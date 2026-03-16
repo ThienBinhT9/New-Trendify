@@ -1,0 +1,14 @@
+@use "./colors" as *;
+@use "./mixins" as *;
+@use "./typography" as *;
+@use "./breakpoints" as *;
+
+[data-theme="dark"] {
+  --bg-body: rgb(10, 10, 10);
+  --text-color: #f0f0f0;
+  --switch-bg: #1f1f1f;
+  --border-color: rgb(46, 46, 46);
+  --box-shadow-color: #686868;
+  --hover-bg: #373737;
+  --icon-color: #f0f0f0;
+}

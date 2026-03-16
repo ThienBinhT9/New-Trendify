@@ -1,0 +1,43 @@
+.guest-layout-container {
+  height: 100dvh;
+
+  .guest-layout-header {
+    height: 60px;
+    padding: 0 32px;
+    background-color: var(--switch-bg);
+    flex-shrink: 0;
+    z-index: 9;
+
+    @media (max-width: $breakpoint-end-mobile-small) {
+      background-color: transparent;
+    }
+  }
+
+  .guest-layout-content {
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+
+    @media (max-width: $breakpoint-end-mobile-small) {
+      padding: 0;
+    }
+
+    .guest-layout-section {
+      flex-direction: column;
+      border-radius: 18px;
+      padding: fluid-h(20, 32) fluid(22, 32);
+      background-color: rgba(255, 255, 255, 0.8);
+      width: 500px;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      transition: 0.3s;
+
+      @media (max-width: $breakpoint-end-mobile-small) {
+        width: 96%;
+        margin-top: 8px;
+        margin-bottom: 8px;
+        border-radius: 12px;
+      }
+    }
+  }
+}

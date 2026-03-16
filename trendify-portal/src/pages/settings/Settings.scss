@@ -1,0 +1,208 @@
+.settings-page {
+  min-height: 100%;
+  padding: 32px 24px;
+  justify-content: center;
+  width: 1024px;
+  margin: 0 auto;
+}
+
+// ── Shared card base ────────────────────────────────────────────────────────
+.settings-index-card,
+.settings-two-col-card {
+  width: 100%;
+  background-color: var(--switch-bg);
+  border-radius: 16px;
+  overflow: hidden;
+  align-self: flex-start;
+}
+
+// ── Index (level 1) ─────────────────────────────────────────────────────────
+.settings-index-card {
+  max-width: 680px;
+  flex-direction: column;
+  padding-bottom: 8px;
+}
+
+.settings-page-title {
+  padding: 20px 24px 12px;
+  text-align: center;
+  color: var(--text-color);
+  display: block;
+}
+
+.settings-index-list {
+  flex-direction: column;
+}
+
+// ── 2-col card (level 2 & 3) ────────────────────────────────────────────────
+.settings-two-col-card {
+  max-width: 1024px;
+  min-height: 320px;
+}
+
+.settings-col-divider {
+  width: 1px;
+  background-color: var(--border-color);
+  flex-shrink: 0;
+}
+
+// ── Left nav ────────────────────────────────────────────────────────────────
+.settings-nav {
+  flex: 1;
+  flex-shrink: 0;
+  padding: 8px;
+  flex-direction: column;
+
+  .settings-nav-item {
+    justify-content: flex-start !important;
+    gap: 12px;
+    padding: 10px 12px !important;
+    border-radius: 12px !important;
+    color: var(--text-color) !important;
+    height: auto !important;
+
+    .ant-btn-icon,
+    span:not(.ant-btn-icon) {
+      display: contents;
+    }
+
+    &--active {
+      background-color: var(--primary-color) !important;
+    }
+  }
+}
+
+// ── Right panel ─────────────────────────────────────────────────────────────
+.settings-right-panel {
+  padding: 8px;
+}
+
+.settings-section-panel {
+  flex-direction: column;
+}
+
+.settings-detail-panel {
+  flex-direction: column;
+}
+
+.settings-detail-header {
+  position: relative;
+  padding: 12px 16px 8px;
+  justify-content: center;
+
+  .settings-detail-title {
+    color: var(--text-color);
+  }
+}
+
+.settings-detail-back-btn {
+  position: absolute !important;
+  left: 8px;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: unset !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  color: var(--text-color) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  &:hover {
+    background-color: var(--hover-bg) !important;
+  }
+}
+
+.settings-detail-placeholder {
+  padding: 24px;
+  justify-content: center;
+}
+
+// ── Blocked content ──────────────────────────────────────────────────────────
+.settings-blocked {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 480px;
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.settings-privacy-profile {
+  padding: 8px 16px 16px;
+
+  &__row {
+    padding: 12px 4px;
+  }
+
+  &__label {
+    color: var(--text-color);
+  }
+
+  &__switch {
+    flex-shrink: 0;
+  }
+
+  &__desc {
+    padding-top: 12px;
+    color: var(--text-color);
+    opacity: 0.45;
+    line-height: 1.55;
+  }
+}
+
+// ── Shared item button ───────────────────────────────────────────────────────
+.settings-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  height: auto !important;
+  padding: 14px 16px !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  color: var(--text-color) !important;
+  text-align: left;
+
+  .ant-btn-icon,
+  span:not(.ant-btn-icon) {
+    display: contents;
+  }
+
+  &:hover {
+    background-color: var(--hover-bg) !important;
+  }
+
+  &--index {
+    padding: 16px 20px !important;
+    border-radius: 0 !important;
+  }
+}
+
+.settings-item-icon {
+  display: flex;
+  align-items: center;
+  color: var(--text-color);
+  opacity: 0.85;
+}
+
+.settings-item-right {
+  align-items: center;
+}
+
+.settings-item-badge {
+  font-size: 12px;
+  color: var(--text-color);
+  opacity: 0.45;
+}
+
+.settings-item-chevron {
+  width: 18px;
+  height: 18px;
+  opacity: 0.35;
+  color: var(--text-color);
+  transform: rotate(180deg); // ArrowIcon points left by default
+  flex-shrink: 0;
+}

@@ -1,0 +1,19 @@
+$breakpoint-start-pc: 1024px;
+$breakpoint-end-tablet: 1023px;
+$breakpoint-start-tablet: 768px;
+$breakpoint-end-mobile: 767px;
+$breakpoint-end-mobile-small: 520px;
+
+$header-height-pc: 56px;
+
+:root {
+  --header-height-pc: #{$header-height-pc};
+
+  --vw: calc(clamp(320px, 100vw, 479px) / 375);
+
+  --breakpoint-start-pc: #{$breakpoint-start-pc};
+  --breakpoint-end-tablet: #{$breakpoint-end-tablet};
+  --breakpoint-start-tablet: #{$breakpoint-start-tablet};
+  --breakpoint-end-mobile: #{$breakpoint-end-mobile};
+  --breakpoint-end-mobile-small: #{$breakpoint-end-mobile-small};
+}

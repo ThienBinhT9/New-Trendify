@@ -1,0 +1,36 @@
+.quick-post-container {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: var(--switch-bg);
+  cursor: pointer;
+
+  .quick-post-header {
+    align-items: center;
+    gap: 8px;
+
+    .quick-post-avatar {
+      width: 42px;
+      height: 42px;
+      cursor: pointer;
+      border: 1px solid var(--gray-300);
+    }
+
+    .quick-post-input {
+      flex: 1;
+      height: 36px;
+      border-radius: 99px;
+      background-color: var(--hover-bg);
+      pointer-events: none;
+    }
+  }
+
+  .quick-post-divider {
+    margin: 12px 0;
+    border-color: #eaeaea;
+  }
+
+  .quick-post-btn {
+    flex: 1;
+  }
+}

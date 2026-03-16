@@ -1,0 +1,57 @@
+.follow-status-modal {
+  .follows-status-modal-footer {
+    margin-top: 16px;
+
+    .follows-status-modal-btn {
+      border: none;
+      height: 46px;
+      border-top: 1px solid var(--border-color);
+      border-radius: 0 0 8px 8px;
+    }
+  }
+
+  .follows-status-modal-body {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 16px 0 12px;
+  }
+}
+
+.blocked-card {
+  border-radius: 6px;
+  padding: 10px 16px;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: var(--hover-bg);
+  }
+
+  &__avatar {
+    flex-shrink: 0;
+    object-fit: cover;
+  }
+
+  &__name {
+    color: var(--text-color);
+  }
+
+  &__username {
+    color: var(--text-color);
+    opacity: 0.45;
+  }
+
+  &__unblock-btn {
+    flex-shrink: 0;
+    border-radius: 20px !important;
+    font-weight: 600;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+    background: transparent !important;
+
+    &:hover {
+      border-color: var(--text-color) !important;
+    }
+  }
+}

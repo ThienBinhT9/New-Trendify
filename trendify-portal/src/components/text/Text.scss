@@ -1,0 +1,196 @@
+.text-container.ant-typography {
+  margin-bottom: unset;
+}
+
+.text-container {
+  color: var(--text-color);
+  font-family: var(--font-family);
+  white-space: pre-wrap;
+
+  .text-tag {
+    color: var(--text-color-blue);
+    font-weight: 500;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  p {
+    margin-bottom: 0;
+  }
+
+  &.SB14 {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: normal;
+    font-style: normal;
+  }
+
+  &.SB16 {
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: normal;
+  }
+
+  &.SB18 {
+    font-size: 18px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: normal;
+  }
+
+  &.SB22 {
+    font-size: 22px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: normal;
+  }
+
+  // Regular
+  &.R10 {
+    font-size: 10px;
+    font-weight: 400;
+    line-height: normal;
+    font-style: normal;
+  }
+
+  &.R12 {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: normal;
+    font-style: normal;
+  }
+
+  &.R14 {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: normal;
+    font-style: normal;
+  }
+
+  &.R16 {
+    font-size: 16px;
+    font-weight: 400;
+    line-height: normal;
+    font-style: normal;
+  }
+
+  &.R18 {
+    font-size: 18px;
+    font-weight: 400;
+    line-height: normal;
+    font-style: normal;
+  }
+
+  &.R20 {
+    font-size: 20px;
+    font-weight: 400;
+    line-height: normal;
+    font-style: normal;
+  }
+
+  &.R24 {
+    font-size: 24px;
+    font-weight: 400;
+    line-height: normal;
+    font-style: normal;
+  }
+
+  // Medium
+  &.M10 {
+    font-size: 10px;
+    font-weight: 500;
+    line-height: normal;
+    font-style: normal;
+  }
+
+  &.M12 {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: normal;
+    font-style: normal;
+  }
+
+  &.M14 {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  &.M16 {
+    font-size: 16px;
+    font-weight: 500;
+    line-height: normal;
+    font-style: normal;
+  }
+
+  &.M18 {
+    font-size: 18px;
+    font-weight: 500;
+    line-height: normal;
+    font-style: normal;
+  }
+
+  &.M20 {
+    font-size: 20px;
+    font-weight: 500;
+    line-height: normal;
+    font-style: normal;
+  }
+
+  &.M24 {
+    font-size: 24px;
+    font-weight: 500;
+    line-height: normal;
+    font-style: normal;
+  }
+
+  &.M32 {
+    font-size: 32px;
+    font-weight: 500;
+    line-height: normal;
+    font-style: normal;
+  }
+
+  &.M36 {
+    font-size: 36px;
+    font-weight: 500;
+    line-height: normal;
+    font-style: normal;
+  }
+
+  &.M40 {
+    font-size: 40px;
+    font-weight: 500;
+    line-height: normal;
+    font-style: normal;
+  }
+
+  &.M48 {
+    font-size: 48px;
+    font-weight: 500;
+    line-height: normal;
+    font-style: normal;
+  }
+
+  // Bold
+  &.B32 {
+    font-size: 32px;
+    font-weight: 600;
+    line-height: normal;
+    font-style: normal;
+  }
+
+  // SemiBold
+  &.SB14 {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  &.SB12 {
+    font-size: 12px;
+    font-weight: 600;
+  }
+}

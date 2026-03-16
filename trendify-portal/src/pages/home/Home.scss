@@ -1,0 +1,133 @@
+.home-container {
+  width: 100%;
+  gap: 24px;
+  justify-content: center;
+
+  .home-content {
+    flex: 1;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 750px;
+  }
+
+  .home-right {
+    flex-direction: column;
+    gap: 12px;
+    width: 320px;
+
+    .home-popular-hashtags {
+      flex-direction: column;
+      gap: 8px;
+
+      .popular-hashtags-list {
+        flex-direction: column;
+        gap: 12px;
+
+        .popular-hashtags-prefix {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background-color: var(--hover-bg);
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .popular-hashtags-info {
+          width: calc(100% - 40px);
+
+          .popular-hashtags-title {
+            cursor: pointer;
+            margin-bottom: 0;
+
+            &:hover {
+              text-decoration: underline;
+              font-weight: 500;
+            }
+          }
+        }
+      }
+    }
+
+    .home-articals {
+      flex-direction: column;
+      gap: 8px;
+
+      .artical-see-all {
+        color: var(--gray-500);
+        transition: 0.2s;
+
+        &:hover {
+          cursor: pointer;
+          font-weight: 500;
+          color: var(--text-color);
+        }
+      }
+
+      .artical-list {
+        flex-direction: column;
+        gap: 8px;
+
+        .artical-item {
+          border-radius: 8px;
+          overflow: hidden;
+          aspect-ratio: 1.4;
+          position: relative;
+          cursor: pointer;
+
+          .ant-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: center;
+          }
+
+          .artical-thumb {
+            width: 100%;
+            height: 100%;
+          }
+
+          .artical-overview {
+            width: 100%;
+            position: absolute;
+            padding: 12px;
+            flex-direction: column;
+            gap: 4px;
+            background-color: var(--switch-bg);
+            border-radius: 4px 4px 0 0;
+            opacity: 0.8;
+            bottom: 0;
+
+            .artical-overview-avatar {
+              width: 20px;
+              height: 20px;
+              flex-shrink: 0;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+.following-container {
+  width: 100%;
+  gap: 24px;
+  justify-content: center;
+
+  .following-content {
+    flex: 1;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 750px;
+  }
+
+  .following-list {
+    max-width: 750px;
+    width: 100%;
+  }
+
+  .following-item {
+    margin-bottom: 12px;
+  }
+}

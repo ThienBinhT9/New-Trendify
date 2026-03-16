@@ -1,0 +1,212 @@
+@use "./variable" as *;
+@use "./antd-override" as *;
+
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;900&display=swap");
+
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  font-size: 14px;
+}
+
+html * {
+  font-family: var(--font-family);
+  color: var(--text-color);
+}
+
+svg[fill="#000000"],
+svg[fill="#000"],
+svg[fill="black"] {
+  fill: var(--icon-color);
+}
+
+svg {
+  .st0 {
+    fill: var(--icon-color);
+  }
+
+  path[fill="#000000"],
+  path[fill="#000"],
+  path[fill="black"] {
+    fill: var(--icon-color);
+  }
+
+  path[stroke="#000000"],
+  path[stroke="#000"],
+  path[stroke="black"],
+  line[stroke="#000000"],
+  polyline[stroke="#000000"],
+  circle[stroke="#000000"],
+  rect[stroke="#000000"] {
+    stroke: var(--icon-color);
+  }
+}
+
+body {
+  overflow-y: overlay;
+  background-color: var(--bg-body);
+}
+
+button,
+input,
+select {
+  outline: 0;
+  font-size: 15px;
+}
+
+html *::-webkit-scrollbar {
+  border-radius: 0;
+  width: 8px;
+  height: 8px;
+  color: #000;
+}
+
+html *::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background-color: rgb(192, 192, 192);
+}
+
+html *::-webkit-scrollbar-track {
+  border-radius: 0;
+  background-color: rgba(68, 68, 68, 0);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: var(--text-color);
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.custom-toast {
+  padding: 0 !important;
+  margin: auto !important;
+  flex: none !important;
+  font-weight: 600;
+  font-size: 10px !important;
+}
+
+.color-second {
+  color: var(--gray-500) !important;
+}
+
+.text-second-color {
+  color: var(--gray-500) !important;
+}
+
+.text-primary-color {
+  color: var(--primary-color) !important;
+}
+
+.m-0 {
+  margin: 0;
+}
+
+.mr-8 {
+  margin-right: 8px;
+}
+
+.mt-4 {
+  margin-top: 4px;
+}
+
+.mt-8 {
+  margin-top: 8px;
+}
+
+.mt-12 {
+  margin-top: 12px;
+}
+
+.mt-16 {
+  margin-top: 16px;
+}
+
+.mt-24 {
+  margin-top: 16px;
+}
+
+.mt-32 {
+  margin-top: 32px;
+}
+
+.mb-12 {
+  margin-bottom: 12px;
+}
+
+.mb-16 {
+  margin-bottom: 16px;
+}
+
+.mb-24 {
+  margin-bottom: 24px;
+}
+
+.pt-24 {
+  padding-top: 24px;
+}
+
+.p-16 {
+  padding: 16px;
+}
+
+.pl-32 {
+  padding-left: 32px;
+}
+
+.pr-32 {
+  padding-right: 32px;
+}
+
+.h-40 {
+  height: 40px;
+}
+
+.w-max {
+  width: 100%;
+}
+
+.pointer {
+  cursor: pointer;
+}
+
+.swiper {
+  overflow-x: hidden;
+}
+
+.swiper-wrapper {
+  display: inline-flex;
+}
+
+.EmojiPickerReact .epr-preview {
+  display: none !important;
+}
+
+.EmojiPickerReact {
+  > div:nth-child(3) {
+    display: none;
+  }
+}
+
+.speator-dot {
+  width: 2px;
+  height: 2px;
+  border-radius: 9px;
+  background-color: var(--gray-500);
+}
+
+.box-wrapper {
+  padding: 12px;
+  border-radius: 8px;
+  background-color: var(--switch-bg);
+}
+
+.text-logo {
+  color: #655f5f;
+  letter-spacing: 1.5px;
+  text-shadow: 2px 2px 2px #a8a8a8;
+}

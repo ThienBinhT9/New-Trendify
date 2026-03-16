@@ -1,0 +1,61 @@
+$primary-color: #90a084; //aabb9e
+$text-color: #22282e;
+$text-color-light: #fff;
+$text-color-red: #ee4d2d;
+$text-color-blue: #1369ef;
+
+$bg-body: #efefef;
+$switch-bg: #fff;
+
+$border-color: #c6c6c6;
+$box-shadow-color: #d4d4d4;
+$hover-bg: #f8f8f8;
+
+//gray
+$gray-50: #f9f9f9;
+$gray-100: #f2f2f2;
+$gray-200: #e0e0e0;
+$gray-300: #c6c6c6;
+$gray-400: #a8a8a8;
+$gray-500: #6e7689;
+
+$color-success: #4caf50;
+$color-warning: #ff9800;
+$color-error: #f44336;
+$color-info: #2196f3;
+
+$overlay-bg: rgba(0, 0, 0, 0.4);
+
+$disabled-color: #bfbfbf;
+
+:root {
+  --icon-color: #000000;
+  --primary-color: #{$primary-color};
+  --text-color: #{$text-color};
+  --text-color-light: #{$text-color-light};
+  --text-color-red: #{$text-color-red};
+  --text-color-blue: #{$text-color-blue};
+
+  --bg-body: #{$bg-body};
+  --switch-bg: #{$switch-bg};
+
+  --border-color: #{$border-color};
+  --box-shadow-color: #{$box-shadow-color};
+  --hover-bg: #{$hover-bg};
+
+  --gray-50: #{$gray-50};
+  --gray-100: #{$gray-100};
+  --gray-200: #{$gray-200};
+  --gray-300: #{$gray-300};
+  --gray-400: #{$gray-400};
+  --gray-500: #{$gray-500};
+
+  --color-success: #{$color-success};
+  --color-warning: #{$color-warning};
+  --color-error: #{$color-error};
+  --color-info: #{$color-info};
+
+  --overlay-bg: #{$overlay-bg};
+
+  --disabled-color: #{$disabled-color};
+}

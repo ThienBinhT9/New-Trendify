@@ -1,0 +1,10 @@
+.profile-section-container {
+  flex-direction: column;
+  gap: 12px;
+
+  .post-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+}

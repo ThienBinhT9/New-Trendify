@@ -1,0 +1,16 @@
+@use "@/themes/_mixins" as *;
+
+.button-container {
+}
+
+.ant-btn-default {
+  border-color: var(--gray-300);
+
+  &:hover {
+    @include button-shadow;
+  }
+}
+
+.ant-btn-variant-text:not(:disabled):not(.ant-btn-disabled):active {
+  background-color: var(--primary-color);
+}

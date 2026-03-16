@@ -1,0 +1,34 @@
+.input-container {
+  height: 42px;
+  background-color: transparent;
+  border-radius: 8px;
+  transition: 0.05s;
+  border: 1px solid var(--gray-300);
+
+  &:hover {
+    background-color: transparent;
+    border-color: var(--gray-400);
+  }
+
+  .ant-input-prefix {
+    margin-right: 8px;
+  }
+}
+
+.ant-input-outlined:focus-within,
+.ant-picker-outlined:focus-within {
+  border-width: 2px;
+  background-color: transparent;
+}
+
+.ant-otp-input {
+  width: fluid(36, 50);
+  height: fluid(42, 56);
+  border-radius: 8px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.ant-input {
+  font-family: var(--font-family);
+}

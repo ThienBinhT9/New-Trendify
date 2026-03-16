@@ -1,0 +1,13 @@
+.main-layout-body {
+  height: 100vh;
+
+  .main-layout-content {
+    display: flex;
+    flex-direction: column;
+
+    .main-layout-children {
+      padding: 12px;
+      overflow-y: auto;
+    }
+  }
+}

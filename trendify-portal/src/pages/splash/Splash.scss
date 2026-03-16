@@ -1,0 +1,59 @@
+.splash-container {
+  position: fixed;
+  inset: 0;
+  background: var(--switch-bg);
+  z-index: 9999;
+  user-select: none;
+  transition: opacity 0.4s ease;
+
+  &.enter {
+    opacity: 1;
+  }
+  &.hold {
+    opacity: 1;
+  }
+  &.scale {
+    opacity: 1;
+  }
+  &.exit {
+    opacity: 0;
+  }
+
+  .splash-logo {
+    &.enter {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    &.hold {
+      transform: scale(1);
+      opacity: 1;
+      transition: none;
+    }
+
+    &.exit {
+      transform: scale(2.6);
+      opacity: 0;
+      transition: all 0.4s ease;
+    }
+
+    img {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+    }
+  }
+
+  .splash-footer {
+    position: absolute;
+    bottom: 36px;
+
+    &__from {
+      opacity: 0.6;
+    }
+
+    &__name {
+      letter-spacing: 0.05em;
+    }
+  }
+}
