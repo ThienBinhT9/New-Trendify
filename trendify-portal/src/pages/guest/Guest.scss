@@ -1,0 +1,100 @@
+.guest-container {
+  .guest-container-title {
+    margin-bottom: 24px;
+    margin-bottom: fluid-h(12, 24);
+  }
+
+  .btn-transparent {
+    background-color: transparent;
+
+    &:hover {
+      background-color: transparent !important;
+    }
+  }
+
+  .guest-btn {
+    width: 100%;
+    border-radius: 999px;
+    height: 42px;
+    height: fluid-h(38, 42);
+  }
+
+  .guest-btn-signup {
+    @media (min-width: calc($breakpoint-end-mobile-small + 1px)) {
+      display: none;
+    }
+  }
+
+  .guest-already {
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .sign-in-forgot-password {
+    margin-bottom: fluid-h(16, 24);
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .guest-container-subtitle {
+    margin-bottom: 18px;
+    padding-right: 12px;
+  }
+
+  .ant-form-item-explain-error {
+    font-size: 12px;
+    margin-top: 4px;
+    margin-left: 2px;
+  }
+
+  .verify-email-callback {
+    height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .verify-callback-text {
+      color: #4a4949;
+      letter-spacing: 1.5px;
+      text-shadow: 2px 2px 2px #a8a8a8;
+    }
+  }
+}
+
+.guest-modal-verify-footer {
+  padding: 24px 40px;
+  padding: fluid(12, 24) fluid(16, 40);
+  gap: 12px;
+  border-top: 1px solid var(--gray-300);
+
+  .guest-modal-btn {
+    border-width: 2px;
+
+    height: fluid(36, 46);
+    min-width: fluid(90, 140);
+  }
+}
+
+.guest-modal-verify-content {
+  padding: fluid(12, 40) fluid(12, 40) 12px;
+
+  .guestModalVerifyContent-resendOtp {
+    cursor: pointer;
+
+    &:hover {
+      font-weight: 600;
+    }
+  }
+
+  .guestModalVerify-title {
+    font-size: fluid(24, 32);
+  }
+
+  .guestModalVerify-subTitle {
+    font-size: fluid(16, 20);
+  }
+}

@@ -1,0 +1,24 @@
+.header-container {
+  height: var(--header-height-pc);
+  width: 100%;
+  padding: 0px 56px;
+  background-color: var(--switch-bg);
+  box-shadow: 0 0 4px var(--box-shadow-color);
+  z-index: 99;
+  justify-content: center;
+
+  .ant-tabs-nav {
+    margin-bottom: 0;
+
+    .ant-tabs-tab {
+      height: var(--header-height-pc);
+      margin: 0;
+      padding: 0px 32px;
+      opacity: 0.5;
+    }
+
+    .ant-tabs-tab-active {
+      opacity: 1;
+    }
+  }
+}

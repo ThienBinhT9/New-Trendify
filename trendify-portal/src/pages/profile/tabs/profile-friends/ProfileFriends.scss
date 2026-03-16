@@ -1,0 +1,84 @@
+.profile-friends-container {
+  background-color: var(--switch-bg);
+  padding: 12px;
+  border-radius: 8px;
+  flex-direction: column;
+  gap: 24px;
+
+  .profile-friends-header {
+    flex: 1;
+    align-items: center;
+    justify-content: space-between;
+
+    .search-input {
+      height: 36px;
+      border-radius: 99px;
+      background-color: var(--hover-bg);
+    }
+  }
+
+  .profile-friends-list {
+    padding: 12px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    .infinite-scroll-component__outerdiv {
+      width: 100%;
+    }
+  }
+
+  .friend-card-skeleton {
+    width: calc(50% - 16px);
+  }
+}
+
+.friend-card {
+  padding: 12px;
+  border: 1px solid #ebebeb;
+  align-items: center;
+  border-radius: 8px;
+  gap: 12px;
+  width: calc(50% - 4px);
+  cursor: pointer;
+  transition: 0.2s;
+
+  &:hover {
+    border: 1px solid var(--gray-400);
+    box-shadow: 0 0 4px var(--gray-200);
+  }
+
+  .friend-card-avatar {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    object-position: center;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .friend-card-mutial {
+    color: var(--gray-500);
+  }
+
+  .friend-card-options {
+    width: 32px;
+    height: 32px;
+    border-radius: 99px;
+    border: 1px solid transparent;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s;
+
+    &:hover {
+      border: 1px solid var(--gray-300);
+      background-color: var(--hover-bg);
+    }
+  }
+
+  .friend-card-options.active {
+    border: 1px solid var(--gray-300);
+    background-color: var(--hover-bg);
+  }
+}

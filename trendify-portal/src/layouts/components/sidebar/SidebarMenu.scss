@@ -1,0 +1,136 @@
+.sidebar-menu-popup {
+  width: 260px;
+  overflow: hidden;
+  border-radius: 16px;
+  transition: height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// Sliding track – shifts left by 100% to reveal level 2
+.sidebar-menu-track {
+  display: flex;
+  align-items: flex-start; // each panel keeps its own natural height
+  width: 200%; // two panels side by side
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &--main {
+    transform: translateX(0);
+  }
+
+  &--sub {
+    transform: translateX(-50%);
+  }
+}
+
+// Each panel takes exactly half the track (= full popup width)
+.sidebar-menu-panel {
+  width: 50%;
+  flex-shrink: 0;
+  padding: 6px 0;
+}
+
+// ── Groups ──
+.sidebar-menu-group {
+  padding: 4px 8px;
+}
+
+// ── Divider ──
+.sidebar-menu-divider {
+  margin: 4px 0 !important;
+  border-color: var(--border-color) !important;
+}
+
+// ── Base item button (wraps Ant Design Button type="text") ──
+.sidebar-menu-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  height: auto !important;
+  padding: 12px 14px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 12px !important;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-color) !important;
+  transition: background 0.15s;
+
+  &:hover {
+    background-color: var(--hover-bg) !important;
+  }
+
+  // Ant Design Button renders a span inside – reset its flex
+  .ant-btn-icon,
+  span:not(.ant-btn-icon) {
+    display: contents;
+  }
+
+  &--danger {
+    color: var(--text-color-red) !important;
+  }
+}
+
+.sidebar-menu-chevron {
+  width: 22px;
+  height: 22px;
+  opacity: 0.5;
+  color: var(--text-color);
+  transform: rotate(180deg);
+}
+
+// ── Level 2 header ──
+.sidebar-menu-panel-header {
+  position: relative;
+  padding: 10px 14px 6px;
+  justify-content: center;
+}
+
+.sidebar-menu-back-btn {
+  position: absolute !important;
+  left: 14px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: unset !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  border: none !important;
+  cursor: pointer;
+  color: var(--text-color) !important;
+  font-size: 13px;
+}
+
+.sidebar-menu-panel-title {
+  font-weight: 600;
+}
+
+// ── Theme switcher ──
+.sidebar-theme-switcher {
+  background-color: var(--bg-body);
+  border-radius: 14px;
+  padding: 4px;
+  gap: 2px;
+  margin: 8px 6px 12px;
+}
+
+.sidebar-theme-option {
+  flex: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 38px !important;
+  border: none !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-color) !important;
+  transition:
+    background 0.15s,
+    color 0.15s;
+
+  &--active {
+    background-color: var(--switch-bg) !important;
+    box-shadow: 0 1px 4px var(--box-shadow-color);
+  }
+}

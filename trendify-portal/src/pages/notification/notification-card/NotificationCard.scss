@@ -1,0 +1,21 @@
+.notification-card-container {
+  padding: 12px 8px;
+  cursor: pointer;
+
+  .notification-card-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-color);
+    font-family: var(--font-family);
+    margin-bottom: 0;
+    max-width: 100%;
+  }
+
+  .notification-card-message {
+    color: var(--gray-500);
+    font-family: var(--font-family);
+    font-size: 12px;
+    font-weight: 400;
+    margin-bottom: 0;
+  }
+}

@@ -1,0 +1,69 @@
+.modal-likes-post {
+  .ant-modal-content {
+    height: 100%;
+  }
+
+  .list-user-liked {
+    margin-top: 16px;
+    margin-right: -8px;
+    flex-direction: column;
+    overflow-y: overlay;
+    max-height: 60vh;
+    padding-right: 8px;
+    flex: 1;
+
+    img {
+      cursor: pointer;
+    }
+
+    .username-liked {
+      cursor: pointer;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+.crop-modal {
+  .ant-modal-content {
+    border-radius: 16px;
+    padding: 24px;
+  }
+
+  .crop-wrapper {
+    position: relative;
+    width: 100%;
+    height: 320px;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .crop-wrapper .reactEasyCrop_CropArea {
+    border: 2px solid #ffffff;
+  }
+
+  .ant-slider {
+    margin-top: 4px;
+  }
+}
+
+.modal-detail-post {
+  max-height: 90vh;
+
+  &__content {
+    margin: 6px 6px 0 0;
+    overflow-y: auto;
+    max-height: 500px;
+  }
+
+  &__comments {
+    padding: 0 12px 12px;
+  }
+
+  &__footer {
+    padding: 6px 12px 12px;
+  }
+}

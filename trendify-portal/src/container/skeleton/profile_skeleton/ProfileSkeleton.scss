@@ -1,0 +1,41 @@
+.profile-skeleton {
+  width: 100%;
+
+  &__cover {
+    height: 300px;
+    width: 100%;
+    background: #f0f2f5;
+    animation: pulse 1.5s infinite ease-in-out;
+  }
+
+  &__body {
+    padding: 0 32px;
+    margin-top: -60px;
+    align-items: flex-end;
+    gap: 24px;
+  }
+
+  &__avatar-wrapper {
+    background: white;
+    border-radius: 50%;
+    padding: 4px;
+  }
+
+  &__tabs {
+    display: flex;
+    gap: 16px;
+    padding: 16px 32px;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}

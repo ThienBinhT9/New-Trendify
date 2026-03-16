@@ -1,0 +1,4 @@
+import { COOKIE_CONSANT } from "./cookie.constant";
+import { REGEXT_EMAIL, REGEXT_PASSWORD, REGEXT_NUMBERPHONE } from "./regex.constant";
+
+export { COOKIE_CONSANT, REGEXT_EMAIL, REGEXT_PASSWORD, REGEXT_NUMBERPHONE };

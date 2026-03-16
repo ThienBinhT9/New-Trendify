@@ -1,0 +1,10 @@
+.image-container {
+  .ant-image-preview-mask {
+    background: rgba(0, 0, 0, 0.8) !important;
+  }
+}
+
+.ant-image-preview-mask {
+  background: rgba(128, 128, 128, 0.6) !important;
+  backdrop-filter: blur(20px);
+}
