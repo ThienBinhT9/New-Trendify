@@ -9,6 +9,8 @@ import PostSkeleton from "@/container/skeleton/post_skeleton/PostSkeleton";
 const LIMIT = 5;
 
 const fakeGetPosts = async (cursor: number) => {
+  console.log("vao foryou page");
+
   await new Promise((resolve) => setTimeout(resolve, 2000));
   return {
     data: [1, 1, 1, 1, 1],

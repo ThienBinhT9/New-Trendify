@@ -1,26 +1,27 @@
-import { MoreOutlined } from "@ant-design/icons";
 import { Avatar, Flex, Popover } from "antd";
 import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
 import { useCallback, useEffect, useRef } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import Mention, { MentionNodeAttrs } from "@tiptap/extension-mention";
-import Placeholder from "@tiptap/extension-placeholder";
 import { SuggestionKeyDownProps, SuggestionOptions, SuggestionProps } from "@tiptap/suggestion";
 import tippy, { Instance } from "tippy.js";
-import { JSONContent } from "@tiptap/core";
+import { Extension, JSONContent } from "@tiptap/core";
+import { Plugin } from "@tiptap/pm/state";
+import { Decoration, DecorationSet } from "@tiptap/pm/view";
 
 import { useMention } from "@/hooks";
 import { EVisibility } from "@/interfaces/common.interface";
 import { PostPanelKey } from "../PostCreate";
-import { IPostLocation, IPostMention } from "@/interfaces/post.interface";
-import { IUserSuggestion } from "@/interfaces/user.interface";
 import { listFollowing } from "@/stores/profile/api";
 import { useAppSelector } from "@/stores";
+import { IUserSuggestion } from "@/interfaces/user.interface";
+import { IPostLocation, IPostMention } from "@/interfaces/post.interface";
 
 import Text from "@/components/text/Text";
 import Icon from "@/components/icon/Icon";
 import Button from "@/components/button/Button";
+import StarterKit from "@tiptap/starter-kit";
+import Placeholder from "@tiptap/extension-placeholder";
 
 interface IProps {
   selectedLocation?: IPostLocation | null;
@@ -57,6 +58,43 @@ const ComposerMention = Mention.extend({
   },
 });
 
+const HashtagHighlight = Extension.create({
+  name: "hashtagHighlight",
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        props: {
+          decorations(state) {
+            const decorations: Decoration[] = [];
+
+            state.doc.descendants((node, pos) => {
+              if (!node.isText) return;
+
+              const text = node.text || "";
+              const hashtagRegex = /(^|\s)(#[\p{L}\p{N}_]+)/gu;
+              let match: RegExpExecArray | null = null;
+
+              while ((match = hashtagRegex.exec(text)) !== null) {
+                const prefix = match[1] || "";
+                const hashtag = match[2] || "";
+
+                if (!hashtag) continue;
+
+                const from = pos + match.index + prefix.length;
+                const to = from + hashtag.length;
+
+                decorations.push(Decoration.inline(from, to, { class: "hashtag-highlight" }));
+              }
+            });
+
+            return DecorationSet.create(state.doc, decorations);
+          },
+        },
+      }),
+    ];
+  },
+});
+
 const ComposerPanel = ({
   selectedLocation,
   selectedVisibility,
@@ -70,10 +108,11 @@ const ComposerPanel = ({
 }: IProps) => {
   const privacyLabel = selectedVisibility === EVisibility.public ? "Công khai" : "Riêng tư";
   const authUser = useAppSelector((state) => state.auth.user);
-  const mentionUserMapRef = useRef<Map<string, string>>(new Map());
-  const mentionDebounceTimerRef = useRef<number | null>(null);
-  const mentionRequestSeqRef = useRef<number>(0);
   const mentionLoadingRef = useRef<boolean>(false);
+  const mentionUserMapRef = useRef<Map<string, string>>(new Map());
+  const mentionRequestSeqRef = useRef<number>(0);
+  const mentionRenderItemsRef = useRef<(() => void) | null>(null);
+  const mentionDebounceTimerRef = useRef<number | null>(null);
   const escapeHtml = useCallback((text: string) => {
     return text
       .replace(/&/g, "&amp;")
@@ -83,11 +122,23 @@ const ComposerPanel = ({
       .replace(/'/g, "&#039;");
   }, []);
 
+  const setMentionLoading = useCallback((value: boolean) => {
+    mentionLoadingRef.current = value;
+    mentionRenderItemsRef.current?.();
+  }, []);
+
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
+    if (!editor) {
+      appendEmoji(emojiData.emoji);
+      return;
+    }
+
+    editor.chain().focus().insertContent(emojiData.emoji).run();
+  };
+
   const fetchMentionUsers = useCallback(
     async (query: string) => {
-      if (!authUser?.id) {
-        return [] as IUserSuggestion[];
-      }
+      if (!authUser?.id) return [] as IUserSuggestion[];
 
       try {
         const response = await listFollowing(authUser.id, { query });
@@ -129,7 +180,7 @@ const ComposerPanel = ({
           }
 
           resolve(users);
-        }, 400);
+        }, 300);
       });
     },
     [fetchMentionUsers],
@@ -173,19 +224,21 @@ const ComposerPanel = ({
     },
     items: async ({ query }) => {
       const normalizedQuery = query.trim();
-      mentionLoadingRef.current = true;
+      setMentionLoading(true);
       const users = await debouncedFetchMentionUsers(normalizedQuery);
-      mentionLoadingRef.current = false;
-
-      return users.map((user) => ({
+      const mapped = users.map((user) => ({
         id: user.id,
-        label: user.display || user.username,
+        label: user.username,
         username: user.username,
         display: user.display || user.username,
         avatar:
           user.profilePicture ||
           `https://ui-avatars.com/api/?name=${encodeURIComponent(user.display || user.username)}`,
       }));
+
+      setMentionLoading(false);
+
+      return mapped;
     },
     render: () => {
       let popup: Instance | null = null;
@@ -196,13 +249,20 @@ const ComposerPanel = ({
       root.appendChild(list);
       let currentItems: IMentionSuggestionItem[] = [];
 
+      const scrollToActive = () => {
+        const active = list.querySelector("li.active");
+        active?.scrollIntoView({
+          block: "nearest",
+        });
+      };
+
       const renderItems = () => {
         list.innerHTML = "";
 
         if (mentionLoadingRef.current) {
           const loading = document.createElement("li");
           loading.className = "mention-empty";
-          loading.textContent = "Đang tải...";
+          loading.textContent = "Đang tìm kiếm...";
           list.appendChild(loading);
           return;
         }
@@ -251,6 +311,7 @@ const ComposerPanel = ({
 
       return {
         onStart: (props: SuggestionProps<IMentionSuggestionItem, IComposerMentionAttrs>) => {
+          mentionRenderItemsRef.current = renderItems;
           mentionProps = props;
           currentItems = props.items;
           selectedIndex = 0;
@@ -261,6 +322,11 @@ const ComposerPanel = ({
           mentionProps = props;
           currentItems = props.items;
           selectedIndex = 0;
+
+          if (!popup) {
+            createPopup(props);
+          }
+
           renderItems();
 
           if (popup && props.clientRect) {
@@ -282,12 +348,14 @@ const ComposerPanel = ({
           if (props.event.key === "ArrowDown") {
             selectedIndex = (selectedIndex + 1) % currentItems.length;
             renderItems();
+            scrollToActive();
             return true;
           }
 
           if (props.event.key === "ArrowUp") {
             selectedIndex = (selectedIndex + currentItems.length - 1) % currentItems.length;
             renderItems();
+            scrollToActive();
             return true;
           }
 
@@ -301,8 +369,14 @@ const ComposerPanel = ({
           return false;
         },
         onExit: () => {
-          popup?.destroy();
-          popup = null;
+          mentionProps = null;
+          currentItems = [];
+          selectedIndex = 0;
+
+          if (popup) {
+            popup.destroy();
+            popup = null;
+          }
         },
       };
     },
@@ -316,6 +390,7 @@ const ComposerPanel = ({
         heading: false,
         horizontalRule: false,
       }),
+      HashtagHighlight,
       Placeholder.configure({
         placeholder: "Bạn đang nghĩ gì?",
       }),
@@ -413,15 +488,6 @@ const ComposerPanel = ({
     editor.commands.setContent(html, { emitUpdate: false });
   }, [editor, editorDoc, editorValue, escapeHtml]);
 
-  const handleEmojiClick = (emojiData: EmojiClickData) => {
-    if (!editor) {
-      appendEmoji(emojiData.emoji);
-      return;
-    }
-
-    editor.chain().focus().insertContent(emojiData.emoji).run();
-  };
-
   return (
     <Flex vertical className="post-modal-panel">
       <Flex className="post-modal-header">
@@ -429,9 +495,7 @@ const ComposerPanel = ({
           <Text textType="M16">Hủy</Text>
         </Button>
         <Text textType="SB22">Thread mới</Text>
-        <Flex className="post-head-actions">
-          <MoreOutlined />
-        </Flex>
+        <div />
       </Flex>
 
       <Flex vertical className="post-modal-body">

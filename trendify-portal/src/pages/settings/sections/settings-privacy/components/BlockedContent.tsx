@@ -34,7 +34,7 @@ const BlockedContent = () => {
   if (loading) {
     return (
       <Flex vertical className="settings-blocked">
-        {[1, 2, 3, 4, 5].map((_, i) => (
+        {[1, 2, 3].map((_, i) => (
           <BlockedCardSkeleton key={i} />
         ))}
       </Flex>

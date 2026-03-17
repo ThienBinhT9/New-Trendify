@@ -97,6 +97,7 @@ const getFollowingFeedUseCase = new GetFollowingFeedUseCase(
   likeRepo,
   saveRepo,
   mediaRepo,
+  userRepo,
   storageSvc,
 );
 

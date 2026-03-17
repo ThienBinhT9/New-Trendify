@@ -56,12 +56,36 @@ export class CreatePostUseCase {
         (ids) => this.mediaRepo.findByIds(ids),
       );
 
+      // Fetch author info to return
+      let profilePictureUrl: string | undefined = undefined;
+      const user = await uow.users.findById(authorId);
+      
+      if (user?.data.profilePicture) {
+        // If profilePicture is a string (id), fetch the media entity
+        if (typeof user.data.profilePicture === 'string') {
+          const profileMedia = await this.mediaRepo.findById(user.data.profilePicture);
+          if (profileMedia) {
+             // Find 'small' variant or fallback to original
+             const smallVariant = profileMedia.variants.find(v => v.type === 'small');
+             const key = smallVariant ? smallVariant.key : profileMedia.key;
+             profilePictureUrl = this.storageSvc.getPublicUrl(key);
+          }
+        }
+      }
+
       return new Response.SuccessResponse({
         statusCode: 201,
         message: "Post created successfully",
         data: {
           post: {
             ...created.toSnapshot(),
+            author: user ? {
+              id: user.id,
+              username: user.data.username,
+              firstName: user.data.firstName,
+              lastName: user.data.lastName,
+              profilePicture: profilePictureUrl
+            } : { id: authorId },
             media: mediaDisplayMap.get(created.id!) ?? [],
           },
         },

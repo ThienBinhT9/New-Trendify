@@ -4,6 +4,7 @@ import {
   EPostType,
   IPostCounters,
   IPostCreateInput,
+  IPostHashtag,
   IPostMention,
   IPostProps,
   IPostUpdateInput,
@@ -46,7 +47,7 @@ export class PostEntity {
     return Object.freeze([...this.props.mediaIds]);
   }
 
-  get hashtags(): readonly string[] {
+  get hashtags(): readonly IPostHashtag[] {
     return Object.freeze([...this.props.hashtags]);
   }
 
@@ -289,13 +290,26 @@ export class PostEntity {
    * Extract hashtags from content
    * Supports Unicode hashtags (e.g., #café, #日本語)
    */
-  static extractHashtags(content: string): string[] {
+  static extractHashtags(content: string): IPostHashtag[] {
     const hashtagRegex = /#([\p{L}\p{N}_]+)/gu;
-    const matches = content.matchAll(hashtagRegex);
-    const hashtags = [...matches].map((m) => m[1]);
+    const seen = new Set<string>();
+    const hashtags: IPostHashtag[] = [];
 
-    // Remove duplicates and limit to 30 hashtags
-    return [...new Set(hashtags)].slice(0, 30);
+    for (const match of content.matchAll(hashtagRegex)) {
+      const tag = match[1];
+      if (seen.has(tag)) continue;
+      seen.add(tag);
+
+      hashtags.push({
+        tag,
+        startIndex: match.index, // vị trí của '#'
+        endIndex: match.index + match[0].length, // sau ký tự cuối của hashtag
+      });
+
+      if (hashtags.length === 30) break;
+    }
+
+    return hashtags;
   }
 
   /**
