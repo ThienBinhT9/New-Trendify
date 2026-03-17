@@ -1,126 +1,81 @@
 import { createSlice } from "@reduxjs/toolkit";
 import * as actions from "./actions";
-import { IProfileState } from "./constants";
-import { IApiException } from "@/interfaces/api.interface";
-import {
-  acceptFollowRequestAction,
-  cancelFollowRequestAction,
-  followAction,
-  rejectFollowRequestAction,
-  removeFollowerAction,
-  unfollowAction,
-} from "../follow/actions";
+import { IPostState } from "./constants";
 
-const initialState: IProfileState = {
-  profile: null,
-  errorStatus: null,
-  isOwnProfile: false,
+const initialState: IPostState = {
+  userPosts: {},
+  followingPosts: { posts: [], cursor: null, hasNext: false },
 };
 
-export const profileSlice = createSlice({
-  name: "profile",
+export const postSlice = createSlice({
+  name: "post",
   initialState,
   reducers: {
-    reset: (state) => {
-      state.profile = initialState.profile;
-      state.isOwnProfile = initialState.isOwnProfile;
-    },
+    resetPostState: () => initialState,
   },
+
   extraReducers(builder) {
     builder
-      //User Profile
-      .addCase(actions.userProfileAction.pending, (state) => {
-        state.profile = initialState.profile;
-        state.errorStatus = initialState.errorStatus;
-        state.isOwnProfile = initialState.isOwnProfile;
-      })
-      .addCase(actions.userProfileAction.fulfilled, (state, action) => {
-        state.profile = action.payload;
-        state.errorStatus = initialState.errorStatus;
-        state.isOwnProfile = action.payload?.viewerContext?.isSelf || initialState.isOwnProfile;
-      })
-      .addCase(actions.userProfileAction.rejected, (state, action) => {
-        state.errorStatus = (action.payload as IApiException)?.status || initialState.errorStatus;
-        state.profile = initialState.profile;
-        state.isOwnProfile = initialState.isOwnProfile;
-      })
 
-      .addCase(followAction.fulfilled, (state, action) => {
-        const userId = action.meta.arg;
-        const viewContext = action.payload.data.data.viewContext;
+      // ================= CREATE POST =================
+      .addCase(actions.createPostAction.fulfilled, (state, action) => {
+        const post = action.payload;
+        const userId = post.authorId;
 
-        if (state.profile?.id === userId) {
-          if (state.profile?.viewerContext) {
-            state.profile.viewerContext = {
-              ...state.profile.viewerContext,
-              ...action.payload.data.data.viewContext,
-            };
-          }
-
-          if (viewContext.isFollowing) {
-            state.profile.followerCount += 1;
-          }
+        if (!state.userPosts[userId]) {
+          state.userPosts[userId] = { posts: [], cursor: null, hasNext: false };
         }
-      })
-      .addCase(unfollowAction.fulfilled, (state, action) => {
-        const userId = action.meta.arg;
-        if (state.profile?.id === userId) {
-          if (state.profile?.viewerContext) {
-            const wasFollowing = state.profile.viewerContext.isFollowing;
 
-            state.profile.viewerContext = {
-              ...state.profile.viewerContext,
-              ...action.payload.data.data.viewContext,
-            };
+        state.userPosts[userId].posts.unshift(post);
+      })
 
-            if (wasFollowing) {
-              state.profile.followerCount = Math.max(0, state.profile.followerCount - 1);
-            }
-          }
-        }
-      })
-      .addCase(removeFollowerAction.fulfilled, (state) => {
-        if (state.isOwnProfile && state.profile) {
-          state.profile.followerCount = Math.max(0, state.profile.followerCount - 1);
-        }
-      })
-      .addCase(cancelFollowRequestAction.fulfilled, (state, action) => {
-        const userId = action.meta.arg;
-        if (state.profile?.id === userId && state.profile?.viewerContext) {
-          state.profile.viewerContext = {
-            ...state.profile.viewerContext,
-            ...action.payload.data.data.viewContext,
-          };
-        }
-      })
-      .addCase(acceptFollowRequestAction.fulfilled, (state, action) => {
-        const requesterId = action.meta.arg;
+      // ================= DELETE POST =================
+      .addCase(actions.deletePostAction.fulfilled, (state, action) => {
+        const postId = action.meta.arg;
 
-        if (state.profile?.id === requesterId) {
-          if (state.profile?.viewerContext) {
-            state.profile.viewerContext = {
-              ...state.profile.viewerContext,
-              ...action.payload.data.data.viewContext,
-            };
-          }
-          state.profile.followingCount += 1;
-        }
-      })
-      .addCase(rejectFollowRequestAction.fulfilled, (state, action) => {
-        const requesterId = action.meta.arg;
+        Object.keys(state.userPosts).forEach((userId) => {
+          state.userPosts[userId].posts = state.userPosts[userId].posts.filter(
+            (p) => p.id !== postId,
+          );
+        });
 
-        if (state.profile?.id === requesterId) {
-          if (state.profile?.viewerContext) {
-            state.profile.viewerContext = {
-              ...state.profile.viewerContext,
-              ...action.payload.data.data.viewContext,
-            };
-          }
+        state.followingPosts.posts = state.followingPosts.posts.filter((p) => p.id !== postId);
+      })
+
+      // ================= USER POSTS =================
+      .addCase(actions.getUserPostsAction.fulfilled, (state, action) => {
+        const { posts, nextCursor } = action.payload;
+        const userId = action.meta.arg.userId; // Best practice: Get userId from arguments
+
+        if (!userId) return;
+
+        if (!state.userPosts[userId]) {
+          state.userPosts[userId] = { posts: [], cursor: null, hasNext: false };
         }
+
+        // If it's the first page (no cursor), replace posts. Else append.
+        const isFirstPage = !action.meta.arg.params?.cursor;
+        if (isFirstPage) {
+          state.userPosts[userId].posts = posts;
+        } else {
+          state.userPosts[userId].posts = [...state.userPosts[userId].posts, ...posts];
+        }
+
+        state.userPosts[userId].cursor = nextCursor;
+        state.userPosts[userId].hasNext = !!nextCursor;
+      })
+
+      // ================= FOLLOWING POSTS =================
+      .addCase(actions.getFollowingPostsAction.fulfilled, (state, action) => {
+        const { posts, nextCursor } = action.payload;
+
+        state.followingPosts.posts = [...state.followingPosts.posts, ...posts];
+        state.followingPosts.cursor = nextCursor;
+        state.followingPosts.hasNext = !!nextCursor;
       });
   },
 });
 
-export const { reset } = profileSlice.actions;
+export const { resetPostState } = postSlice.actions;
 
-export default profileSlice;
+export default postSlice;

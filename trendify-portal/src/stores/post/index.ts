@@ -1,3 +1,3 @@
-import profileSlice from "./slice";
+import postSlice from "./slice";
 
-export const { reducer: profileReducer } = profileSlice;
+export const { reducer: postReducer } = postSlice;

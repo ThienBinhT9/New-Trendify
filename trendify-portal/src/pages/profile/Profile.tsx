@@ -50,6 +50,8 @@ const Profile = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
+  console.log({ profile });
+
   const { id: userId } = useParams();
 
   const currentTab = getProfileTab(location.pathname);

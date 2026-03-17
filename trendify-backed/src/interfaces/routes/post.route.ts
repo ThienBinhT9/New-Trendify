@@ -34,14 +34,13 @@ route.get(
   postController.getFollowingFeed,
 );
 
-route.get(POST_ROUTES.GET_POST, validateParams(schema.postIdParamSchema), postController.getPost);
-
-route.patch(
-  POST_ROUTES.UPDATE_POST,
-  validateParams(schema.postIdParamSchema),
-  validate(schema.updatePostSchema),
-  postController.updatePost,
+route.get(
+  POST_ROUTES.GET_FOLLOWING_POSTS,
+  validateQuery(schema.paginationQuerySchema),
+  postController.getFollowingFeed,
 );
+
+route.get(POST_ROUTES.GET_POST, validateParams(schema.postIdParamSchema), postController.getPost);
 
 route.delete(
   POST_ROUTES.DELETE_POST,

@@ -1,20 +1,18 @@
 import { IApiResponse } from "@/interfaces/api.interface";
-import { IListParams } from "@/interfaces/common.interface";
-import { IPost } from "@/interfaces/post.interface";
-import { EAccountType, EUserGender, IPictureUrl, IUser } from "@/interfaces/user.interface";
+import { EVisibility } from "@/interfaces/common.interface";
+import { IPost, IPostLocation, IPostMention } from "@/interfaces/post.interface";
 
 export enum EPostActions {
   CREATE_POST = "CREATE_POST",
   DELETE_POST = "DELETE_POST",
   GET_POST_DETAIL = "GET_POST_DETAIL",
 
-  LIKE_POST = "LIKE_POST",
-  UNLIKE_POST = "UNLIKE_POST",
-  COMMENT_POST = "COMMENT_POST",
+  // LIKE_POST = "LIKE_POST",
+  // UNLIKE_POST = "UNLIKE_POST",
+  // COMMENT_POST = "COMMENT_POST",
 
   GET_USER_POSTS = "GET_USER_POSTS",
   GET_FOLLOWING_POSTS = "GET_FOLLOWING_POSTS",
-  GET_HOME_FEED = "GET_HOME_FEED",
 }
 
 export const POST_ENDPOINT = {
@@ -22,9 +20,9 @@ export const POST_ENDPOINT = {
   DELETE_POST: (postId: string) => `/posts/${postId}`,
   GET_POST_DETAIL: (postId: string) => `/posts/${postId}`,
 
-  LIKE_POST: (postId: string) => `/posts/${postId}/like`,
-  UNLIKE_POST: (postId: string) => `/posts/${postId}/like`,
-  COMMENT_POST: (postId: string) => `/posts/${postId}/comment`,
+  // LIKE_POST: (postId: string) => `/posts/${postId}/like`,
+  // UNLIKE_POST: (postId: string) => `/posts/${postId}/like`,
+  // COMMENT_POST: (postId: string) => `/posts/${postId}/comment`,
 
   GET_USER_POSTS: (userId: string) => `/users/${userId}/posts`,
   GET_FOLLOWING_POSTS: "/posts/following",
@@ -32,68 +30,50 @@ export const POST_ENDPOINT = {
 
 export interface IPostState {
   userPosts: {
-    [userId: string]: { posts: IPost[] };
+    [userId: string]: { posts: IPost[]; cursor?: string | null; hasNext: boolean };
+  };
+  followingPosts: {
+    posts: IPost[];
+    cursor?: string | null;
+    hasNext: boolean;
   };
 }
 
-export interface IUserProfile {
-  id: string;
-  postCount: number;
-  followerCount: number;
-  followingCount: number;
-
-  username: string;
-  firstName: string;
-  lastName?: string;
-  about?: string;
-  gender?: EUserGender;
-  dateOfBirth?: string;
-  coverPicture?: IPictureUrl;
-  profilePicture?: IPictureUrl;
-  isVerified: boolean;
-  accountType: EAccountType;
-  createdAt: Date;
-  viewerContext: IPostViewContext;
-}
-
-export interface IPostViewContext {
-  isSelf: boolean;
-  isRequested: boolean;
-  isFollowing: boolean;
-  isFollowedBy: boolean;
-  isRequestedByThem: boolean;
-  canFollow: boolean;
-}
-
 //============= REQUEST =============
-export interface IListRelationshipRequest extends IListParams {
-  userId: string;
-}
-
-export interface IUpdateProfileRequest {
-  firstName?: string;
-  lastName?: string;
-  about?: string;
-  gender?: EUserGender;
-  dateOfBirth?: string;
-  coverPicture?: string;
-  profilePicture?: string;
+export interface ICreatePostRequest {
+  authorId: string;
+  content?: string;
+  mediaIds?: string[];
+  mentions?: IPostMention[];
+  location?: IPostLocation;
+  replyToId?: string;
+  visibility?: EVisibility;
+  isDraft?: boolean;
 }
 
 //============= RESPONSE =============
-export interface IUserProfileResponse extends IApiResponse {
-  data: IUserProfile;
+export interface ICreatePostResponse extends IApiResponse {
+  data: IPost;
 }
 
-export interface IUpdateProfileResponse extends IApiResponse {
-  data: IUser;
+export interface IDeletePostResponse extends IApiResponse {
+  message: string;
 }
 
-export interface IUserRelationshipListResponse extends IApiResponse {
+export interface IPostDetailResponse extends IApiResponse {
+  data: IPost;
+}
+
+export interface IUserPostsResponse extends IApiResponse {
   data: {
-    users: IUserRelationship[];
-    cursor?: string | null;
-    page?: number;
-    hasNext: boolean;
+    posts: IPost[];
+    nextCursor: string;
+  };
+}
+
+export interface IFollowingPostsResponse extends IApiResponse {
+  data: {
+    posts: IPost[];
+    nextCursor: string;
   };
 }

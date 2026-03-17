@@ -85,6 +85,10 @@
           overflow-y: auto;
           padding-right: 4px;
 
+          .hashtag-highlight {
+            color: var(--primary-color);
+          }
+
           &:focus-visible {
             outline: none;
           }

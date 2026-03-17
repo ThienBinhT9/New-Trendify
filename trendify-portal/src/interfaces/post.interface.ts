@@ -74,6 +74,7 @@ export interface IPostCreateInput {
 
 export interface IPost {
   id: string;
+  authorId: string;
   type: PostType;
   content: string;
   mentions?: IPostMention[];
@@ -86,6 +87,8 @@ export interface IPost {
   createdAt: string;
   updatedAt: string;
   location?: IPostLocation;
+  replyToId?: string;
+  rootPostId?: string;
 }
 
 export interface IPostViewerContext {

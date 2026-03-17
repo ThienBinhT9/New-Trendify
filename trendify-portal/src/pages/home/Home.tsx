@@ -28,7 +28,7 @@ const Home = () => {
       const id = w.requestIdleCallback(() => enablePrefetch());
       return () => w.cancelIdleCallback?.(id);
     }
-    const timeoutId = setTimeout(enablePrefetch, 600);
+    const timeoutId = setTimeout(enablePrefetch, 2500);
     return () => clearTimeout(timeoutId);
   }, []);
 

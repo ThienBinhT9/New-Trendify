@@ -38,6 +38,12 @@ export interface IPostMention {
   endIndex: number;
 }
 
+export interface IPostHashtag {
+  tag: string;
+  startIndex: number;
+  endIndex: number;
+}
+
 /**
  * Location/check-in data
  */
@@ -84,7 +90,7 @@ export interface IPostProps {
   // Content
   content?: string;
   mediaIds: string[];
-  hashtags: string[];
+  hashtags: IPostHashtag[];
   mentions: IPostMention[];
 
   // Relationships

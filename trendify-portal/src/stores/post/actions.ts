@@ -1,14 +1,14 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { EProfileActions, IListRelationshipRequest, IUpdateProfileRequest } from "./constants";
+import { EPostActions, ICreatePostRequest } from "./constants";
 
 import * as api from "./api";
 import { IListParams } from "@/interfaces/common.interface";
 
-export const userProfileAction = createAsyncThunk(
-  EProfileActions.USER_PROFILE,
-  async (userId: string, { rejectWithValue }) => {
+export const createPostAction = createAsyncThunk(
+  EPostActions.CREATE_POST,
+  async (body: ICreatePostRequest, { rejectWithValue }) => {
     try {
-      const response = await api.userProfile(userId);
+      const response = await api.createPost(body);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error);
@@ -16,11 +16,23 @@ export const userProfileAction = createAsyncThunk(
   },
 );
 
-export const updateProfileAction = createAsyncThunk(
-  EProfileActions.MY_PROFILE,
-  async (body: IUpdateProfileRequest, { rejectWithValue }) => {
+export const deletePostAction = createAsyncThunk(
+  EPostActions.DELETE_POST,
+  async (postId: string, { rejectWithValue }) => {
     try {
-      const response = await api.updateProfile(body);
+      const response = await api.deletePost(postId);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
+export const getPostAction = createAsyncThunk(
+  EPostActions.GET_POST_DETAIL,
+  async (postId: string, { rejectWithValue }) => {
+    try {
+      const response = await api.getPost(postId);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error);
@@ -28,12 +40,12 @@ export const updateProfileAction = createAsyncThunk(
   },
 );
 
-export const listFollowingAction = createAsyncThunk(
-  EProfileActions.LIST_FOLLOWING,
-  async (payload: IListRelationshipRequest, { rejectWithValue }) => {
+export const getUserPostsAction = createAsyncThunk(
+  EPostActions.GET_USER_POSTS,
+  async (payload: { userId: string; params?: IListParams }, { rejectWithValue }) => {
     try {
-      const { userId, ...params } = payload;
-      const response = await api.listFollowing(userId, params);
+      const { userId, params } = payload;
+      const response = await api.listUserPosts(userId, params);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error);
@@ -41,26 +53,12 @@ export const listFollowingAction = createAsyncThunk(
   },
 );
 
-export const listFollowersAction = createAsyncThunk(
-  EProfileActions.LIST_FOLLOWERS,
-  async (payload: IListRelationshipRequest, { rejectWithValue }) => {
+export const getFollowingPostsAction = createAsyncThunk(
+  EPostActions.GET_FOLLOWING_POSTS,
+  async (payload: { params?: IListParams }, { rejectWithValue }) => {
     try {
-      const { userId, ...params } = payload;
-      const response = await api.listFollowers(userId, params);
-      console.log({ response });
-
-      return response.data.data;
-    } catch (error) {
-      return rejectWithValue(error);
-    }
-  },
-);
-
-export const listBlockedAction = createAsyncThunk(
-  EProfileActions.LIST_BLOCKED,
-  async (params: IListParams, { rejectWithValue }) => {
-    try {
-      const response = await api.listBlocked(params);
+      const { params } = payload;
+      const response = await api.listFollowingPosts(params);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error);

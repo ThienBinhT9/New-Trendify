@@ -1,21 +1,13 @@
-import { Empty, Flex } from "antd";
+import { Flex } from "antd";
 import "../Home.scss";
 
 import Post from "@/container/post/Post";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Virtuoso } from "react-virtuoso";
 import PostSkeleton from "@/container/skeleton/post_skeleton/PostSkeleton";
-
-const LIMIT = 5;
-
-const fakeGetFollowingPosts = async (cursor: number) => {
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-  return {
-    data: [1, 1, 1, 1, 1],
-    cursor: cursor + LIMIT,
-    hasNext: true,
-  };
-};
+import { useAppDispatch, useAppSelector } from "@/stores";
+import { getFollowingPostsAction } from "@/stores/post/actions";
+import { EPostActions } from "@/stores/post/constants";
 
 interface FollowingProps {
   isActive?: boolean;
@@ -23,30 +15,28 @@ interface FollowingProps {
 }
 
 const Following = ({ isActive = true, prefetch = false }: FollowingProps) => {
-  const [posts, setPosts] = useState<number[]>([]);
-  const [cursor, setCursor] = useState<number>(0);
-  const [hasNext, setHasNext] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const loading = useAppSelector((state) => state.loading);
+  const followingPosts = useAppSelector((state) => state.posts.followingPosts);
+
+  const dispatch = useAppDispatch();
+
+  const { posts, cursor, hasNext } = followingPosts;
+
   const hasFetchedRef = useRef<boolean>(false);
 
-  const fetchPosts = useCallback(async (nextCursor: number) => {
+  const fetchPosts = useCallback(async (nextCursor?: string | null) => {
     try {
-      setIsLoading(true);
-      const res = await fakeGetFollowingPosts(nextCursor);
-      setPosts((prev) => (nextCursor === 0 ? res.data : [...prev, ...res.data]));
-      setCursor(res.cursor);
-      setHasNext(res.hasNext);
+      console.log("vao following page");
+      await dispatch(getFollowingPostsAction({ params: { cursor: nextCursor } })).unwrap();
     } catch (error) {
       console.error(error);
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
     if ((!isActive && !prefetch) || hasFetchedRef.current) return;
     hasFetchedRef.current = true;
-    fetchPosts(0);
+    fetchPosts();
   }, [fetchPosts, isActive, prefetch]);
 
   const [scrollParent, setScrollParent] = useState<HTMLElement | null>(null);
@@ -63,7 +53,7 @@ const Following = ({ isActive = true, prefetch = false }: FollowingProps) => {
     </Flex>
   );
 
-  const isInitialLoading = isLoading && posts.length === 0;
+  const isInitialLoading = loading[EPostActions.GET_FOLLOWING_POSTS] && posts.length === 0;
 
   return (
     <Flex className="following-container">
@@ -77,7 +67,7 @@ const Following = ({ isActive = true, prefetch = false }: FollowingProps) => {
             className="following-list"
             style={{ height: "100%" }}
             endReached={() => {
-              if (!isActive || !hasNext || isLoading) return;
+              if (!isActive || !hasNext || loading[EPostActions.GET_FOLLOWING_POSTS]) return;
               fetchPosts(cursor);
             }}
             itemContent={() => (
@@ -86,12 +76,10 @@ const Following = ({ isActive = true, prefetch = false }: FollowingProps) => {
               </div>
             )}
             components={{
-              Footer: () => (isLoading ? renderLoading() : null),
+              Footer: () => (loading[EPostActions.GET_FOLLOWING_POSTS] ? renderLoading() : null),
             }}
           />
-        ) : (
-          <Empty style={{ margin: "auto" }} />
-        )}
+        ) : null}
       </Flex>
     </Flex>
   );

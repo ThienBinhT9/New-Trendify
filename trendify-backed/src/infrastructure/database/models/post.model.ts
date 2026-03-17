@@ -7,6 +7,7 @@ import {
   IPostMention,
   IPostLocation,
   IPostCounters,
+  IPostHashtag,
 } from "@/domain/post";
 import { ECommonVisibility } from "@/domain/user-setting";
 
@@ -33,6 +34,15 @@ const PostMentionSchema = new Schema<IPostMention>(
   {
     userId: { type: String, required: true },
     username: { type: String, required: true },
+    startIndex: { type: Number, required: true },
+    endIndex: { type: Number, required: true },
+  },
+  { _id: false },
+);
+
+const PostHashtagSchema = new Schema<IPostHashtag>(
+  {
+    tag: { type: String, required: true },
     startIndex: { type: Number, required: true },
     endIndex: { type: Number, required: true },
   },
@@ -126,7 +136,7 @@ const postSchema = new Schema<IPostDocument>(
       },
     },
     hashtags: {
-      type: [String],
+      type: [PostHashtagSchema],
       default: [],
       index: true, // For hashtag search
     },
@@ -199,7 +209,7 @@ postSchema.index({ authorId: 1, isPinned: 1, status: 1, _id: -1 }, { name: "user
 postSchema.index({ authorId: 1, type: 1, status: 1, _id: -1 }, { name: "user_posts_by_type" });
 
 // Hashtag trending/search
-postSchema.index({ hashtags: 1, status: 1, _id: -1 }, { name: "hashtag_search" });
+postSchema.index({ "hashtags.tag": 1, status: 1, _id: -1 }, { name: "hashtag_search" });
 
 // Replies to a post
 postSchema.index({ replyToId: 1, status: 1, _id: -1 }, { name: "post_replies" });
@@ -252,9 +262,22 @@ postSchema.virtual("replyCount").get(function () {
 postSchema.pre("save", function (next) {
   if (this.isModified("content") && this.content) {
     const hashtagRegex = /#([\p{L}\p{N}_]+)/gu;
-    const matches = this.content.matchAll(hashtagRegex);
-    const hashtags = [...matches].map((m) => m[1].toLowerCase());
-    this.hashtags = [...new Set(hashtags)].slice(0, 30);
+    const hashtags: IPostHashtag[] = [];
+    const seen = new Set<string>();
+
+    for (const match of this.content.matchAll(hashtagRegex)) {
+      const tag = match[1].toLowerCase();
+      if (seen.has(tag)) continue;
+      seen.add(tag);
+      hashtags.push({
+        tag,
+        startIndex: match.index,
+        endIndex: match.index + match[0].length,
+      });
+      if (hashtags.length === 30) break;
+    }
+
+    this.hashtags = hashtags;
   }
   next();
 });

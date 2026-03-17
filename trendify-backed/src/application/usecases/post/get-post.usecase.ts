@@ -71,11 +71,33 @@ export class GetPostUseCase {
       isBlocked,
     });
 
+    // Fetch author info to return
+    let profilePictureUrl: string | undefined = undefined;
+    const authorUser = await this.userRepo.findById(post.authorId);
+    
+    if (authorUser?.data.profilePicture) {
+      if (typeof authorUser.data.profilePicture === 'string') {
+        const profileMedia = await this.mediaRepo.findById(authorUser.data.profilePicture);
+        if (profileMedia) {
+           const smallVariant = profileMedia.variants.find(v => v.type === 'small');
+           const key = smallVariant ? smallVariant.key : profileMedia.key;
+           profilePictureUrl = this.storageSvc.getPublicUrl(key);
+        }
+      }
+    }
+
     return new Response.SuccessResponse({
       message: "Post retrieved successfully",
       data: {
         post: {
           ...post.toSnapshot(),
+          author: authorUser ? {
+            id: authorUser.id,
+            username: authorUser.data.username,
+            firstName: authorUser.data.firstName,
+            lastName: authorUser.data.lastName,
+            profilePicture: profilePictureUrl
+          } : { id: post.authorId },
           media: mediaDisplayMap.get(post.id!) ?? [],
         },
         viewerContext,
