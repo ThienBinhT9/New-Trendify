@@ -17,6 +17,7 @@ import dayjs from "dayjs";
 
 import { UploadIcon, EllipsisIcon } from "@/assets/icons/Icon";
 import ROUTE_PATHS, { SUB_PATH_PROFILE } from "@/routes/path.route";
+import { blockAction } from "@/stores/follow/actions";
 import { EMediaPurpose } from "@/interfaces/common.interface";
 import { getProfileTab } from "@/utils/common.util";
 import { EProfileActions } from "@/stores/profile/constants";
@@ -49,8 +50,6 @@ const Profile = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-
-  console.log({ profile });
 
   const { id: userId } = useParams();
 
@@ -145,8 +144,8 @@ const Profile = () => {
       okButtonProps: { danger: true },
       onOk: async () => {
         try {
-          // await dispatch(blockAction(userId)).unwrap();
-          await new Promise((resolve) => setTimeout(resolve, 2000));
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          await dispatch(blockAction(userId)).unwrap();
           message.success("Đã chặn người dùng");
           navigate(ROUTE_PATHS.HOME);
         } catch {

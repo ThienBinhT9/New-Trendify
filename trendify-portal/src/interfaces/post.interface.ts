@@ -63,7 +63,6 @@ export interface IPostLocation {
 
 export interface IPostCreateInput {
   authorId: string;
-  type?: EPostType;
   content?: string;
   mentions?: IPostMention[];
   location?: IPostLocation;

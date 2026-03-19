@@ -22,6 +22,7 @@ import Icon from "@/components/icon/Icon";
 import Button from "@/components/button/Button";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
+import { EPostActions } from "@/stores/post/constants";
 
 interface IProps {
   selectedLocation?: IPostLocation | null;
@@ -107,7 +108,9 @@ const ComposerPanel = ({
   onNavigatePanel,
 }: IProps) => {
   const privacyLabel = selectedVisibility === EVisibility.public ? "Công khai" : "Riêng tư";
+  const loading = useAppSelector((state) => state.loading);
   const authUser = useAppSelector((state) => state.auth.user);
+
   const mentionLoadingRef = useRef<boolean>(false);
   const mentionUserMapRef = useRef<Map<string, string>>(new Map());
   const mentionRequestSeqRef = useRef<number>(0);
@@ -571,7 +574,12 @@ const ComposerPanel = ({
             {`${privacyLabel}`}
           </Text>
         </Flex>
-        <Button className="post-submit" onClick={onSubmit}>
+        <Button
+          className="post-submit"
+          onClick={onSubmit}
+          disabled={!editor || editor.getText().trim().length === 0}
+          loading={loading[EPostActions.CREATE_POST]}
+        >
           <Text textType="M14">Đăng</Text>
         </Button>
       </Flex>

@@ -4,8 +4,11 @@ import "./QuickPost.scss";
 import Input from "@/components/input/Input";
 
 import PostCreate from "../post/post-editor/PostCreate";
+import { useAppSelector } from "@/stores";
 
 const QuickPost = () => {
+  const profile = useAppSelector((state) => state.profile.profile);
+
   const [openCreateModal, setOpenCreateModal] = useState<boolean>(false);
 
   const onOpenModal = () => {
@@ -20,10 +23,7 @@ const QuickPost = () => {
     <>
       <Flex vertical className="quick-post-container" onClick={onOpenModal}>
         <Flex className="quick-post-header">
-          <Avatar
-            className="quick-post-avatar"
-            src={"https://i.pinimg.com/1200x/0b/54/b6/0b54b68fe601f1d58888023c1d4711e8.jpg"}
-          />
+          <Avatar className="quick-post-avatar" src={profile?.profilePicture?.small} />
           <Input className="quick-post-input" placeholder="Bạn đang nghĩ gì?" readOnly />
         </Flex>
       </Flex>

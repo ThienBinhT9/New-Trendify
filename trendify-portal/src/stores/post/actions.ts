@@ -65,3 +65,51 @@ export const getFollowingPostsAction = createAsyncThunk(
     }
   },
 );
+
+export const likePostAction = createAsyncThunk(
+  EPostActions.LIKE_POST,
+  async (postId: string, { rejectWithValue }) => {
+    try {
+      const response = await api.likePost(postId);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
+export const unlikePostAction = createAsyncThunk(
+  EPostActions.UNLIKE_POST,
+  async (postId: string, { rejectWithValue }) => {
+    try {
+      const response = await api.unlikePost(postId);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
+export const savePostAction = createAsyncThunk(
+  EPostActions.SAVE_POST,
+  async (postId: string, { rejectWithValue }) => {
+    try {
+      const response = await api.savePost(postId);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
+export const unsavePostAction = createAsyncThunk(
+  EPostActions.UNSAVE_POST,
+  async (postId: string, { rejectWithValue }) => {
+    try {
+      const response = await api.unsavePost(postId);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);

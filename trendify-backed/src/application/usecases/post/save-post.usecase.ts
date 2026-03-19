@@ -41,10 +41,7 @@ export class SavePostUseCase {
     const created = await this.saveRepo.create(save);
 
     if (!created) {
-      return new Response.SuccessResponse({
-        message: "Already saved",
-        data: { isSaved: true },
-      });
+      return new Response.SuccessResponse({ message: "Already saved", data: { isSaved: true } });
     }
 
     // Async: increment save count

@@ -210,3 +210,19 @@ input:-webkit-autofill:active {
   letter-spacing: 1.5px;
   text-shadow: 2px 2px 2px #a8a8a8;
 }
+
+// Global Snackbar Notification for actions like Post Save/Unsave
+.custom-snackbar-notification.ant-notification-notice {
+  border-radius: 999px !important;
+
+  .ant-notification-notice-message {
+    margin-bottom: 0 !important;
+    margin-inline-start: 0 !important;
+    width: 100%;
+    color: var(--text-color) !important;
+  }
+
+  .ant-notification-close-icon {
+    display: none !important;
+  }
+}

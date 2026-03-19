@@ -13,7 +13,7 @@ const fakeGetPosts = async (cursor: number) => {
 
   await new Promise((resolve) => setTimeout(resolve, 2000));
   return {
-    data: [1, 1, 1, 1, 1],
+    data: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     cursor: cursor + LIMIT,
     hasNext: true,
   };
@@ -79,8 +79,8 @@ const ForyouPage = ({ isActive = false, prefetch = false }: ForyouPageProps) => 
             className="foryou-list"
             style={{ height: "100%" }}
             endReached={() => {
-              if (!isActive || !hasNext || isLoading) return;
-              fetchPosts(cursor);
+              // if (!isActive || !hasNext || isLoading) return;
+              // fetchPosts(cursor);
             }}
             itemContent={() => (
               <div className="foryou-item">
@@ -88,7 +88,12 @@ const ForyouPage = ({ isActive = false, prefetch = false }: ForyouPageProps) => 
               </div>
             )}
             components={{
-              Footer: () => (isLoading ? renderLoading() : null),
+              Footer: () => (
+                <div>
+                  {isLoading ? renderLoading() : null}
+                  <div style={{ height: "12px" }} />
+                </div>
+              ),
             }}
           />
         ) : (

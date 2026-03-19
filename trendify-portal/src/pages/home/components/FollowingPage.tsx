@@ -70,13 +70,18 @@ const Following = ({ isActive = true, prefetch = false }: FollowingProps) => {
               if (!isActive || !hasNext || loading[EPostActions.GET_FOLLOWING_POSTS]) return;
               fetchPosts(cursor);
             }}
-            itemContent={() => (
+            itemContent={(_, post) => (
               <div className="following-item">
-                <Post />
+                <Post post={post} key={post.id} />
               </div>
             )}
             components={{
-              Footer: () => (loading[EPostActions.GET_FOLLOWING_POSTS] ? renderLoading() : null),
+              Footer: () => (
+                <div>
+                  {loading[EPostActions.GET_FOLLOWING_POSTS] ? renderLoading() : null}
+                  <div style={{ height: "12px" }} />
+                </div>
+              ),
             }}
           />
         ) : null}

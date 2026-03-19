@@ -1,7 +1,7 @@
 import * as Response from "@/shared/responses";
 import { CreatePostDTO } from "@/application/dtos/post.dto";
 import { IUnitOfWorkFactory } from "@/domain/unit-of-work";
-import { IMediaRepository } from "@/domain/media";
+import { EVariantType, IMediaRepository } from "@/domain/media";
 import { IFileStorageService } from "@/application/services/fileStorage.service";
 import { PostEntity } from "@/domain/post";
 import {
@@ -9,6 +9,7 @@ import {
   determinePostType,
   batchPopulateMedia,
 } from "./media-display.mapper";
+import { ViewerContextBuilder } from "@/application/policies/viewer-context.builder";
 
 export class CreatePostUseCase {
   constructor(
@@ -25,7 +26,6 @@ export class CreatePostUseCase {
     });
 
     const postType = determinePostType(mediaEntities);
-
     const uow = await this.uowFactory.create();
 
     try {
@@ -47,7 +47,6 @@ export class CreatePostUseCase {
       }
 
       await uow.users.incrementPostCount(authorId);
-
       await uow.commit();
 
       const mediaDisplayMap = await batchPopulateMedia(
@@ -56,20 +55,26 @@ export class CreatePostUseCase {
         (ids) => this.mediaRepo.findByIds(ids),
       );
 
-      // Fetch author info to return
+      const author = await uow.users.findById(authorId);
+
+      // Build viewer context
+      const viewerContext = ViewerContextBuilder.buildPost({
+        viewerId: authorId,
+        postAuthorId: post.authorId,
+        postSettings: post.data.settings,
+        isLiked: false,
+        isSaved: false,
+        isFollowingAuthor: false,
+        isBlocked: false,
+      });
+
       let profilePictureUrl: string | undefined = undefined;
-      const user = await uow.users.findById(authorId);
-      
-      if (user?.data.profilePicture) {
-        // If profilePicture is a string (id), fetch the media entity
-        if (typeof user.data.profilePicture === 'string') {
-          const profileMedia = await this.mediaRepo.findById(user.data.profilePicture);
-          if (profileMedia) {
-             // Find 'small' variant or fallback to original
-             const smallVariant = profileMedia.variants.find(v => v.type === 'small');
-             const key = smallVariant ? smallVariant.key : profileMedia.key;
-             profilePictureUrl = this.storageSvc.getPublicUrl(key);
-          }
+      if (author?.data.profilePicture && typeof author.data.profilePicture === "string") {
+        const profileMedia = await this.mediaRepo.findById(author.data.profilePicture);
+        if (profileMedia) {
+          const smallVariant = profileMedia.variants.find((v) => v.type === EVariantType.SMALL);
+          const key = smallVariant ? smallVariant.key : profileMedia.key;
+          profilePictureUrl = this.storageSvc.getPublicUrl(key);
         }
       }
 
@@ -79,15 +84,16 @@ export class CreatePostUseCase {
         data: {
           post: {
             ...created.toSnapshot(),
-            author: user ? {
-              id: user.id,
-              username: user.data.username,
-              firstName: user.data.firstName,
-              lastName: user.data.lastName,
-              profilePicture: profilePictureUrl
-            } : { id: authorId },
+            author: {
+              id: author?.id,
+              username: author?.data.username,
+              firstName: author?.data.firstName,
+              lastName: author?.data.lastName,
+              profilePicture: profilePictureUrl,
+            },
             media: mediaDisplayMap.get(created.id!) ?? [],
           },
+          viewerContext,
         },
       });
     } catch (error) {

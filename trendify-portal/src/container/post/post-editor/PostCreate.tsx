@@ -6,12 +6,13 @@ import "./PostEditor.scss";
 import { useMention } from "@/hooks";
 import { EVisibility } from "@/interfaces/common.interface";
 import { EPostType, IPostCreateInput, IPostLocation } from "@/interfaces/post.interface";
-import { useAppSelector } from "@/stores";
+import { useAppDispatch, useAppSelector } from "@/stores";
 
 import Modal from "@/components/modal/Modal";
 import ComposerPanel from "./panels/ComposerPanel";
 import LocationPanel from "./panels/LocationPanel";
 import PrivacyPanel from "./panels/PrivacyPanel";
+import { createPostAction } from "@/stores/post/actions";
 
 export type PostPanelKey = "composer" | "location" | "privacy";
 
@@ -23,6 +24,8 @@ interface IProps {
 const PostCreate = ({ opened, onClose }: IProps) => {
   const { editorValue, editorDoc, handleChange, getPayload, appendEmoji } = useMention();
   const authUser = useAppSelector((state) => state.auth.user);
+
+  const dispatch = useAppDispatch();
 
   const [activePanel, setActivePanel] = useState<PostPanelKey>("composer");
   const [panelDirection, setPanelDirection] = useState<1 | -1>(1);
@@ -52,13 +55,14 @@ const PostCreate = ({ opened, onClose }: IProps) => {
     const mentionPayload = getPayload();
     const payload: IPostCreateInput = {
       authorId: authUser.id,
-      type: EPostType.text,
       content: mentionPayload.content,
       mentions: mentionPayload.mentions,
       location: selectedLocation ?? undefined,
       visibility: selectedVisibility,
     };
-    console.log(payload);
+
+    await dispatch(createPostAction(payload));
+    onCloseModal();
   };
 
   return (
@@ -69,6 +73,7 @@ const PostCreate = ({ opened, onClose }: IProps) => {
       onCancel={onCloseModal}
       footer={null}
       maskClosable={false}
+      destroyOnHidden
       className="post-create-modal"
     >
       <Flex vertical className="post-modal-shell">

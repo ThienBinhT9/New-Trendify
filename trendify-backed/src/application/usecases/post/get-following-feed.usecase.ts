@@ -5,7 +5,7 @@ import { IFollowRepository } from "@/domain/follow";
 import { IBlockRepository } from "@/domain/block";
 import { ILikeRepository } from "@/domain/like";
 import { ISaveRepository } from "@/domain/save";
-import { IMediaRepository } from "@/domain/media";
+import { EVariantType, IMediaRepository } from "@/domain/media";
 import { IFileStorageService } from "@/application/services/fileStorage.service";
 import { IUserRepository } from "@/domain/user";
 import { batchPopulateMedia } from "./media-display.mapper";
@@ -83,7 +83,7 @@ export class GetFollowingFeedUseCase {
       if (authorProp?.profilePicture && typeof authorProp.profilePicture === "string") {
         const media = avatarMap.get(authorProp.profilePicture);
         if (media) {
-          const smallVariant = media.variants.find((v) => v.type === "small");
+          const smallVariant = media.variants.find((v) => v.type === EVariantType.SMALL);
           const key = smallVariant ? smallVariant.key : media.key;
           profilePictureUrl = this.storageSvc.getPublicUrl(key);
         }
@@ -99,8 +99,6 @@ export class GetFollowingFeedUseCase {
           profilePicture: profilePictureUrl,
         },
         media: mediaDisplayMap.get(post.id!) ?? [],
-        isLiked: likedPostIds.has(post.id!),
-        isSaved: savedPostIds.has(post.id!),
       };
     });
 

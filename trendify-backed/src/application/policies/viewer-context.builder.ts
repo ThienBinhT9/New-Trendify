@@ -30,7 +30,6 @@ export interface IPostViewerContext {
   canSave: boolean;
   canShare: boolean;
   canComment: boolean;
-  canEdit: boolean;
   canDelete: boolean;
 }
 
@@ -57,7 +56,6 @@ export class ViewerContextBuilder {
     canSave: false,
     canShare: true,
     canComment: false,
-    canEdit: false,
     canDelete: false,
   };
 
@@ -115,7 +113,6 @@ export class ViewerContextBuilder {
       canSave: !isRestricted && !isSaved && postSettings.allowSave,
       canShare: !isBlocked && postSettings.allowShare,
       canComment: !isRestricted && postSettings.allowComment,
-      canEdit: isAuthor,
       canDelete: isAuthor,
     };
   }
