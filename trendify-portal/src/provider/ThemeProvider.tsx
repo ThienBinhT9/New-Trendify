@@ -66,6 +66,11 @@ const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
           colorBorder: darkMode ? "#555555" : "#d9d9d9",
           borderRadius: 12,
         },
+        Notification: {
+          colorBgElevated: darkMode ? "#ffffff" : "#2f2f2f",
+          colorText: darkMode ? "#ffffff" : "#000000",
+          colorTextHeading: darkMode ? "#ffffff" : "#000000",
+        },
       },
     }),
     [darkMode],

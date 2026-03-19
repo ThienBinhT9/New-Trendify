@@ -19,7 +19,7 @@ export const postSlice = createSlice({
 
       // ================= CREATE POST =================
       .addCase(actions.createPostAction.fulfilled, (state, action) => {
-        const post = action.payload;
+        const post = action.payload.post;
         const userId = post.authorId;
 
         if (!state.userPosts[userId]) {

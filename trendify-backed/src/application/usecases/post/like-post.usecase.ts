@@ -41,10 +41,7 @@ export class LikePostUseCase {
     const created = await this.likeRepo.create(like);
 
     if (!created) {
-      return new Response.SuccessResponse({
-        message: "Already liked",
-        data: { isLiked: true },
-      });
+      return new Response.SuccessResponse({ message: "Already liked", data: { isLiked: true } });
     }
 
     // Async: increment like count

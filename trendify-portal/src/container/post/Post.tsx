@@ -56,6 +56,7 @@ const postDummy: { post: IPost; viewerContext: IPostViewerContext } = {
       repostCount: 2,
       saveCount: 11,
     },
+    authorId: "697ecce7e4ba55404989e3b2",
     author: {
       id: "697ecce7e4ba55404989e3b2",
       username: "nguyenvana",
@@ -80,65 +81,17 @@ const postDummy: { post: IPost; viewerContext: IPostViewerContext } = {
   },
 };
 
-// const postDummy = {
-//   post: {
-//     id: "69b13945dac98e511974f1a2",
-//     type: "text",
-//     content:
-//       "Trong thời đại công nghệ số phát triển mạnh mẽ như hiện nay, mạng xã hội đã trở thành một phần không thể thiếu trong cuộc sống của con người. Thông qua các nền tảng trực tuyến, mọi người có thể dễ dàng kết nối, chia sẻ thông tin, hình ảnh và video với nhau chỉ trong vài giây. Điều này giúp rút ngắn khoảng cách địa lý và tạo ra nhiều cơ hội giao tiếp, học tập cũng như làm việc từ xa. Tuy nhiên, bên cạnh những lợi ích to lớn, mạng xã hội cũng mang lại không ít thách thức như việc lan truyền thông tin sai lệch, ảnh hưởng đến quyền riêng tư hay gây nghiện sử dụng. Vì vậy, mỗi người dùng cần có ý thức sử dụng mạng xã hội một cách thông minh và có trách nhiệm. Việc kiểm soát thời gian sử dụng, chọn lọc thông tin và tôn trọng người khác trên môi trường mạng là điều rất cần thiết. Khi được sử dụng đúng cách, mạng xã hội sẽ trở thành một công cụ hữu ích giúp con người kết nối và phát triển trong xã hội hiện đại.",
-//     mentions: [],
-//     hashtags: [],
-//     status: "active",
-//     settings: {
-//       visibility: "public",
-//       allowLike: true,
-//       allowSave: true,
-//       allowShare: true,
-//       allowComment: true,
-//       allowDownload: true,
-//     },
-//     isPinned: false,
-//     counters: {
-//       likeCount: 24,
-//       viewCount: 312,
-//       shareCount: 5,
-//       commentCount: 8,
-//       repostCount: 2,
-//       saveCount: 11,
-//     },
-//     authorId: "697ecce7e4ba55404989e3b2",
-//     author: {
-//       id: "697ecce7e4ba55404989e3b2",
-//       username: "nguyenvana",
-//       displayName: "Nguyễn Văn A",
-//       avatar: "https://i.pravatar.cc/150?img=3",
-//     },
-//     mediaIds: [],
-//     createdAt: "2026-03-11T09:43:33.096Z",
-//     updatedAt: "2026-03-11T09:43:33.096Z",
-//     media: [],
-//   },
-//   viewerContext: {
-//     isAuthor: false,
-//     isFollowingAuthor: false,
-//     isLiked: false,
-//     isSaved: false,
-//     canLike: true,
-//     canSave: true,
-//     canShare: true,
-//     canComment: true,
-//     canEdit: false,
-//     canDelete: false,
-//   },
-// };
-
 interface IProps {
   expandedTitle?: boolean;
+  post?: IPost;
+  viewerContext?: IPostViewerContext;
 }
 
-const Post = ({ expandedTitle }: IProps) => {
-  const { post, viewerContext } = postDummy;
-
+const Post = ({
+  expandedTitle,
+  post = postDummy.post,
+  viewerContext = postDummy.viewerContext,
+}: IProps) => {
   const [visibleModalLike, setVisibleModalLike] = useState<boolean>(false);
   const [visibleModalDetail, setVisibleModalDetail] = useState<boolean>(false);
   const [isLiked, setIsLiked] = useState<boolean>(false);

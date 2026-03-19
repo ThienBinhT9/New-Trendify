@@ -22,10 +22,7 @@ export class UnlikePostUseCase {
 
     const deleted = await this.likeRepo.delete(userId, postId);
     if (!deleted) {
-      return new Response.SuccessResponse({
-        message: "Not liked",
-        data: { isLiked: false },
-      });
+      return new Response.SuccessResponse({ message: "Not liked", data: { isLiked: false } });
     }
 
     // Async: decrement like count

@@ -1,4 +1,4 @@
-import { Empty, Flex } from "antd";
+import { Flex } from "antd";
 import "../../Profile.scss";
 import "./ProfilePosts.scss";
 import { useCallback, useEffect } from "react";
@@ -14,6 +14,7 @@ const ProfilePosts = () => {
   const loading = useAppSelector((state) => state.loading);
   const profile = useAppSelector((state) => state.profile.profile);
   const userPosts = useAppSelector((state) => state.posts.userPosts);
+  const isOwnProfile = useAppSelector((state) => state.profile.isOwnProfile);
 
   const profileData = profile?.id ? userPosts[profile.id] : undefined;
   const posts = profileData?.posts ?? [];
@@ -45,7 +46,7 @@ const ProfilePosts = () => {
 
   return (
     <Flex className="profile-section-container profile-posts-container">
-      <QuickPost />
+      {isOwnProfile && <QuickPost />}
       {loading[EPostActions.GET_USER_POSTS] && !cursor ? (
         <Flex vertical gap={32} className="mt-32 w-max">
           {[1, 1, 1].map((_, index) => (
@@ -70,7 +71,7 @@ const ProfilePosts = () => {
             fetchPosts(cursor);
           }}
         >
-          {posts.length ? posts.map((_, index) => <Post key={index} />) : null}
+          {posts.length ? posts.map((post) => <Post key={post.id} post={post} />) : null}
         </InfiniteScroll>
       )}
     </Flex>

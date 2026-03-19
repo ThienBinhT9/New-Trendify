@@ -35,6 +35,16 @@ export class GetUserPostsUseCase {
 
     const isSelf = viewerId === authorId;
 
+    let profilePictureUrl: string | undefined = undefined;
+    if (author.data.profilePicture && typeof author.data.profilePicture === "string") {
+      const profileMedia = await this.mediaRepo.findById(author.data.profilePicture);
+      if (profileMedia) {
+        const smallVariant = profileMedia.variants.find((v) => v.type === "small");
+        const key = smallVariant ? smallVariant.key : profileMedia.key;
+        profilePictureUrl = this.storageSvc.getPublicUrl(key);
+      }
+    }
+
     // Check block
     if (!isSelf) {
       const isBlocked = await this.blockRepo.isEitherBlocked(viewerId, authorId);
@@ -49,7 +59,11 @@ export class GetUserPostsUseCase {
 
     if (isSelf) {
       statuses = [EPostStatus.ACTIVE, EPostStatus.HIDDEN, EPostStatus.DRAFT];
-      visibilities = [ECommonVisibility.PUBLIC, ECommonVisibility.FOLLOWER, ECommonVisibility.PRIVATE];
+      visibilities = [
+        ECommonVisibility.PUBLIC,
+        ECommonVisibility.FOLLOWER,
+        ECommonVisibility.PRIVATE,
+      ];
     } else {
       const isFollowing = await this.followRepo.exists(viewerId, authorId);
       statuses = [EPostStatus.ACTIVE];
@@ -82,9 +96,14 @@ export class GetUserPostsUseCase {
 
     const posts = result.posts.map((post) => ({
       ...post.toSnapshot(),
+      author: {
+        id: author.id,
+        username: author.data.username,
+        firstName: author.data.firstName,
+        lastName: author.data.lastName,
+        profilePicture: profilePictureUrl,
+      },
       media: mediaDisplayMap.get(post.id!) ?? [],
-      isLiked: likedPostIds.has(post.id!),
-      isSaved: savedPostIds.has(post.id!),
     }));
 
     return new Response.SuccessResponse({

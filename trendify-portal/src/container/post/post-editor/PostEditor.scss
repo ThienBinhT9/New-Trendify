@@ -183,6 +183,11 @@
         background-color: transparent !important;
         color: var(--gray-500) !important;
         box-shadow: none !important;
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
       }
     }
 
