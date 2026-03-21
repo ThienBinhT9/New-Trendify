@@ -20,7 +20,6 @@ import S3Service from "@/infrastructure/services/s3.service";
 import {
   CreatePostUseCase,
   GetPostUseCase,
-  UpdatePostUseCase,
   DeletePostUseCase,
   GetUserPostsUseCase,
   GetFollowingFeedUseCase,
@@ -34,6 +33,7 @@ import {
   SavePostUseCase,
   UnsavePostUseCase,
   GetSavedPostsUseCase,
+  GetDraftPostsUseCase,
 } from "@/application/usecases/post";
 
 // Infrastructure
@@ -65,8 +65,6 @@ const getPostUseCase = new GetPostUseCase(
   mediaRepo,
   storageSvc,
 );
-
-const updatePostUseCase = new UpdatePostUseCase(postRepo, cacheSvc, mediaRepo, storageSvc);
 
 const deletePostUseCase = new DeletePostUseCase(
   uowFactory,
@@ -119,6 +117,18 @@ const getSavedPostsUseCase = new GetSavedPostsUseCase(
   postRepo,
   saveRepo,
   likeRepo,
+  userRepo,
+  followRepo,
+  blockRepo,
+  mediaRepo,
+  storageSvc,
+);
+
+const getDraftPostsUseCase = new GetDraftPostsUseCase(
+  postRepo,
+  userRepo,
+  likeRepo,
+  saveRepo,
   mediaRepo,
   storageSvc,
 );
@@ -127,7 +137,6 @@ const getSavedPostsUseCase = new GetSavedPostsUseCase(
 const postController = new PostController(
   createPostUseCase,
   getPostUseCase,
-  updatePostUseCase,
   deletePostUseCase,
   getUserPostsUseCase,
   getFollowingFeedUseCase,
@@ -141,6 +150,7 @@ const postController = new PostController(
   savePostUseCase,
   unsavePostUseCase,
   getSavedPostsUseCase,
+  getDraftPostsUseCase,
 );
 
 export default postController;

@@ -1,6 +1,18 @@
 import { ECommonVisibility } from "@/domain/user-setting";
-import {  EPostType, IPostProps, IPostMention, IPostLocation } from "@/domain/post";
+import {
+  EPostStatus,
+  EPostType,
+  IPostCounters,
+  IPostHashtag,
+  IPostLocation,
+  IPostMention,
+  IPostProps,
+  IPostSettings,
+} from "@/domain/post";
 import { ICommentMention } from "@/domain/comment";
+import { AuthorDTO } from "@/application/mappers/user.mapper";
+import { MediaDisplay } from "@/application/mappers/media.mapper";
+import { IPostViewerContext } from "@/application/policies/viewer-context.builder";
 
 export interface CreatePostDTO {
   authorId: string;
@@ -68,6 +80,13 @@ export interface GetSavedPostsDTO {
   cursor?: string;
 }
 
+export interface GetDraftPostsDTO {
+  userId: string;
+  limit?: number;
+  cursor?: string;
+  type?: EPostType;
+}
+
 // ====================== CACHE TYPES ======================
 
 export interface CachedPostsData {
@@ -102,6 +121,31 @@ export interface PostLikedPayload {
 
 export interface SyncLikeCountPayload {
   postId: string;
+}
+
+// ====================== RESPONSE SHAPES ======================
+
+export interface PostCoreResponseDTO {
+  id: string;
+  type: EPostType;
+  content?: string;
+  hashtags: IPostHashtag[];
+  mentions: IPostMention[];
+  location?: IPostLocation;
+  status: EPostStatus;
+  settings: Readonly<IPostSettings>;
+  isPinned: boolean;
+  counters: Readonly<IPostCounters>;
+  replyToId?: string;
+  rootPostId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PostResponseDTO extends PostCoreResponseDTO {
+  author: AuthorDTO;
+  media: MediaDisplay[];
+  viewerContext: IPostViewerContext;
 }
 
 // ====================== COMMENT TYPES ======================

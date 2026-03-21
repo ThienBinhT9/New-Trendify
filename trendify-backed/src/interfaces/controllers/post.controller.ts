@@ -3,7 +3,6 @@ import { Request, Response } from "express";
 import {
   CreatePostUseCase,
   GetPostUseCase,
-  UpdatePostUseCase,
   DeletePostUseCase,
   GetUserPostsUseCase,
   GetFollowingFeedUseCase,
@@ -17,13 +16,14 @@ import {
   SavePostUseCase,
   UnsavePostUseCase,
   GetSavedPostsUseCase,
+  GetDraftPostsUseCase,
 } from "@/application/usecases/post";
+import { SuccessResponse } from "@/shared/responses";
 
 class PostController {
   constructor(
     private readonly createPostUseCase: CreatePostUseCase,
     private readonly getPostUseCase: GetPostUseCase,
-    private readonly updatePostUseCase: UpdatePostUseCase,
     private readonly deletePostUseCase: DeletePostUseCase,
     private readonly getUserPostsUseCase: GetUserPostsUseCase,
     private readonly getFollowingFeedUseCase: GetFollowingFeedUseCase,
@@ -37,6 +37,7 @@ class PostController {
     private readonly savePostUseCase: SavePostUseCase,
     private readonly unsavePostUseCase: UnsavePostUseCase,
     private readonly getSavedPostsUseCase: GetSavedPostsUseCase,
+    private readonly getDraftPostsUseCase: GetDraftPostsUseCase,
   ) {}
 
   // ====================== POST CRUD ======================
@@ -49,32 +50,20 @@ class PostController {
       ...request.body,
     });
 
-    return response.status(201).json(result);
+    const successResponse = new SuccessResponse({ data: result });
+
+    return response.status(201).json(successResponse);
   };
 
   getPost = async (request: Request, response: Response) => {
     const userId = response.locals?.auth?.userId;
     const { postId } = request.params;
 
-    const result = await this.getPostUseCase.execute({
-      viewerId: userId,
-      postId,
-    });
+    const result = await this.getPostUseCase.execute({ viewerId: userId, postId });
 
-    return response.status(200).json(result);
-  };
+    const successResponse = new SuccessResponse({ data: result });
 
-  updatePost = async (request: Request, response: Response) => {
-    const userId = response.locals?.auth?.userId;
-    const { postId } = request.params;
-
-    const result = await this.updatePostUseCase.execute({
-      authorId: userId,
-      postId,
-      ...request.body,
-    });
-
-    return response.status(200).json(result);
+    return response.status(200).json(successResponse);
   };
 
   deletePost = async (request: Request, response: Response) => {
@@ -219,6 +208,17 @@ class PostController {
     const userId = response.locals?.auth?.userId;
 
     const result = await this.getSavedPostsUseCase.execute({
+      userId,
+      ...request.query,
+    });
+
+    return response.status(200).json(result);
+  };
+
+  getDraftPosts = async (request: Request, response: Response) => {
+    const userId = response.locals?.auth?.userId;
+
+    const result = await this.getDraftPostsUseCase.execute({
       userId,
       ...request.query,
     });

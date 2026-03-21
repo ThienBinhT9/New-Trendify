@@ -1,4 +1,5 @@
 import { EVisibility } from "./common.interface";
+import { IPictureUrl } from "./user.interface";
 
 export type PostType = "text" | "image" | "video";
 
@@ -48,10 +49,9 @@ export interface IPostCounters {
 
 export interface IPostAuthor {
   id: string;
-  firstName: string;
-  lastName: string;
+  displayName: string;
   username: string;
-  profilePicture: string;
+  profilePicture: IPictureUrl;
 }
 
 export interface IPostLocation {
@@ -73,7 +73,6 @@ export interface IPostCreateInput {
 
 export interface IPost {
   id: string;
-  authorId: string;
   type: PostType;
   content: string;
   mentions?: IPostMention[];

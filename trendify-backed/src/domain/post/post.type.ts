@@ -12,8 +12,6 @@ export enum EPostAccessLevel {
 
 export enum EPostStatus {
   ACTIVE = "active",
-  HIDDEN = "hidden",
-  DELETED = "deleted",
   DRAFT = "draft",
 }
 
@@ -26,15 +24,10 @@ export enum EPostType {
 // ============================================================================
 // INTERFACES - SUB TYPES
 // ============================================================================
-
-/**
- * User mention in post content
- * Stores position for rich text rendering
- */
 export interface IPostMention {
   userId: string;
   username: string;
-  startIndex: number; // Position in content string
+  startIndex: number;
   endIndex: number;
 }
 
@@ -43,10 +36,6 @@ export interface IPostHashtag {
   startIndex: number;
   endIndex: number;
 }
-
-/**
- * Location/check-in data
- */
 export interface IPostLocation {
   name: string;
   address?: string;
@@ -54,21 +43,14 @@ export interface IPostLocation {
   coordinates?: { lat: number; lng: number };
 }
 
-/**
- * Post interaction settings
- */
 export interface IPostSettings {
   visibility: ECommonVisibility;
   allowLike: boolean;
   allowSave: boolean;
   allowShare: boolean;
   allowComment: boolean;
-  allowDownload: boolean; // For media
+  allowDownload: boolean;
 }
-
-/**
- * Post engagement counters
- */
 export interface IPostCounters {
   likeCount: number;
   viewCount: number;
@@ -77,10 +59,6 @@ export interface IPostCounters {
   repostCount: number;
   commentCount: number;
 }
-
-// ============================================================================
-// MAIN INTERFACE
-// ============================================================================
 
 export interface IPostProps {
   // Identity
@@ -127,18 +105,4 @@ export interface IPostCreateInput {
   replyToId?: string;
   visibility?: ECommonVisibility;
   isDraft?: boolean;
-}
-
-export interface IPostUpdateInput {
-  content?: string;
-  mediaIds?: string[];
-  type?: EPostType;
-  mentions?: IPostMention[];
-  location?: IPostLocation | null; // null to remove
-  visibility?: ECommonVisibility;
-  allowLike?: boolean;
-  allowSave?: boolean;
-  allowShare?: boolean;
-  allowComment?: boolean;
-  allowDownload?: boolean;
 }

@@ -56,13 +56,13 @@ const postDummy: { post: IPost; viewerContext: IPostViewerContext } = {
       repostCount: 2,
       saveCount: 11,
     },
-    authorId: "697ecce7e4ba55404989e3b2",
     author: {
       id: "697ecce7e4ba55404989e3b2",
       username: "nguyenvana",
-      profilePicture: "https://i.pravatar.cc/150?img=3",
-      firstName: "Nguyễn",
-      lastName: "Văn A",
+      profilePicture: {
+        small: "https://i.pravatar.cc/150?img=3",
+      },
+      displayName: "Nguyễn Văn A",
     },
     createdAt: "2026-03-11T09:43:33.096Z",
     updatedAt: "2026-03-11T09:43:33.096Z",

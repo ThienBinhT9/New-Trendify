@@ -1,6 +1,5 @@
 export { CreatePostUseCase } from "./create-post.usecase";
 export { GetPostUseCase } from "./get-post.usecase";
-export { UpdatePostUseCase } from "./update-post.usecase";
 export { DeletePostUseCase } from "./delete-post.usecase";
 export { GetUserPostsUseCase } from "./get-user-posts.usecase";
 export { GetFollowingFeedUseCase } from "./get-following-feed.usecase";
@@ -17,5 +16,4 @@ export { DeleteCommentUseCase } from "./delete-comment.usecase";
 export { SavePostUseCase } from "./save-post.usecase";
 export { UnsavePostUseCase } from "./unsave-post.usecase";
 export { GetSavedPostsUseCase } from "./get-saved-posts.usecase";
-
-export * from "./media-display.mapper";
+export { GetDraftPostsUseCase } from "./get-draft-posts.usecase";
