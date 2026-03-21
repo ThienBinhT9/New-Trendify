@@ -10,7 +10,11 @@ import { IMediaRepository } from "@/domain/media";
 import { IFileStorageService } from "@/application/services/fileStorage.service";
 import { ICacheService } from "@/application/services";
 import { ViewerContextBuilder } from "@/application/policies/viewer-context.builder";
-import { batchPopulateMedia } from "./media-display.mapper";
+import { PostMapper, UserMapper } from "@/application/mappers";
+import {
+  fetchMediaRecordFromGroups,
+  resolveMediaDisplayList,
+} from "@/application/mappers/media.mapper";
 
 export class GetPostUseCase {
   constructor(
@@ -29,21 +33,18 @@ export class GetPostUseCase {
     const { viewerId, postId } = dto;
 
     const post = await this.postRepo.findById(postId);
-    if (!post || post.isDeleted()) {
+    if (!post || !post.isActive()) {
       throw new Response.NotFoundError("Post not found");
     }
 
-    // Check if viewer is blocked by post author
     const isBlocked = await this.blockRepo.isEitherBlocked(viewerId, post.authorId);
     if (isBlocked && !post.isOwnedBy(viewerId)) {
       throw new Response.NotFoundError("Post not found");
     }
 
-    // Check follow status for visibility
     const isFollowingAuthor =
       viewerId !== post.authorId ? await this.followRepo.exists(viewerId, post.authorId) : false;
 
-    // Check visibility
     if (post.isPrivate() && !post.isOwnedBy(viewerId)) {
       throw new Response.NotFoundError("Post not found");
     }
@@ -51,16 +52,11 @@ export class GetPostUseCase {
       throw new Response.NotFoundError("Post not found");
     }
 
-    // Batch check like/save status + populate media
-    const [isLiked, isSaved, mediaDisplayMap] = await Promise.all([
+    const [isLiked, isSaved] = await Promise.all([
       this.likeRepo.exists(viewerId, postId),
       this.saveRepo.exists(viewerId, postId),
-      batchPopulateMedia([{ id: post.id!, mediaIds: post.mediaIds }], this.storageSvc, (ids) =>
-        this.mediaRepo.findByIds(ids),
-      ),
     ]);
 
-    // Build viewer context
     const viewerContext = ViewerContextBuilder.buildPost({
       viewerId,
       postAuthorId: post.authorId,
@@ -71,37 +67,21 @@ export class GetPostUseCase {
       isBlocked,
     });
 
-    // Fetch author info to return
-    let profilePictureUrl: string | undefined = undefined;
-    const authorUser = await this.userRepo.findById(post.authorId);
-
-    if (authorUser?.data.profilePicture) {
-      if (typeof authorUser.data.profilePicture === "string") {
-        const profileMedia = await this.mediaRepo.findById(authorUser.data.profilePicture);
-        if (profileMedia) {
-          const smallVariant = profileMedia.variants.find((v) => v.type === "small");
-          const key = smallVariant ? smallVariant.key : profileMedia.key;
-          profilePictureUrl = this.storageSvc.getPublicUrl(key);
-        }
-      }
+    const author = await this.userRepo.findById(post.authorId);
+    if (!author) {
+      throw new Response.NotFoundError("Author not found");
     }
 
-    return new Response.SuccessResponse({
-      message: "Post retrieved successfully",
-      data: {
-        post: {
-          ...post.toSnapshot(),
-          author: {
-            id: authorUser?.id,
-            username: authorUser?.data.username,
-            firstName: authorUser?.data.firstName,
-            lastName: authorUser?.data.lastName,
-            profilePicture: profilePictureUrl,
-          },
-          media: mediaDisplayMap.get(post.id!) ?? [],
-        },
-        viewerContext,
-      },
-    });
+    const profilePictureId =
+      typeof author.data.profilePicture === "string" ? author.data.profilePicture : undefined;
+    const mediaRecord = await fetchMediaRecordFromGroups(
+      [post.mediaIds, [profilePictureId]],
+      (ids) => this.mediaRepo.findByIds(ids),
+    );
+    const media = resolveMediaDisplayList(post.mediaIds, mediaRecord, this.storageSvc);
+
+    const authorMapped = UserMapper.toAuthorDTO(author, mediaRecord, this.storageSvc);
+
+    return PostMapper.toResponseDTO(post, authorMapped, media, viewerContext);
   }
 }

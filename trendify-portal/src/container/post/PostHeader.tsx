@@ -159,12 +159,12 @@ const PostHeader = ({ post, viewerContext }: PostHeaderProps) => {
       <Flex gap={8} align="center">
         <Avatar
           className="post-header-avatar"
-          src={author.profilePicture}
+          src={author.profilePicture?.small}
           onClick={navigateToProfile}
         />
         <Flex vertical>
           <Text textType="M14" className="post-author" onClick={navigateToProfile}>
-            {`${author.firstName} ${author.lastName}`}
+            {`${author.displayName}`}
           </Text>
           <Flex align="center" gap={6}>
             <Tooltip

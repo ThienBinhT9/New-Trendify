@@ -204,17 +204,6 @@ export class MediaEntity {
     return new MediaEntity(props);
   }
 
-  // --------------------------------------------------------------------------
-  // Serialization
-  // --------------------------------------------------------------------------
-
-  toSnapshot() {
-    return {
-      id: this.id,
-      ...this.props,
-    };
-  }
-
   isOwnedBy(userId: string): boolean {
     return this.props.userId.toString() === userId;
   }

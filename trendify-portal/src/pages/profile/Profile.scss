@@ -12,6 +12,7 @@
     background-color: var(--switch-bg);
     border-radius: 8px;
     flex-direction: column;
+    border: 1px solid var(--gray-200);
 
     .header-cover-image {
       background-color: var(--gray-300);

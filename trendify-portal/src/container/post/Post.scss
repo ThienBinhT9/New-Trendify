@@ -1,6 +1,7 @@
 .post-container {
   flex-direction: column;
   gap: 8px;
+  border: 1px solid var(--gray-200);
 
   .post-header {
     justify-content: space-between;
@@ -87,7 +88,7 @@
     .post-content__mention,
     .post-content__hashtag {
       color: var(--primary-color);
-      font-weight: 600;
+      font-weight: 500;
       cursor: pointer;
 
       &:hover {

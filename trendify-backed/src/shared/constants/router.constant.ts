@@ -50,6 +50,7 @@ export const POST_ROUTES = {
   SAVE_POST: "/:postId/saves",
   UNSAVE_POST: "/:postId/saves",
   GET_SAVED_POSTS: "/saved",
+  GET_DRAFT_POSTS: "/drafts",
   GET_COMMENT_REPLIES: "/:postId/comments/:commentId/replies",
   DELETE_COMMENT: "/:postId/comments/:commentId",
   GET_FOLLOWING_POSTS: "/following",

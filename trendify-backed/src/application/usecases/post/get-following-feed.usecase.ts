@@ -5,10 +5,16 @@ import { IFollowRepository } from "@/domain/follow";
 import { IBlockRepository } from "@/domain/block";
 import { ILikeRepository } from "@/domain/like";
 import { ISaveRepository } from "@/domain/save";
-import { EVariantType, IMediaRepository } from "@/domain/media";
+import { IMediaRepository } from "@/domain/media";
 import { IFileStorageService } from "@/application/services/fileStorage.service";
 import { IUserRepository } from "@/domain/user";
-import { batchPopulateMedia } from "./media-display.mapper";
+import { ViewerContextBuilder } from "@/application/policies/viewer-context.builder";
+import {
+  batchResolveMediaDisplays,
+  resolveMediaVariants,
+  toMediaRecord,
+} from "@/application/mappers/media.mapper";
+import { PostMapper, UserMapper } from "@/application/mappers";
 
 export class GetFollowingFeedUseCase {
   constructor(
@@ -56,7 +62,7 @@ export class GetFollowingFeedUseCase {
     const [likedPostIds, savedPostIds, mediaDisplayMap] = await Promise.all([
       this.likeRepo.findLikedPostIds(viewerId, postIds),
       this.saveRepo.findSavedPostIds(viewerId, postIds),
-      batchPopulateMedia(
+      batchResolveMediaDisplays(
         result.posts.map((p) => ({ id: p.id!, mediaIds: p.mediaIds })),
         this.storageSvc,
         (ids) => this.mediaRepo.findByIds(ids),
@@ -66,7 +72,7 @@ export class GetFollowingFeedUseCase {
     // Fetch author info for all posts
     const authorIdsInDb = [...new Set(result.posts.map((p) => p.authorId))];
     const authors = await this.userRepo.findByIds(authorIdsInDb);
-    const authorMap = new Map(authors.map((u) => [u.id, u.data]));
+    const authorMap = new Map(authors.map((u) => [u.id, u]));
 
     // Resolve profile pictures
     const avatarMediaIds = authors
@@ -74,33 +80,46 @@ export class GetFollowingFeedUseCase {
       .filter((id): id is string => typeof id === "string");
 
     const avatarMediaEntities = await this.mediaRepo.findByIds([...new Set(avatarMediaIds)]);
-    const avatarMap = new Map(avatarMediaEntities.map((m) => [m.id, m]));
+    const avatarRecord = toMediaRecord(avatarMediaEntities);
 
-    const posts = result.posts.map((post) => {
-      const authorProp = authorMap.get(post.authorId);
-      let profilePictureUrl: string | undefined = undefined;
-
-      if (authorProp?.profilePicture && typeof authorProp.profilePicture === "string") {
-        const media = avatarMap.get(authorProp.profilePicture);
-        if (media) {
-          const smallVariant = media.variants.find((v) => v.type === EVariantType.SMALL);
-          const key = smallVariant ? smallVariant.key : media.key;
-          profilePictureUrl = this.storageSvc.getPublicUrl(key);
+    const posts = result.posts
+      .map((post) => {
+        const authorEntity = authorMap.get(post.authorId);
+        if (!authorEntity) {
+          return null;
         }
-      }
 
-      return {
-        ...post.toSnapshot(),
-        author: {
-          id: post.authorId,
-          username: authorProp?.username,
-          firstName: authorProp?.firstName,
-          lastName: authorProp?.lastName,
-          profilePicture: profilePictureUrl,
-        },
-        media: mediaDisplayMap.get(post.id!) ?? [],
-      };
-    });
+        const isLiked = likedPostIds.has(post.id!);
+        const isSaved = savedPostIds.has(post.id!);
+
+        const profileMediaId =
+          authorEntity.data.profilePicture && typeof authorEntity.data.profilePicture === "string"
+            ? authorEntity.data.profilePicture
+            : undefined;
+        const profilePicture = resolveMediaVariants(profileMediaId, avatarRecord, this.storageSvc);
+
+        const authorMapped = UserMapper.toAuthorDTO(authorEntity, avatarRecord, this.storageSvc);
+        const authorWithResolvedProfilePicture = {
+          ...authorMapped,
+          profilePicture,
+        };
+
+        return PostMapper.toResponseDTO(
+          post,
+          authorWithResolvedProfilePicture,
+          mediaDisplayMap.get(post.id!) ?? [],
+          ViewerContextBuilder.buildPost({
+            viewerId,
+            postAuthorId: post.authorId,
+            postSettings: post.data.settings,
+            isLiked,
+            isSaved,
+            isFollowingAuthor: true,
+            isBlocked: false,
+          }),
+        );
+      })
+      .filter(Boolean);
 
     return new Response.SuccessResponse({
       message: "Feed retrieved successfully",

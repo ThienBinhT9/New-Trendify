@@ -27,6 +27,13 @@ route.get(
   postController.getSavedPosts,
 );
 
+// Draft posts MUST come before /:postId to avoid matching "drafts" as postId
+route.get(
+  POST_ROUTES.GET_DRAFT_POSTS,
+  validateQuery(schema.userPostsQuerySchema),
+  postController.getDraftPosts,
+);
+
 // Home feed — MUST come before /:postId
 route.get(
   POST_ROUTES.HOME_FEED,

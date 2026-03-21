@@ -1,42 +1,34 @@
 import * as Response from "@/shared/responses";
-import { GetUserPostsDTO } from "@/application/dtos/post.dto";
-import { IPostRepository, EPostStatus } from "@/domain/post";
+import { GetDraftPostsDTO } from "@/application/dtos/post.dto";
+import { EPostStatus, IPostRepository } from "@/domain/post";
+import { ECommonVisibility } from "@/domain/user-setting";
 import { ILikeRepository } from "@/domain/like";
 import { ISaveRepository } from "@/domain/save";
-import { IFollowRepository } from "@/domain/follow";
-import { IBlockRepository } from "@/domain/block";
 import { IUserRepository } from "@/domain/user";
 import { IMediaRepository } from "@/domain/media";
 import { IFileStorageService } from "@/application/services/fileStorage.service";
-import { ECommonVisibility } from "@/domain/user-setting";
-import { ICacheService } from "@/application/services";
 import { ViewerContextBuilder } from "@/application/policies/viewer-context.builder";
 import { batchResolveMediaDisplays } from "@/application/mappers/media.mapper";
 import { PostMapper, UserMapper } from "@/application/mappers";
 import { MediaEntity } from "@/domain/media";
 
-export class GetUserPostsUseCase {
+export class GetDraftPostsUseCase {
   constructor(
     private readonly postRepo: IPostRepository,
     private readonly userRepo: IUserRepository,
     private readonly likeRepo: ILikeRepository,
     private readonly saveRepo: ISaveRepository,
-    private readonly followRepo: IFollowRepository,
-    private readonly blockRepo: IBlockRepository,
-    private readonly cacheService: ICacheService,
     private readonly mediaRepo: IMediaRepository,
     private readonly storageSvc: IFileStorageService,
   ) {}
 
-  async execute(dto: GetUserPostsDTO) {
-    const { viewerId, authorId, limit = 20, cursor, type } = dto;
+  async execute(dto: GetDraftPostsDTO) {
+    const { userId, limit = 20, cursor, type } = dto;
 
-    const author = await this.userRepo.findById(authorId);
+    const author = await this.userRepo.findById(userId);
     if (!author) {
       throw new Response.NotFoundError("User not found");
     }
-
-    const isSelf = viewerId === authorId;
 
     const authorProfileMedia =
       author.data.profilePicture && typeof author.data.profilePicture === "string"
@@ -50,49 +42,24 @@ export class GetUserPostsUseCase {
 
     const authorMapped = UserMapper.toAuthorDTO(author, authorMediaRecord, this.storageSvc);
 
-    // Check block
-    if (!isSelf) {
-      const isBlocked = await this.blockRepo.isEitherBlocked(viewerId, authorId);
-      if (isBlocked) {
-        throw new Response.NotFoundError("User not found");
-      }
-    }
-
-    // Determine visible statuses and visibilities
-    let statuses: EPostStatus[];
-    let visibilities: ECommonVisibility[];
-    let isFollowingAuthor = false;
-
-    if (isSelf) {
-      statuses = [EPostStatus.ACTIVE, EPostStatus.DRAFT];
-      visibilities = [
+    const result = await this.postRepo.findByUser({
+      authorId: userId,
+      statuses: [EPostStatus.DRAFT],
+      visibilities: [
         ECommonVisibility.PUBLIC,
         ECommonVisibility.FOLLOWER,
         ECommonVisibility.PRIVATE,
-      ];
-    } else {
-      isFollowingAuthor = await this.followRepo.exists(viewerId, authorId);
-      statuses = [EPostStatus.ACTIVE];
-      visibilities = isFollowingAuthor
-        ? [ECommonVisibility.PUBLIC, ECommonVisibility.FOLLOWER]
-        : [ECommonVisibility.PUBLIC];
-    }
-
-    const result = await this.postRepo.findByUser({
-      authorId,
-      statuses,
-      visibilities,
+      ],
       limit,
       cursor,
       type,
-      pinnedFirst: !cursor, // Only pin first on first page
+      pinnedFirst: false,
     });
 
-    // Batch check like/save status + populate media
     const postIds = result.posts.map((p) => p.id!);
     const [likedPostIds, savedPostIds, mediaDisplayMap] = await Promise.all([
-      this.likeRepo.findLikedPostIds(viewerId, postIds),
-      this.saveRepo.findSavedPostIds(viewerId, postIds),
+      this.likeRepo.findLikedPostIds(userId, postIds),
+      this.saveRepo.findSavedPostIds(userId, postIds),
       batchResolveMediaDisplays(
         result.posts.map((p) => ({ id: p.id!, mediaIds: p.mediaIds })),
         this.storageSvc,
@@ -109,19 +76,19 @@ export class GetUserPostsUseCase {
         authorMapped,
         mediaDisplayMap.get(post.id!) ?? [],
         ViewerContextBuilder.buildPost({
-          viewerId,
+          viewerId: userId,
           postAuthorId: post.authorId,
           postSettings: post.data.settings,
           isLiked,
           isSaved,
-          isFollowingAuthor,
+          isFollowingAuthor: false,
           isBlocked: false,
         }),
       );
     });
 
     return new Response.SuccessResponse({
-      message: "Posts retrieved successfully",
+      message: "Draft posts retrieved successfully",
       data: {
         posts,
         nextCursor: result.nextCursor,

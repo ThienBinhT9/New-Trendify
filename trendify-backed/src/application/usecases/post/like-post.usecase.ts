@@ -30,13 +30,11 @@ export class LikePostUseCase {
       throw new Response.BadRequestError("Likes are disabled for this post");
     }
 
-    // Check block
     const isBlocked = await this.blockRepo.isEitherBlocked(userId, post.authorId);
     if (isBlocked) {
       throw new Response.NotFoundError("Post not found");
     }
 
-    // Create like (idempotent — returns null if already exists)
     const like = LikeEntity.create({ userId, postId });
     const created = await this.likeRepo.create(like);
 
@@ -44,7 +42,6 @@ export class LikePostUseCase {
       return new Response.SuccessResponse({ message: "Already liked", data: { isLiked: true } });
     }
 
-    // Async: increment like count
     try {
       await this.producer.publish(ROUTING_KEYS.COUNTER_POST_LIKE, {
         postId,
@@ -54,7 +51,6 @@ export class LikePostUseCase {
       });
     } catch (error) {
       console.error("[LikePost] Failed to publish event:", error);
-      // Fallback: direct increment
       await this.postRepo.incrementLikeCount(postId);
     }
 
