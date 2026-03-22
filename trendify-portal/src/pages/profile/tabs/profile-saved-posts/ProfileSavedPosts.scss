@@ -1,0 +1,12 @@
+.profile-saved-posts-container {
+  .post-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .profile-saved-posts-container__empty {
+    min-height: 120px;
+    align-items: center;
+  }
+}

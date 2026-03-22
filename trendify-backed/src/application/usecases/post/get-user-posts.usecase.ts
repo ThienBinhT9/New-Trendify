@@ -59,12 +59,11 @@ export class GetUserPostsUseCase {
     }
 
     // Determine visible statuses and visibilities
-    let statuses: EPostStatus[];
+    const statuses: EPostStatus[] = [EPostStatus.ACTIVE];
     let visibilities: ECommonVisibility[];
     let isFollowingAuthor = false;
 
     if (isSelf) {
-      statuses = [EPostStatus.ACTIVE, EPostStatus.DRAFT];
       visibilities = [
         ECommonVisibility.PUBLIC,
         ECommonVisibility.FOLLOWER,
@@ -72,7 +71,6 @@ export class GetUserPostsUseCase {
       ];
     } else {
       isFollowingAuthor = await this.followRepo.exists(viewerId, authorId);
-      statuses = [EPostStatus.ACTIVE];
       visibilities = isFollowingAuthor
         ? [ECommonVisibility.PUBLIC, ECommonVisibility.FOLLOWER]
         : [ECommonVisibility.PUBLIC];
@@ -88,19 +86,21 @@ export class GetUserPostsUseCase {
       pinnedFirst: !cursor, // Only pin first on first page
     });
 
+    const activePosts = result.posts.filter((post) => post.isActive());
+
     // Batch check like/save status + populate media
-    const postIds = result.posts.map((p) => p.id!);
+    const postIds = activePosts.map((p) => p.id!);
     const [likedPostIds, savedPostIds, mediaDisplayMap] = await Promise.all([
       this.likeRepo.findLikedPostIds(viewerId, postIds),
       this.saveRepo.findSavedPostIds(viewerId, postIds),
       batchResolveMediaDisplays(
-        result.posts.map((p) => ({ id: p.id!, mediaIds: p.mediaIds })),
+        activePosts.map((p) => ({ id: p.id!, mediaIds: p.mediaIds })),
         this.storageSvc,
         (ids) => this.mediaRepo.findByIds(ids),
       ),
     ]);
 
-    const posts = result.posts.map((post) => {
+    const posts = activePosts.map((post) => {
       const isLiked = likedPostIds.has(post.id!);
       const isSaved = savedPostIds.has(post.id!);
 

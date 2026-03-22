@@ -1,0 +1,12 @@
+.profile-draft-posts-container {
+  .post-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .profile-draft-posts-container__empty {
+    min-height: 120px;
+    align-items: center;
+  }
+}

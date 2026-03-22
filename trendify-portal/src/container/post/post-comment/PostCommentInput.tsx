@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { forwardRef, useCallback, useImperativeHandle, useRef, useState } from "react";
 import { MentionsInput, Mention } from "react-mentions";
 import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
 import { Avatar, Flex, Image, Popover, Upload, UploadFile, UploadProps } from "antd";
@@ -9,12 +9,31 @@ import { handleBeforeUpload } from "@/utils/common.util";
 import Icon from "@/components/icon/Icon";
 import LoaderSpin from "@/components/loader/LoaderPuff";
 
-const PostCommentInput = () => {
+export interface IPostCommentInputRef {
+  focus: () => void;
+}
+
+const PostCommentInput = forwardRef<IPostCommentInputRef>((_, ref) => {
   const [file, setFile] = useState<UploadFile | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [isFocus, setIsFocus] = useState<boolean>(false);
   const [plainText, setPlainText] = useState<string>("");
   const [filePreview, setFilePreview] = useState<{ uid: string; url: string } | null>(null);
+  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+
+  const focus = useCallback(() => {
+    if (!inputRef.current) return;
+    inputRef.current.focus();
+    setIsFocus(true);
+  }, []);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      focus,
+    }),
+    [focus],
+  );
 
   const handleRemoveImage = () => {
     if (filePreview) URL.revokeObjectURL(filePreview.url);
@@ -63,11 +82,13 @@ const PostCommentInput = () => {
       <Flex className={`comment-box__input-wrapper ${isFocus && "focus"}`} flex={1}>
         <MentionsInput
           value={plainText}
+          inputRef={(element) => {
+            inputRef.current = element;
+          }}
           className="comment-box__input"
           placeholder="Thêm bình luận..."
           onFocus={() => setIsFocus(true)}
-          onChange={(event, newValue, newPlainTextValue) => {
-            console.log({ event, newValue });
+          onChange={(_, __, newPlainTextValue) => {
             setPlainText(newPlainTextValue);
           }}
         >
@@ -125,6 +146,6 @@ const PostCommentInput = () => {
       </Flex>
     </Flex>
   );
-};
+});
 
 export default PostCommentInput;

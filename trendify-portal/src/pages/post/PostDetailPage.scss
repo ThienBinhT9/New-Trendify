@@ -1,0 +1,37 @@
+.post-detail-page {
+  --post-detail-header-height: 66px;
+
+  width: 100%;
+  justify-content: center;
+  padding: 12px 0 24px;
+
+  .post-detail-page__content {
+    width: 100%;
+    max-width: 680px;
+    flex-direction: column;
+    gap: 12px;
+    height: fit-content;
+    padding-bottom: 24px;
+  }
+
+  .post-detail-page__comments {
+    flex-direction: column;
+  }
+
+  .post-detail-page__comment-input {
+    position: sticky;
+    top: 0;
+    z-index: 12;
+    box-shadow: none;
+    transition: box-shadow 0.3s ease;
+  }
+
+  .post-detail-page__comment-input--pinned {
+    box-shadow: 0 4px 6px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .post-detail-page__empty {
+    min-height: 120px;
+    align-items: center;
+  }
+}

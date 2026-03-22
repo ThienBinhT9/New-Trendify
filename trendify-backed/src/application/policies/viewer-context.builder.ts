@@ -109,8 +109,8 @@ export class ViewerContextBuilder {
       isLiked,
       isSaved,
 
-      canLike: !isRestricted && !isLiked && postSettings.allowLike,
-      canSave: !isRestricted && !isSaved && postSettings.allowSave,
+      canLike: !isRestricted && postSettings.allowLike,
+      canSave: !isRestricted && postSettings.allowSave,
       canShare: !isBlocked && postSettings.allowShare,
       canComment: !isRestricted && postSettings.allowComment,
       canDelete: isAuthor,

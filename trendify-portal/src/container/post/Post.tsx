@@ -1,15 +1,13 @@
-import { useState } from "react";
+import { memo, useCallback } from "react";
 import { Flex } from "antd";
+import { useNavigate } from "react-router-dom";
 
 import "./Post.scss";
-import { formatNumberCount } from "@/utils/common.util";
+import ROUTE_PATHS from "@/routes/path.route";
 
-import Icon from "@/components/icon/Icon";
-import Text from "@/components/text/Text";
 import PostTitle from "./PostTitle";
 import PostHeader from "./PostHeader";
-import ModalLikePost from "@/container/modal/LikePost";
-import ModalDetailPost from "@/container/modal/DetailPost";
+import PostAction from "./PostAction";
 import { EPostStatus, IPost, IPostViewerContext } from "@/interfaces/post.interface";
 import { EVisibility } from "@/interfaces/common.interface";
 
@@ -87,66 +85,38 @@ interface IProps {
   viewerContext?: IPostViewerContext;
 }
 
-const Post = ({
-  expandedTitle,
-  post = postDummy.post,
-  viewerContext = postDummy.viewerContext,
-}: IProps) => {
-  const [visibleModalLike, setVisibleModalLike] = useState<boolean>(false);
-  const [visibleModalDetail, setVisibleModalDetail] = useState<boolean>(false);
-  const [isLiked, setIsLiked] = useState<boolean>(false);
-  const [likeCount, setLikeCount] = useState<number>(post.counters.likeCount);
+const Post = ({ expandedTitle, post = postDummy.post, viewerContext }: IProps) => {
+  const navigate = useNavigate();
+  const resolvedViewerContext = viewerContext ?? post.viewerContext ?? postDummy.viewerContext;
 
-  const handleClickLike = () => {
-    if (isLiked) {
-      setLikeCount((prev) => prev - 1);
-    } else {
-      setLikeCount((prev) => prev + 1);
-    }
-    setIsLiked((prev) => !prev);
-  };
+  const handleNavigateToDetail = useCallback(() => {
+    if (!post.id) return;
+
+    console.log("fwefew");
+
+    navigate(ROUTE_PATHS.POST_DETAIL(post.id));
+  }, [navigate, post.id]);
 
   return (
-    <Flex className="box-wrapper post-container">
-      <PostHeader post={post} viewerContext={viewerContext} />
+    <Flex className="box-wrapper post-container" onClick={handleNavigateToDetail}>
+      <Flex onClick={(e) => e.stopPropagation()}>
+        <PostHeader post={post} viewerContext={resolvedViewerContext} />
+      </Flex>
       <PostTitle
         expandedTitle={expandedTitle}
         content={post.content}
         mentions={post.mentions ?? []}
         hashtags={post.hashtags ?? []}
+        onSeeMore={handleNavigateToDetail}
       />
 
-      <Flex className="post-actions">
-        <Flex
-          className={`post-action ${isLiked ? "post-action__liked" : ""}`}
-          onClick={handleClickLike}
-        >
-          <Icon name={isLiked ? "HeartFillIcon" : "HeartAltIcon"} />
-          <Text
-            className="post-action__text"
-            onClick={(e) => {
-              e.stopPropagation();
-              setVisibleModalLike(true);
-            }}
-          >{`${formatNumberCount(likeCount)}`}</Text>
-        </Flex>
-        <Flex className="post-action" onClick={() => setVisibleModalDetail(true)}>
-          <Icon name="CommentIcon" />
-          <Text className="post-action__text">{`${formatNumberCount(post.counters.commentCount)}`}</Text>
-        </Flex>
-        <Flex className="post-action">
-          <Icon name="ShareIcon" />
-          <Text className="post-action__text">{`${formatNumberCount(post.counters.shareCount)}`}</Text>
-        </Flex>
-      </Flex>
-
-      <ModalDetailPost open={visibleModalDetail} onCancel={() => setVisibleModalDetail(false)} />
-
-      {visibleModalLike && (
-        <ModalLikePost open={visibleModalLike} onCancel={() => setVisibleModalLike(false)} />
-      )}
+      <PostAction
+        post={post}
+        viewerContext={resolvedViewerContext}
+        onNavigateToDetail={handleNavigateToDetail}
+      />
     </Flex>
   );
 };
 
-export default Post;
+export default memo(Post);

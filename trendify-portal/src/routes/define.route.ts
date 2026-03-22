@@ -28,6 +28,8 @@ import ProfileVideos from "@/pages/profile/tabs/profile-videos/ProfileVideos";
 import ProfileImages from "@/pages/profile/tabs/profile-images/ProfileImages";
 import ProfileFriends from "@/pages/profile/tabs/profile-friends/ProfileFriends";
 import ProfileIntroduce from "@/pages/profile/tabs/profile-introduce/ProfileIntroduce";
+import ProfileSavedPosts from "@/pages/profile/tabs/profile-saved-posts/ProfileSavedPosts";
+import ProfileDraftPosts from "@/pages/profile/tabs/profile-draft-posts/ProfileDraftPosts";
 import VerifyEmailCallback from "@/pages/guest/VerifyEmailCallback";
 import Notification from "@/pages/notification/Notification";
 
@@ -37,6 +39,7 @@ import SettingsAccount from "@/pages/settings/sections/settings-account/Settings
 import SettingsDetailPanel from "@/pages/settings/components/SettingDetailPanel";
 import Activity from "@/pages/activity/Activity";
 import Home from "@/pages/home/Home";
+import PostDetailPage from "@/pages/post/PostDetailPage";
 
 const EmptyRoute: React.FC = () => null;
 
@@ -93,6 +96,12 @@ export const privateRoutes: IRoute[] = [
     path: ROUTE_PATHS.ACTIVITY,
     layout: MainLayout,
     element: Activity,
+    sidebar: HomeSidebar,
+  },
+  {
+    path: ROUTE_PATHS.POST_DETAIL(),
+    layout: MainLayout,
+    element: PostDetailPage,
     sidebar: HomeSidebar,
   },
   {
@@ -157,6 +166,8 @@ export const privateRoutes: IRoute[] = [
       { path: ROUTE_PATHS.PROFILE_FOLLOWING(), element: ProfileFriends },
       { path: ROUTE_PATHS.PROFILE_INTRODUCE(), element: ProfileIntroduce },
       { path: ROUTE_PATHS.PROFILE_PERSONAL_DETAIL(), element: ProfileIntroduce },
+      { path: ROUTE_PATHS.PROFILE_SAVED(), element: ProfileSavedPosts },
+      { path: ROUTE_PATHS.PROFILE_DRAFTS(), element: ProfileDraftPosts },
     ],
   },
 ];

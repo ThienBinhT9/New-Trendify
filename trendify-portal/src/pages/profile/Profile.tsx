@@ -11,7 +11,7 @@ import {
   TabsProps,
 } from "antd";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "./Profile.scss";
 import dayjs from "dayjs";
 
@@ -35,11 +35,12 @@ import CropImageModal from "@/container/modal/CropImage";
 import FollowStatusCard from "@/container/card/FollowStatusCard";
 import FollowRequestCard from "@/container/card/FollowRequestCard";
 
-const profile_tabs: TabsProps["items"] = [
+const baseProfileTabs: TabsProps["items"] = [
   { key: "", label: "Bài viết" },
   { key: SUB_PATH_PROFILE.INTRODUCE, label: "Giới thiệu" },
   { key: SUB_PATH_PROFILE.FRIENDS, label: "Bạn bè" },
 ];
+const OWNER_ONLY_PROFILE_TABS = new Set<string>([SUB_PATH_PROFILE.DRAFTS, SUB_PATH_PROFILE.SAVED]);
 
 const Profile = () => {
   const { message, modal } = App.useApp();
@@ -56,6 +57,15 @@ const Profile = () => {
   const currentTab = getProfileTab(location.pathname);
   const [isPreviewOpen, setIsPreviewOpen] = useState<boolean>(false);
   const [isIntroduceOpen, setIsIntroduceOpen] = useState<boolean>(false);
+  const profileTabs = useMemo<TabsProps["items"]>(() => {
+    if (!isOwnProfile) return baseProfileTabs;
+
+    return [
+      ...baseProfileTabs,
+      { key: SUB_PATH_PROFILE.DRAFTS, label: "Bản nháp" },
+      { key: SUB_PATH_PROFILE.SAVED, label: "Đã lưu" },
+    ];
+  }, [isOwnProfile]);
 
   const avatarUpload = useImageUploadCrop({
     aspect: 1,
@@ -250,6 +260,13 @@ const Profile = () => {
     handleGetProfile();
   }, [handleGetProfile]);
 
+  useEffect(() => {
+    if (loadingGetProfile || isOwnProfile) return;
+    if (!OWNER_ONLY_PROFILE_TABS.has(currentTab)) return;
+
+    navigate(ROUTE_PATHS.PROFILE(userId), { replace: true });
+  }, [currentTab, isOwnProfile, loadingGetProfile, navigate, userId]);
+
   if (errorStatus || !userId) {
     return <NotFound />;
   }
@@ -384,9 +401,9 @@ const Profile = () => {
           <Divider className="profile-header-divider" />
           <Flex justify="space-between">
             <Tabs
-              defaultActiveKey={profile_tabs[0].key}
+              defaultActiveKey={profileTabs?.[0]?.key}
               activeKey={normalizeTab(currentTab)}
-              items={profile_tabs.map((tab) => ({
+              items={profileTabs.map((tab) => ({
                 ...tab,
                 disabled: loadingGetProfile,
               }))}

@@ -577,7 +577,7 @@ const ComposerPanel = ({
         <Button
           className="post-submit"
           onClick={onSubmit}
-          disabled={!editor || editor.getText().trim().length === 0}
+          disabled={editorValue.trim().length === 0}
           loading={loading[EPostActions.CREATE_POST]}
         >
           <Text textType="M14">Đăng</Text>

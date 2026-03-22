@@ -32,8 +32,6 @@ const PostCommentItem = (props: PostCommentItemProps) => {
   const [likeCount, setLikeCount] = useState<number>(comment.counters.likeCount);
   const [likeLoading, setLikeLoading] = useState<boolean>(false);
 
-  console.log({ loading });
-
   const handleLike = async () => {
     if (likeLoading) return;
 

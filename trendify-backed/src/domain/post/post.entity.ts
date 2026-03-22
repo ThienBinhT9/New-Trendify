@@ -150,11 +150,11 @@ export class PostEntity {
       status: input.isDraft ? EPostStatus.DRAFT : EPostStatus.ACTIVE,
       settings: {
         visibility: input.visibility ?? ECommonVisibility.PUBLIC,
-        allowLike: true,
-        allowSave: true,
-        allowShare: true,
-        allowComment: true,
-        allowDownload: true,
+        allowLike: input.allowLike ?? true,
+        allowSave: input.allowSave ?? true,
+        allowShare: input.allowShare ?? true,
+        allowComment: input.allowComment ?? true,
+        allowDownload: input.allowDownload ?? true,
       },
       isPinned: false,
 

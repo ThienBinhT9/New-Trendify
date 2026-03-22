@@ -1,5 +1,4 @@
 import { IApiResponse } from "@/interfaces/api.interface";
-import { IComment } from "@/interfaces/comment.interface";
 import { EVisibility } from "@/interfaces/common.interface";
 import { IPost, IPostLocation, IPostMention } from "@/interfaces/post.interface";
 
@@ -19,6 +18,8 @@ export enum EPostActions {
 
   GET_USER_POSTS = "GET_USER_POSTS",
   GET_FOLLOWING_POSTS = "GET_FOLLOWING_POSTS",
+  GET_SAVED_POSTS = "GET_SAVED_POSTS",
+  GET_DRAFT_POSTS = "GET_DRAFT_POSTS",
 }
 
 export const POST_ENDPOINT = {
@@ -37,6 +38,8 @@ export const POST_ENDPOINT = {
 
   GET_USER_POSTS: (userId: string) => `/users/${userId}/posts`,
   GET_FOLLOWING_POSTS: "/posts/following",
+  GET_SAVED_POSTS: "/posts/saved",
+  GET_DRAFT_POSTS: "/posts/drafts",
 };
 
 export interface IPostState {
@@ -44,6 +47,16 @@ export interface IPostState {
     [userId: string]: { posts: IPost[]; cursor?: string | null; hasNext: boolean };
   };
   followingPosts: {
+    posts: IPost[];
+    cursor?: string | null;
+    hasNext: boolean;
+  };
+  savedPosts: {
+    posts: IPost[];
+    cursor?: string | null;
+    hasNext: boolean;
+  };
+  draftPosts: {
     posts: IPost[];
     cursor?: string | null;
     hasNext: boolean;
@@ -59,14 +72,16 @@ export interface ICreatePostRequest {
   location?: IPostLocation;
   replyToId?: string;
   visibility?: EVisibility;
+  allowLike?: boolean;
+  allowSave?: boolean;
+  allowComment?: boolean;
+  allowShare?: boolean;
   isDraft?: boolean;
 }
 
 //============= RESPONSE =============
 export interface ICreatePostResponse extends IApiResponse {
-  data: {
-    post: IPost;
-  };
+  data: IPost;
 }
 
 export interface IDeletePostResponse extends IApiResponse {
@@ -74,9 +89,7 @@ export interface IDeletePostResponse extends IApiResponse {
 }
 
 export interface IPostDetailResponse extends IApiResponse {
-  data: {
-    post: IPost;
-  };
+  data: IPost;
 }
 
 export interface IUserPostsResponse extends IApiResponse {
@@ -87,6 +100,20 @@ export interface IUserPostsResponse extends IApiResponse {
 }
 
 export interface IFollowingPostsResponse extends IApiResponse {
+  data: {
+    posts: IPost[];
+    nextCursor: string;
+  };
+}
+
+export interface ISavedPostsResponse extends IApiResponse {
+  data: {
+    posts: IPost[];
+    nextCursor: string;
+  };
+}
+
+export interface IDraftPostsResponse extends IApiResponse {
   data: {
     posts: IPost[];
     nextCursor: string;

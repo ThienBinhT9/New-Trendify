@@ -23,6 +23,11 @@ export class CreatePostUseCase {
   async execute(dto: CreatePostDTO) {
     const { authorId, mediaIds = [] } = dto;
 
+    const allowLike = dto.allowLike ?? dto.canLike;
+    const allowSave = dto.allowSave ?? dto.canSave;
+    const allowShare = dto.allowShare ?? dto.canShare;
+    const allowComment = dto.allowComment ?? dto.canComment;
+
     const mediaEntities = await validateAndFetchMedia(mediaIds, authorId, (ids) =>
       this.mediaRepo.findByIds(ids),
     );
@@ -31,7 +36,15 @@ export class CreatePostUseCase {
     const uow = await this.uowFactory.create();
 
     try {
-      const post = PostEntity.create({ ...dto, mediaIds, type: postType });
+      const post = PostEntity.create({
+        ...dto,
+        mediaIds,
+        type: postType,
+        allowLike,
+        allowSave,
+        allowShare,
+        allowComment,
+      });
 
       const created = await uow.posts.create(post);
       if (!created) {

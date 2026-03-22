@@ -1,5 +1,12 @@
 import { BaseConsumer, ConsumerConfig } from "../consumer.base";
-import { UserCountsUpdateMessage, ROUTING_KEYS } from "@/domain/events";
+import {
+  PostCommentMessage,
+  PostLikeMessage,
+  PostSaveMessage,
+  ROUTING_KEYS,
+  UserCountsUpdateMessage,
+} from "@/domain/events";
+import { MongoosePostRepository } from "@/infrastructure/database/repositories/post.repository.impl";
 import { MongooseUserRepository } from "@/infrastructure/database/repositories/user.repository.impl";
 
 export class CounterConsumer extends BaseConsumer {
@@ -21,11 +28,21 @@ export class CounterConsumer extends BaseConsumer {
       this.handleUserCountsUpdate.bind(this),
     );
 
-    // TODO: Register post counts handler
-    // this.register<PostCountsUpdateMessage["data"]>(
-    //   ROUTING_KEYS.COUNTER_POST_COUNTS,
-    //   this.handlePostCountsUpdate.bind(this),
-    // );
+    // Register post counters handlers
+    this.register<PostLikeMessage["data"]>(
+      ROUTING_KEYS.COUNTER_POST_LIKE,
+      this.handlePostLikeUpdate.bind(this),
+    );
+
+    this.register<PostCommentMessage["data"]>(
+      ROUTING_KEYS.COUNTER_POST_COMMENT,
+      this.handlePostCommentUpdate.bind(this),
+    );
+
+    this.register<PostSaveMessage["data"]>(
+      ROUTING_KEYS.COUNTER_POST_SAVE,
+      this.handlePostSaveUpdate.bind(this),
+    );
   }
 
   /**
@@ -63,6 +80,51 @@ export class CounterConsumer extends BaseConsumer {
       });
     } catch (error) {
       console.error(`❌ Failed to update counts for ${source}:`, error);
+      throw error;
+    }
+  }
+
+  private async handlePostLikeUpdate(data: PostLikeMessage["data"]): Promise<void> {
+    const { postId, delta } = data;
+    if (!delta) return;
+
+    const postRepository = new MongoosePostRepository();
+
+    try {
+      await postRepository.incrementLikeCount(postId, delta);
+      console.log(`   Post ${postId}: likeCount ${delta > 0 ? "+" : ""}${delta}`);
+    } catch (error) {
+      console.error(`❌ Failed to update likeCount for post ${postId}:`, error);
+      throw error;
+    }
+  }
+
+  private async handlePostCommentUpdate(data: PostCommentMessage["data"]): Promise<void> {
+    const { postId, delta } = data;
+    if (!delta) return;
+
+    const postRepository = new MongoosePostRepository();
+
+    try {
+      await postRepository.incrementCommentCount(postId, delta);
+      console.log(`   Post ${postId}: commentCount ${delta > 0 ? "+" : ""}${delta}`);
+    } catch (error) {
+      console.error(`❌ Failed to update commentCount for post ${postId}:`, error);
+      throw error;
+    }
+  }
+
+  private async handlePostSaveUpdate(data: PostSaveMessage["data"]): Promise<void> {
+    const { postId, delta } = data;
+    if (!delta) return;
+
+    const postRepository = new MongoosePostRepository();
+
+    try {
+      await postRepository.incrementSaveCount(postId, delta);
+      console.log(`   Post ${postId}: saveCount ${delta > 0 ? "+" : ""}${delta}`);
+    } catch (error) {
+      console.error(`❌ Failed to update saveCount for post ${postId}:`, error);
       throw error;
     }
   }

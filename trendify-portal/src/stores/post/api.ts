@@ -6,6 +6,8 @@ import {
   IPostDetailResponse,
   IUserPostsResponse,
   IFollowingPostsResponse,
+  ISavedPostsResponse,
+  IDraftPostsResponse,
   ILikePostResponse,
   ISavePostResponse,
 } from "./constants";
@@ -37,18 +39,30 @@ export const listFollowingPosts = async (params?: IListParams) => {
   });
 };
 
+export const listSavedPosts = async (params?: IListParams) => {
+  return apiClient.get<ISavedPostsResponse>(POST_ENDPOINT.GET_SAVED_POSTS, {
+    params,
+  });
+};
+
+export const listDraftPosts = async (params?: IListParams) => {
+  return apiClient.get<IDraftPostsResponse>(POST_ENDPOINT.GET_DRAFT_POSTS, {
+    params,
+  });
+};
+
 export const likePost = async (postId: string) => {
-  return apiClient.get<ILikePostResponse>(POST_ENDPOINT.LIKE_POST(postId));
+  return apiClient.post<ILikePostResponse>(POST_ENDPOINT.LIKE_POST(postId));
 };
 
 export const unlikePost = async (postId: string) => {
-  return apiClient.get<ILikePostResponse>(POST_ENDPOINT.UNLIKE_POST(postId));
+  return apiClient.delete<ILikePostResponse>(POST_ENDPOINT.UNLIKE_POST(postId));
 };
 
 export const savePost = async (postId: string) => {
-  return apiClient.get<ISavePostResponse>(POST_ENDPOINT.SAVE_POST(postId));
+  return apiClient.post<ISavePostResponse>(POST_ENDPOINT.SAVE_POST(postId));
 };
 
 export const unsavePost = async (postId: string) => {
-  return apiClient.get<ISavePostResponse>(POST_ENDPOINT.UNSAVE_POST(postId));
+  return apiClient.delete<ISavePostResponse>(POST_ENDPOINT.UNSAVE_POST(postId));
 };

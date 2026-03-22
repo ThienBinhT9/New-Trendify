@@ -50,27 +50,29 @@ export class GetFollowingFeedUseCase {
 
     const result = await this.postRepo.findFeed({ authorIds, limit, cursor });
 
-    if (result.posts.length === 0) {
+    const activePosts = result.posts.filter((post) => post.isActive());
+
+    if (activePosts.length === 0) {
       return new Response.SuccessResponse({
         message: "Feed retrieved successfully",
         data: { posts: [], nextCursor: undefined },
       });
     }
 
-    const postIds = result.posts.map((p) => p.id!);
+    const postIds = activePosts.map((p) => p.id!);
 
     const [likedPostIds, savedPostIds, mediaDisplayMap] = await Promise.all([
       this.likeRepo.findLikedPostIds(viewerId, postIds),
       this.saveRepo.findSavedPostIds(viewerId, postIds),
       batchResolveMediaDisplays(
-        result.posts.map((p) => ({ id: p.id!, mediaIds: p.mediaIds })),
+        activePosts.map((p) => ({ id: p.id!, mediaIds: p.mediaIds })),
         this.storageSvc,
         (ids) => this.mediaRepo.findByIds(ids),
       ),
     ]);
 
     // Fetch author info for all posts
-    const authorIdsInDb = [...new Set(result.posts.map((p) => p.authorId))];
+    const authorIdsInDb = [...new Set(activePosts.map((p) => p.authorId))];
     const authors = await this.userRepo.findByIds(authorIdsInDb);
     const authorMap = new Map(authors.map((u) => [u.id, u]));
 
@@ -82,7 +84,7 @@ export class GetFollowingFeedUseCase {
     const avatarMediaEntities = await this.mediaRepo.findByIds([...new Set(avatarMediaIds)]);
     const avatarRecord = toMediaRecord(avatarMediaEntities);
 
-    const posts = result.posts
+    const posts = activePosts
       .map((post) => {
         const authorEntity = authorMap.get(post.authorId);
         if (!authorEntity) {

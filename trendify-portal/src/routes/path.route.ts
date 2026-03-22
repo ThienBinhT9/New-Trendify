@@ -6,6 +6,8 @@ export const SUB_PATH_PROFILE = {
   FOLLOWING: "following",
   IMAGES: "images",
   VIDEOS: "videos",
+  DRAFTS: "drafts",
+  SAVED: "saved",
 };
 
 export const SUB_PATH_SETTINGS = {
@@ -31,6 +33,7 @@ const ROUTE_PATHS = {
 
   FOLLOWING: "/following",
   MESSAGE: "/message",
+  POST_DETAIL: (id = ":id") => `/posts/${id}`,
 
   //SEARCH
   SEARCH: "/search",
@@ -50,5 +53,7 @@ const ROUTE_PATHS = {
   PROFILE_FOLLOWERS: (id = ":id") => `/profile/${id}/${SUB_PATH_PROFILE.FOLLOWERS}`,
   PROFILE_IMAGES: (id = ":id") => `/profile/${id}/${SUB_PATH_PROFILE.IMAGES}`,
   PROFILE_VIDEOS: (id = ":id") => `/profile/${id}/${SUB_PATH_PROFILE.VIDEOS}`,
+  PROFILE_DRAFTS: (id = ":id") => `/profile/${id}/${SUB_PATH_PROFILE.DRAFTS}`,
+  PROFILE_SAVED: (id = ":id") => `/profile/${id}/${SUB_PATH_PROFILE.SAVED}`,
 };
 export default ROUTE_PATHS;

@@ -1,11 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { App, Avatar, Dropdown, Flex, MenuProps } from "antd";
 
 import "./Post.scss";
 import ROUTE_PATHS from "@/routes/path.route";
 import { EVisibility } from "@/interfaces/common.interface";
-import { useAppDispatch } from "@/stores";
+import { EPostActions } from "@/stores/post/constants";
+import { useAppDispatch, useAppSelector } from "@/stores";
 import { IPost, IPostViewerContext } from "@/interfaces/post.interface";
 import { formatDate, formatTimeFromNow } from "@/utils/common.util";
 import { deletePostAction, savePostAction, unsavePostAction } from "@/stores/post/actions";
@@ -14,7 +15,6 @@ import Icon from "@/components/icon/Icon";
 import Text from "@/components/text/Text";
 import Tooltip from "@/components/tooltip/Tooltip";
 import ModalSettingPrivacyPost from "@/container/modal/SettingPrivacyPost";
-import { EPostActions } from "@/stores/post/constants";
 
 interface PostHeaderProps {
   post: IPost;
@@ -25,16 +25,29 @@ const PostHeader = ({ post, viewerContext }: PostHeaderProps) => {
   const { message, modal, notification } = App.useApp();
 
   const { author, settings, createdAt } = post;
-  const { canEdit, canDelete, canSave } = viewerContext;
+  const { canDelete, canSave, isAuthor } = viewerContext;
+  const currentUserId = useAppSelector((state) => state.auth.user?.id);
 
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
   const [showOptions, setShowOptions] = useState<boolean>(false);
   const [visibleModalPrivacy, setVisibleModalPrivacy] = useState<boolean>(false);
+  const [isSaved, setIsSaved] = useState<boolean>(viewerContext.isSaved);
 
-  const handleDeletePost = () => {
+  useEffect(() => {
+    setIsSaved(viewerContext.isSaved);
+  }, [post.id, viewerContext.isSaved]);
+
+  const handleOpenPrivacyModal = () => {
+    if (!isAuthor) return;
+
+    setVisibleModalPrivacy(true);
+  };
+
+  const handleDeletePost = async () => {
     if (!post?.id) return;
+
     modal.confirm({
       centered: true,
       icon: null,
@@ -46,7 +59,18 @@ const PostHeader = ({ post, viewerContext }: PostHeaderProps) => {
       onOk: async () => {
         try {
           await dispatch(deletePostAction(post.id)).unwrap();
-          message.success("Đã xoá bài viết");
+          notification.open({
+            key: `delete-toast-${post.id}`,
+            message: (
+              <Flex align="center" justify="space-between" style={{ width: "100%" }}>
+                <Text textType="SB16">Đã xoá bài viết</Text>
+              </Flex>
+            ),
+            placement: "bottom",
+            duration: 3,
+            className: "custom-snackbar-notification",
+            closeIcon: null,
+          });
         } catch {
           message.error("Xoá bài viết thất bại, vui lòng thử lại.");
         }
@@ -56,45 +80,50 @@ const PostHeader = ({ post, viewerContext }: PostHeaderProps) => {
 
   const handleSavePost = async () => {
     try {
-      const isCurrentlySaved = viewerContext.isSaved;
+      const isCurrentlySaved = isSaved;
+      let nextSavedState = isCurrentlySaved;
 
-      // if (isCurrentlySaved) {
-      //   await dispatch(unsavePostAction(post.id)).unwrap();
-      // } else {
-      //   await dispatch(savePostAction(post.id)).unwrap();
-      // }
+      if (isCurrentlySaved) {
+        const response = await dispatch(unsavePostAction(post.id)).unwrap();
+        nextSavedState = response?.isSaved ?? false;
+      } else {
+        const response = await dispatch(savePostAction(post.id)).unwrap();
+        nextSavedState = response?.isSaved ?? true;
+      }
+      setIsSaved(nextSavedState);
 
       const toastKey = `save-toast-${post.id}`;
+      const isSavedAfterMutation = nextSavedState;
 
       notification.open({
         key: toastKey,
         message: (
           <Flex align="center" justify="space-between" style={{ width: "100%" }}>
-            <Text textType="SB16" style={{ color: "var(--text-color)" }}>
-              {isCurrentlySaved ? "Đã bỏ lưu" : "Đã lưu"}
-            </Text>
+            <Text textType="SB16">{isSavedAfterMutation ? "Đã lưu" : "Đã bỏ lưu"}</Text>
             <Text
               textType="SB16"
-              style={{ cursor: "pointer", color: "var(--text-color)" }}
+              style={{ cursor: "pointer" }}
               onClick={async () => {
                 notification.destroy(toastKey);
+                if (isSavedAfterMutation) {
+                  navigate(ROUTE_PATHS.PROFILE_SAVED(currentUserId ?? author.id));
+                  return;
+                }
+
                 try {
-                  if (isCurrentlySaved) {
-                    await dispatch(savePostAction(post.id)).unwrap();
-                  } else {
-                    await dispatch(unsavePostAction(post.id)).unwrap();
-                  }
+                  await dispatch(savePostAction(post.id)).unwrap();
+                  setIsSaved(true);
                 } catch (err) {
-                  console.log("undo save error: ", err);
+                  console.log("undo unsave error: ", err);
                 }
               }}
             >
-              Hoàn tác
+              {isSavedAfterMutation ? "Xem tất cả" : "Hoàn tác"}
             </Text>
           </Flex>
         ),
         placement: "bottom",
-        duration: 100,
+        duration: 3,
         className: "custom-snackbar-notification",
         closeIcon: null,
       });
@@ -127,16 +156,14 @@ const PostHeader = ({ post, viewerContext }: PostHeaderProps) => {
             icon: <Icon name="SaveAltIcon" size={22} />,
             label: (
               <PostOptionItem
-                title={canSave && viewerContext.isSaved ? "Đã lưu bài viết" : "Lưu bài viết"}
-                description={
-                  canSave && viewerContext.isSaved ? "Nhấn để bỏ lưu" : "Thêm vào danh sách đã lưu"
-                }
+                title={isSaved ? "Đã lưu bài viết" : "Lưu bài viết"}
+                description={isSaved ? "Xoá khỏi danh sách đã lưu" : "Thêm vào danh sách đã lưu"}
               />
             ),
           },
         ]
       : []),
-    ...((canEdit || canSave) && canDelete ? [{ type: "divider" as const }] : []),
+    ...(canSave && canDelete ? [{ type: "divider" as const }] : []),
     ...(canDelete
       ? [
           {
@@ -177,7 +204,7 @@ const PostHeader = ({ post, viewerContext }: PostHeaderProps) => {
             </Tooltip>
             <div className="speator-dot" />
             <Tooltip title={isPublic ? "Public" : "Private"} placement="bottom">
-              <Flex className="post-privacy" onClick={() => setVisibleModalPrivacy(true)}>
+              <Flex className="post-privacy" onClick={handleOpenPrivacyModal}>
                 <Icon name={isPublic ? "GlobalIcon" : "LockAltIcon"} size={10} />
               </Flex>
             </Tooltip>
@@ -198,7 +225,7 @@ const PostHeader = ({ post, viewerContext }: PostHeaderProps) => {
 
       <ModalSettingPrivacyPost
         visibility={settings.visibility}
-        open={visibleModalPrivacy}
+        open={isAuthor && visibleModalPrivacy}
         onCancel={() => setVisibleModalPrivacy(false)}
       />
     </Flex>

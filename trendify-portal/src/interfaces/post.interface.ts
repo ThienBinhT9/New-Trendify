@@ -68,6 +68,10 @@ export interface IPostCreateInput {
   location?: IPostLocation;
   replyToId?: string;
   visibility?: EVisibility;
+  allowLike?: boolean;
+  allowSave?: boolean;
+  allowComment?: boolean;
+  allowShare?: boolean;
   isDraft?: boolean;
 }
 
@@ -87,6 +91,7 @@ export interface IPost {
   location?: IPostLocation;
   replyToId?: string;
   rootPostId?: string;
+  viewerContext?: IPostViewerContext;
 }
 
 export interface IPostViewerContext {

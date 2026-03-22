@@ -66,6 +66,32 @@ export const getFollowingPostsAction = createAsyncThunk(
   },
 );
 
+export const getSavedPostsAction = createAsyncThunk(
+  EPostActions.GET_SAVED_POSTS,
+  async (payload: { params?: IListParams }, { rejectWithValue }) => {
+    try {
+      const { params } = payload;
+      const response = await api.listSavedPosts(params);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
+export const getDraftPostsAction = createAsyncThunk(
+  EPostActions.GET_DRAFT_POSTS,
+  async (payload: { params?: IListParams }, { rejectWithValue }) => {
+    try {
+      const { params } = payload;
+      const response = await api.listDraftPosts(params);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
 export const likePostAction = createAsyncThunk(
   EPostActions.LIKE_POST,
   async (postId: string, { rejectWithValue }) => {

@@ -33,7 +33,15 @@ export class GetPostUseCase {
     const { viewerId, postId } = dto;
 
     const post = await this.postRepo.findById(postId);
-    if (!post || !post.isActive()) {
+    if (!post) {
+      throw new Response.NotFoundError("Post not found");
+    }
+
+    if (post.isDraft() && !post.isOwnedBy(viewerId)) {
+      throw new Response.NotFoundError("Post not found");
+    }
+
+    if (!post.isActive() && !post.isDraft()) {
       throw new Response.NotFoundError("Post not found");
     }
 

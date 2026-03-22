@@ -34,7 +34,7 @@ export class GetSavedPostsUseCase {
     const result = await this.saveRepo.findByUser(userId, limit, cursor);
 
     // Get post IDs from saves
-    const postIds = result.saves.map((s) => s.postId);
+    const postIds = result.saves.map((s) => String(s.postId));
     if (postIds.length === 0) {
       return new Response.SuccessResponse({
         message: "Saved posts retrieved successfully",
@@ -74,7 +74,7 @@ export class GetSavedPostsUseCase {
     // Maintain save order (newest saved first)
     const orderedPosts = result.saves
       .map((save) => {
-        const post = postMap.get(save.postId);
+        const post = postMap.get(String(save.postId));
         if (!post || post.isDeleted()) return null;
 
         const author = authorMap.get(post.authorId);

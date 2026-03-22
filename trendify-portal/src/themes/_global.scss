@@ -213,12 +213,18 @@ input:-webkit-autofill:active {
 
 // Global Snackbar Notification for actions like Post Save/Unsave
 .custom-snackbar-notification.ant-notification-notice {
+  --text-color: var(--text-color-light);
   border-radius: 999px !important;
 
   .ant-notification-notice-message {
     margin-bottom: 0 !important;
     margin-inline-start: 0 !important;
     width: 100%;
+    color: var(--text-color) !important;
+  }
+
+  .text-container,
+  .ant-typography {
     color: var(--text-color) !important;
   }
 

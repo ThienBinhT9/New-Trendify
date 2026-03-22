@@ -21,6 +21,15 @@ export interface CreatePostDTO {
   mentions?: IPostMention[];
   location?: IPostLocation;
   visibility?: ECommonVisibility;
+  allowLike?: boolean;
+  allowSave?: boolean;
+  allowShare?: boolean;
+  allowComment?: boolean;
+  allowDownload?: boolean;
+  canLike?: boolean;
+  canSave?: boolean;
+  canShare?: boolean;
+  canComment?: boolean;
   replyToId?: string;
   isDraft?: boolean;
 }

@@ -1,4 +1,4 @@
-import { Flex } from "antd";
+import { Flex, Switch } from "antd";
 
 import { EVisibility } from "@/interfaces/common.interface";
 
@@ -8,8 +8,16 @@ import Text from "@/components/text/Text";
 
 interface IProps {
   visibility: EVisibility;
+  canLike: boolean;
+  canComment: boolean;
+  canSave: boolean;
+  canShare: boolean;
   onBack: () => void;
   onSelect: (value: EVisibility) => void;
+  onTogglePermission: (
+    key: "canLike" | "canComment" | "canSave" | "canShare",
+    value: boolean,
+  ) => void;
 }
 
 const privacyOptions = [
@@ -27,7 +35,41 @@ const privacyOptions = [
   },
 ] as const;
 
-const PrivacyPanel = ({ visibility, onBack, onSelect }: IProps) => {
+const interactionOptions = [
+  {
+    key: "canLike",
+    title: "Cho phép thích",
+    description: "Mọi người có thể thả tim bài viết của bạn",
+  },
+  {
+    key: "canComment",
+    title: "Cho phép bình luận",
+    description: "Mọi người có thể bình luận bài viết của bạn",
+  },
+  {
+    key: "canSave",
+    title: "Cho phép lưu",
+    description: "Mọi người có thể lưu bài viết này",
+  },
+  {
+    key: "canShare",
+    title: "Cho phép chia sẻ",
+    description: "Mọi người có thể chia sẻ bài viết này",
+  },
+] as const;
+
+const PrivacyPanel = ({
+  visibility,
+  canLike,
+  canComment,
+  canSave,
+  canShare,
+  onBack,
+  onSelect,
+  onTogglePermission,
+}: IProps) => {
+  const permissions = { canLike, canComment, canSave, canShare };
+
   return (
     <Flex vertical className="post-modal-panel post-privacy-panel">
       <Flex className="post-modal-header">
@@ -75,6 +117,25 @@ const PrivacyPanel = ({ visibility, onBack, onSelect }: IProps) => {
               </Button>
             );
           })}
+        </Flex>
+
+        <Flex vertical className="post-privacy-permissions">
+          <Text textType="SB18">Ai có thể tương tác với bài đăng?</Text>
+
+          <Flex vertical className="post-privacy-permissions-list">
+            {interactionOptions.map((option) => (
+              <Flex key={option.key} className="post-privacy-permission-item">
+                <Flex vertical className="post-privacy-permission-copy">
+                  <Text textType="SB16">{option.title}</Text>
+                  <Text textType="R14">{option.description}</Text>
+                </Flex>
+                <Switch
+                  checked={permissions[option.key]}
+                  onChange={(checked) => onTogglePermission(option.key, checked)}
+                />
+              </Flex>
+            ))}
+          </Flex>
         </Flex>
       </Flex>
     </Flex>

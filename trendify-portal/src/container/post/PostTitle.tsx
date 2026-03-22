@@ -42,9 +42,10 @@ interface IProps {
   content: string;
   mentions: IPostMention[];
   hashtags: IPostHashtag[];
+  onSeeMore?: () => void;
 }
 
-const PostTitle = ({ expandedTitle = false, content, mentions, hashtags }: IProps) => {
+const PostTitle = ({ expandedTitle = false, content, mentions, hashtags, onSeeMore }: IProps) => {
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(expandedTitle);
 
@@ -94,6 +95,10 @@ const PostTitle = ({ expandedTitle = false, content, mentions, hashtags }: IProp
               className="post-content__see-more"
               onClick={(e) => {
                 e.stopPropagation();
+                if (onSeeMore) {
+                  onSeeMore();
+                  return;
+                }
                 setExpanded(true);
               }}
             >

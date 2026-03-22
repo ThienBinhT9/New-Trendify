@@ -92,4 +92,19 @@ export class MongooseSaveRepository
     const result = await SaveModel.deleteMany({ postId: new Types.ObjectId(postId) });
     return result.deletedCount;
   }
+
+  protected override mapToEntity(doc: any, EntityClass: new (props: ISaveProps, id?: string) => SaveEntity): SaveEntity {
+    if (!doc) throw new Error("Document not found");
+
+    const { _id, __v, userId, postId, createdAt } = doc;
+
+    return new EntityClass(
+      {
+        userId: userId?.toString?.() ?? String(userId),
+        postId: postId?.toString?.() ?? String(postId),
+        createdAt: createdAt ? new Date(createdAt) : new Date(),
+      },
+      _id.toString(),
+    );
+  }
 }

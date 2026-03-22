@@ -104,5 +104,10 @@ export interface IPostCreateInput {
   location?: IPostLocation;
   replyToId?: string;
   visibility?: ECommonVisibility;
+  allowLike?: boolean;
+  allowSave?: boolean;
+  allowShare?: boolean;
+  allowComment?: boolean;
+  allowDownload?: boolean;
   isDraft?: boolean;
 }

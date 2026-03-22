@@ -58,9 +58,7 @@ export const userPostsQuerySchema = z.object({
 // ============================================================================
 
 const mentionSchema = z.object({
-  userId: z
-    .string()
-    .refine((v) => MONGODB_OBJECTID_REGEX.test(v), { message: "Invalid user ID" }),
+  userId: z.string().refine((v) => MONGODB_OBJECTID_REGEX.test(v), { message: "Invalid user ID" }),
   username: z.string().min(1).max(50),
   startIndex: z.number().int().min(0),
   endIndex: z.number().int().min(0),
@@ -94,9 +92,16 @@ export const createPostSchema = z
       .optional(),
     mentions: z.array(mentionSchema).max(20).optional(),
     location: locationSchema.optional(),
-    visibility: z
-      .nativeEnum(ECommonVisibility, { message: "Invalid visibility" })
-      .optional(),
+    visibility: z.nativeEnum(ECommonVisibility, { message: "Invalid visibility" }).optional(),
+    allowLike: z.boolean().optional(),
+    allowSave: z.boolean().optional(),
+    allowShare: z.boolean().optional(),
+    allowComment: z.boolean().optional(),
+    allowDownload: z.boolean().optional(),
+    canLike: z.boolean().optional(),
+    canSave: z.boolean().optional(),
+    canShare: z.boolean().optional(),
+    canComment: z.boolean().optional(),
     replyToId: z
       .string()
       .refine((v) => MONGODB_OBJECTID_REGEX.test(v), { message: "Invalid reply ID" })
@@ -119,9 +124,7 @@ export const updatePostSchema = z
       .optional(),
     mentions: z.array(mentionSchema).max(20).optional(),
     location: locationSchema.nullable().optional(),
-    visibility: z
-      .nativeEnum(ECommonVisibility, { message: "Invalid visibility" })
-      .optional(),
+    visibility: z.nativeEnum(ECommonVisibility, { message: "Invalid visibility" }).optional(),
     allowLike: z.boolean().optional(),
     allowSave: z.boolean().optional(),
     allowShare: z.boolean().optional(),
