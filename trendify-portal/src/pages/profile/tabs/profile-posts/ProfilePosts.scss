@@ -2,10 +2,12 @@
   flex-direction: column;
   gap: 12px;
 
-  .post-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+  .profile-post-list {
+    width: 100%;
+  }
+
+  .profile-post-item {
+    margin-bottom: 16px;
   }
 }
 

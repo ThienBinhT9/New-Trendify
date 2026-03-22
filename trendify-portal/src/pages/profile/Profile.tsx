@@ -11,7 +11,7 @@ import {
   TabsProps,
 } from "antd";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
 import "./Profile.scss";
 import dayjs from "dayjs";
 
@@ -23,6 +23,7 @@ import { getProfileTab } from "@/utils/common.util";
 import { EProfileActions } from "@/stores/profile/constants";
 import { useImageUploadCrop } from "@/hooks";
 import { useAppDispatch, useAppSelector } from "@/stores";
+import { getUserPostsAction } from "@/stores/post/actions";
 import { confirmUploadAction, presignedAction } from "@/stores/upload/action";
 import { updateProfileAction, userProfileAction } from "@/stores/profile/actions";
 
@@ -35,18 +36,33 @@ import CropImageModal from "@/container/modal/CropImage";
 import FollowStatusCard from "@/container/card/FollowStatusCard";
 import FollowRequestCard from "@/container/card/FollowRequestCard";
 
-const baseProfileTabs: TabsProps["items"] = [
+const baseProfileTabs: NonNullable<TabsProps["items"]> = [
   { key: "", label: "Bài viết" },
   { key: SUB_PATH_PROFILE.INTRODUCE, label: "Giới thiệu" },
   { key: SUB_PATH_PROFILE.FRIENDS, label: "Bạn bè" },
 ];
 const OWNER_ONLY_PROFILE_TABS = new Set<string>([SUB_PATH_PROFILE.DRAFTS, SUB_PATH_PROFILE.SAVED]);
 
+const normalizeProfileTab = (tab?: string) => {
+  if (!tab) return "";
+
+  if (tab === SUB_PATH_PROFILE.FOLLOWERS || tab === SUB_PATH_PROFILE.FOLLOWING) {
+    return SUB_PATH_PROFILE.FRIENDS;
+  }
+
+  if (tab === SUB_PATH_PROFILE.PERSONAL_DETAIL) {
+    return SUB_PATH_PROFILE.INTRODUCE;
+  }
+
+  return tab;
+};
+
 const Profile = () => {
   const { message, modal } = App.useApp();
   const { profile, isOwnProfile, errorStatus } = useAppSelector((state) => state.profile);
 
   const loadingGetProfile = useAppSelector((state) => state.loading[EProfileActions.USER_PROFILE]);
+  const userPosts = useAppSelector((state) => state.posts.userPosts);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -55,9 +71,12 @@ const Profile = () => {
   const { id: userId } = useParams();
 
   const currentTab = getProfileTab(location.pathname);
+  const normalizedCurrentTab = normalizeProfileTab(currentTab);
+  const hasCachedProfilePosts = Boolean(userId && userPosts[userId]);
   const [isPreviewOpen, setIsPreviewOpen] = useState<boolean>(false);
   const [isIntroduceOpen, setIsIntroduceOpen] = useState<boolean>(false);
-  const profileTabs = useMemo<TabsProps["items"]>(() => {
+  const [activeProfileTab, setActiveProfileTab] = useState<string>(normalizedCurrentTab);
+  const profileTabs = useMemo<NonNullable<TabsProps["items"]>>(() => {
     if (!isOwnProfile) return baseProfileTabs;
 
     return [
@@ -228,22 +247,17 @@ const Profile = () => {
       : []),
   ];
 
-  const normalizeTab = (tab?: string) => {
-    if (!tab) return "";
-
-    if (tab === SUB_PATH_PROFILE.FOLLOWERS || tab === SUB_PATH_PROFILE.FOLLOWING) {
-      return SUB_PATH_PROFILE.FRIENDS;
-    }
-
-    if (tab === SUB_PATH_PROFILE.PERSONAL_DETAIL) {
-      return SUB_PATH_PROFILE.INTRODUCE;
-    }
-
-    return tab;
-  };
+  useEffect(() => {
+    setActiveProfileTab(normalizedCurrentTab);
+  }, [normalizedCurrentTab]);
 
   const handleChangeTab = (tab: string) => {
-    navigate(`${ROUTE_PATHS.PROFILE(userId)}${tab}`);
+    if (!userId) return;
+
+    setActiveProfileTab(tab);
+    startTransition(() => {
+      navigate(`${ROUTE_PATHS.PROFILE(userId)}${tab}`);
+    });
   };
 
   const handleGetProfile = useCallback(async () => {
@@ -259,6 +273,13 @@ const Profile = () => {
   useEffect(() => {
     handleGetProfile();
   }, [handleGetProfile]);
+
+  useEffect(() => {
+    if (!userId || loadingGetProfile) return;
+    if (currentTab === "" || hasCachedProfilePosts) return;
+
+    dispatch(getUserPostsAction({ userId }));
+  }, [currentTab, dispatch, hasCachedProfilePosts, loadingGetProfile, userId]);
 
   useEffect(() => {
     if (loadingGetProfile || isOwnProfile) return;
@@ -401,8 +422,7 @@ const Profile = () => {
           <Divider className="profile-header-divider" />
           <Flex justify="space-between">
             <Tabs
-              defaultActiveKey={profileTabs?.[0]?.key}
-              activeKey={normalizeTab(currentTab)}
+              activeKey={activeProfileTab}
               items={profileTabs.map((tab) => ({
                 ...tab,
                 disabled: loadingGetProfile,

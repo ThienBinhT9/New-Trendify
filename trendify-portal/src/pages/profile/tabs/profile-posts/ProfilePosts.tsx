@@ -1,8 +1,8 @@
 import { Flex } from "antd";
 import "../../Profile.scss";
 import "./ProfilePosts.scss";
-import { useCallback, useEffect } from "react";
-import InfiniteScroll from "react-infinite-scroll-component";
+import { useCallback, useEffect, useState } from "react";
+import { Virtuoso } from "react-virtuoso";
 import Post from "@/container/post/Post";
 import PostSkeleton from "@/container/skeleton/post_skeleton/PostSkeleton";
 import QuickPost from "@/container/quick-post/QuickPost";
@@ -20,14 +20,14 @@ const ProfilePosts = () => {
   const posts = profileData?.posts ?? [];
   const cursor = profileData?.cursor ?? null;
   const hasNext = profileData?.hasNext ?? false;
+  const isUserPostsLoading = !!loading[EPostActions.GET_USER_POSTS];
 
   const dispatch = useAppDispatch();
+  const [scrollParent, setScrollParent] = useState<HTMLElement | null>(null);
 
   const fetchPosts = useCallback(
     async (nextCursor?: string | null) => {
       try {
-        console.log({ profile });
-
         if (profile?.id) {
           await dispatch(
             getUserPostsAction({ userId: profile.id, params: { cursor: nextCursor } }),
@@ -37,42 +37,57 @@ const ProfilePosts = () => {
         console.error(error);
       }
     },
-    [profile?.id],
+    [dispatch, profile?.id],
   );
 
   useEffect(() => {
+    if (profileData || isUserPostsLoading) return;
     fetchPosts();
-  }, [fetchPosts]);
+  }, [fetchPosts, profileData, isUserPostsLoading]);
+
+  useEffect(() => {
+    setScrollParent(document.getElementById("mainLayoutChildren"));
+  }, []);
+
+  const renderLoading = () => (
+    <Flex vertical gap={32} className="mt-32 w-max">
+      {[1, 1, 1].map((_, index) => (
+        <PostSkeleton key={index} />
+      ))}
+    </Flex>
+  );
 
   return (
     <Flex className="profile-section-container profile-posts-container">
       {isOwnProfile && <QuickPost />}
-      {loading[EPostActions.GET_USER_POSTS] && !cursor ? (
-        <Flex vertical gap={32} className="mt-32 w-max">
-          {[1, 1, 1].map((_, index) => (
-            <PostSkeleton key={index} />
-          ))}
-        </Flex>
+      {isUserPostsLoading && posts.length === 0 ? (
+        renderLoading()
       ) : (
-        <InfiniteScroll
-          dataLength={posts.length}
-          hasMore={hasNext}
-          scrollableTarget="mainLayoutChildren"
-          className="post-list"
-          loader={
-            <Flex vertical gap={32}>
-              {[1, 1, 1].map((_, index) => (
-                <PostSkeleton key={index} />
-              ))}
-            </Flex>
-          }
-          next={() => {
-            if (!hasNext || !cursor) return;
+        <Virtuoso
+          customScrollParent={scrollParent ?? undefined}
+          data={posts}
+          className="profile-post-list"
+          style={{ height: "100%" }}
+          overscan={320}
+          computeItemKey={(_, post) => post.id}
+          endReached={() => {
+            if (!hasNext || !cursor || isUserPostsLoading) return;
             fetchPosts(cursor);
           }}
-        >
-          {posts.length ? posts.map((post) => <Post key={post.id} post={post} />) : null}
-        </InfiniteScroll>
+          itemContent={(_, post) => (
+            <div className="profile-post-item">
+              <Post post={post} />
+            </div>
+          )}
+          components={{
+            Footer: () => (
+              <div>
+                {isUserPostsLoading && posts.length ? renderLoading() : null}
+                <div style={{ height: "12px" }} />
+              </div>
+            ),
+          }}
+        />
       )}
     </Flex>
   );
