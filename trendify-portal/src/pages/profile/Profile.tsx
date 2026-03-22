@@ -58,7 +58,7 @@ const normalizeProfileTab = (tab?: string) => {
 };
 
 const Profile = () => {
-  const { message, modal } = App.useApp();
+  const { message, modal, notification } = App.useApp();
   const { profile, isOwnProfile, errorStatus } = useAppSelector((state) => state.profile);
 
   const loadingGetProfile = useAppSelector((state) => state.loading[EProfileActions.USER_PROFILE]);
@@ -144,11 +144,24 @@ const Profile = () => {
 
   const handleCopyLink = async () => {
     const profileUrl = `${window.location.origin}/profile/${userId}`;
-    console.log({ profileUrl });
 
-    navigator.clipboard.writeText(profileUrl).then(() => {
-      message.success("Đã sao chép liên kết");
-    });
+    try {
+      await navigator.clipboard.writeText(profileUrl);
+      notification.open({
+        key: `copy-link-toast-${userId}`,
+        message: (
+          <Flex align="center" justify="center">
+            <Text textType="SB16">Đã sao chép liên kết</Text>
+          </Flex>
+        ),
+        placement: "bottom",
+        duration: 3,
+        className: "custom-snackbar-notification",
+        closeIcon: null,
+      });
+    } catch {
+      message.error("Sao chép liên kết thất bại, vui lòng thử lại.");
+    }
   };
 
   const handleBlockUser = () => {
@@ -175,7 +188,18 @@ const Profile = () => {
         try {
           await new Promise((resolve) => setTimeout(resolve, 1500));
           await dispatch(blockAction(userId)).unwrap();
-          message.success("Đã chặn người dùng");
+          notification.open({
+            key: `block-user-toast-${userId}`,
+            message: (
+              <Flex align="center" justify="center">
+                <Text textType="SB16">Đã chặn người dùng</Text>
+              </Flex>
+            ),
+            placement: "bottom",
+            duration: 3,
+            className: "custom-snackbar-notification",
+            closeIcon: null,
+          });
           navigate(ROUTE_PATHS.HOME);
         } catch {
           message.error("Chặn người dùng thất bại, vui lòng thử lại.");
@@ -446,6 +470,10 @@ const Profile = () => {
         </Flex>
       </Flex>
 
+      {/* ======================= Content ======================= */}
+      <Outlet />
+
+      {/* ======================= Modal ======================= */}
       <Modal
         open={isIntroduceOpen}
         onCancel={() => setIsIntroduceOpen(false)}
@@ -492,9 +520,6 @@ const Profile = () => {
           </div>
         </div>
       </Modal>
-
-      {/* Content */}
-      <Outlet />
 
       {/* ======================= Start Upload ======================= */}
       <input
