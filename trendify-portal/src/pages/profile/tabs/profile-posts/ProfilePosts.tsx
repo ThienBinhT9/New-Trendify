@@ -9,6 +9,8 @@ import QuickPost from "@/container/quick-post/QuickPost";
 import { getUserPostsAction } from "@/stores/post/actions";
 import { useAppDispatch, useAppSelector } from "@/stores";
 import { EPostActions } from "@/stores/post/constants";
+import EmptyState from "@/container/empty/EmptyState";
+import Icon from "@/components/icon/Icon";
 
 const ProfilePosts = () => {
   const loading = useAppSelector((state) => state.loading);
@@ -62,7 +64,7 @@ const ProfilePosts = () => {
       {isOwnProfile && <QuickPost />}
       {isUserPostsLoading && posts.length === 0 ? (
         renderLoading()
-      ) : (
+      ) : posts.length > 0 ? (
         <Virtuoso
           customScrollParent={scrollParent ?? undefined}
           data={posts}
@@ -83,12 +85,21 @@ const ProfilePosts = () => {
             Footer: () => (
               <div>
                 {isUserPostsLoading && posts.length ? renderLoading() : null}
-                <div style={{ height: "12px" }} />
+                <div className="list-bottom-spacer" />
               </div>
             ),
           }}
         />
-      )}
+      ) : isOwnProfile ? (
+        <EmptyState
+          variant="green"
+          icon={<Icon name="ImagePenIcon" size={28} />}
+          title="Chưa có bài viết nào"
+          description="Chia sẻ khoảnh khắc đầu tiên của bạn với mọi người"
+          ctaLabel="Đăng bài ngay"
+          onCtaClick={() => {}}
+        />
+      ) : null}
     </Flex>
   );
 };

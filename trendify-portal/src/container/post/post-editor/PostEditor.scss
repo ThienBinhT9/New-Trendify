@@ -43,6 +43,10 @@
       justify-content: space-between;
       border-bottom: 1px solid var(--gray-200);
 
+      @include mobile-medium {
+        padding: 12px 2px;
+      }
+
       .post-head-btn,
       .post-icon-btn {
         border: none !important;
@@ -61,6 +65,10 @@
       margin: 6px 6px 0 0;
       gap: 12px;
       padding: 10px 12px 16px 24px;
+
+      @include mobile-medium {
+        padding: 10px 12px 12px;
+      }
 
       .post-location-tag {
         gap: 4px;
@@ -133,6 +141,10 @@
       position: relative;
       z-index: 1;
 
+      @include mobile-medium {
+        padding: 0px 10px 10px;
+      }
+
       .post-toolbar-btn {
         width: 42px;
         height: 42px;
@@ -169,6 +181,10 @@
       justify-content: space-between;
       align-items: center;
       margin-top: auto;
+
+      @include mobile-medium {
+        padding: 12px 10px;
+      }
 
       .post-reply-option {
         cursor: pointer;
@@ -318,6 +334,10 @@
         padding-right: 14px;
         margin-right: 4px;
         margin-top: 4px;
+
+        @include mobile-medium {
+          padding: 14px 12px 16px;
+        }
       }
 
       .post-privacy-description {

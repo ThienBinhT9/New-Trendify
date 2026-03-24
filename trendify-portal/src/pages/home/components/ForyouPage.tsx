@@ -59,7 +59,7 @@ const ForyouPage = ({ isActive = false, prefetch = false }: ForyouPageProps) => 
 
   const renderLoading = () => (
     <Flex vertical gap={32} className="mt-32">
-      {[1, 1, 1].map((_, index) => (
+      {[1, 1, 1, 1, 1, 1, 1, 1].map((_, index) => (
         <PostSkeleton key={index} />
       ))}
     </Flex>
@@ -91,7 +91,7 @@ const ForyouPage = ({ isActive = false, prefetch = false }: ForyouPageProps) => 
               Footer: () => (
                 <div>
                   {isLoading ? renderLoading() : null}
-                  <div style={{ height: "12px" }} />
+                  <div className="list-bottom-spacer" />
                 </div>
               ),
             }}

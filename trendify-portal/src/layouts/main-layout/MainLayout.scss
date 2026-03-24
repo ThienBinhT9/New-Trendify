@@ -1,5 +1,13 @@
 .main-layout-body {
-  height: 100vh;
+  height: 100dvh;
+
+  @include mobile-medium {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
 
   .main-layout-content {
     display: flex;
@@ -8,6 +16,11 @@
     .main-layout-children {
       padding: 12px;
       overflow-y: auto;
+      min-height: 80dvh;
+
+      @include mobile-medium {
+        margin-bottom: var(--bottom-height-pc);
+      }
     }
   }
 }

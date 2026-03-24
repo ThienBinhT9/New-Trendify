@@ -61,6 +61,11 @@ html *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
   color: #000;
+
+  @include mobile-medium {
+    width: 4px;
+    height: 4px;
+  }
 }
 
 html *::-webkit-scrollbar-thumb {
@@ -230,5 +235,13 @@ input:-webkit-autofill:active {
 
   .ant-notification-close-icon {
     display: none !important;
+  }
+}
+
+.list-bottom-spacer {
+  height: 12px;
+
+  @include mobile-medium {
+    height: calc(var(--bottom-height-pc));
   }
 }

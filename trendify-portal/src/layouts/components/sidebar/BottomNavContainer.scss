@@ -1,0 +1,51 @@
+.bottom-nav {
+  display: none; // ẩn mặc định trên desktop
+
+  @include mobile-medium {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--bottom-height-pc);
+    z-index: 1000;
+
+    background-color: var(--switch-bg);
+    box-shadow: 0 -2px 8px var(--box-shadow-color);
+    padding: 0 8px;
+  }
+
+  &__item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    opacity: 0.4;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 0.7;
+    }
+
+    &--active {
+      opacity: 1;
+    }
+  }
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+}

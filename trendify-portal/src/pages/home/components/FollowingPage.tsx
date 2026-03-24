@@ -8,6 +8,8 @@ import PostSkeleton from "@/container/skeleton/post_skeleton/PostSkeleton";
 import { useAppDispatch, useAppSelector } from "@/stores";
 import { getFollowingPostsAction } from "@/stores/post/actions";
 import { EPostActions } from "@/stores/post/constants";
+import EmptyState from "@/container/empty/EmptyState";
+import Icon from "@/components/icon/Icon";
 
 interface FollowingProps {
   isActive?: boolean;
@@ -84,7 +86,16 @@ const Following = ({ isActive = true, prefetch = false }: FollowingProps) => {
               ),
             }}
           />
-        ) : null}
+        ) : (
+          <EmptyState
+            variant="green"
+            icon={<Icon name="UserPlusIcon" size={28} />}
+            title="Feed đang trống"
+            description="Theo dõi thêm ai đó để thấy bài viết mới nhất của họ"
+            ctaLabel="Tìm người để theo dõi"
+            onCtaClick={() => {}}
+          />
+        )}
       </Flex>
     </Flex>
   );

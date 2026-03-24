@@ -3,6 +3,10 @@
   gap: 24px;
   justify-content: center;
 
+  @include mobile-medium {
+    margin-top: var(--header-height-pc);
+  }
+
   .home-content {
     flex: 1;
     flex-direction: column;
@@ -118,6 +122,10 @@
   width: 100%;
   gap: 24px;
   justify-content: center;
+
+  @include mobile-medium {
+    margin-top: var(--header-height-pc);
+  }
 
   .following-content {
     flex: 1;

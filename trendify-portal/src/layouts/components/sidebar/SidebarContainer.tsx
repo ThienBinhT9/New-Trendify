@@ -1,6 +1,6 @@
-import { Flex, Menu, MenuProps, Popover } from "antd";
+import { Flex, Grid, Menu, MenuProps, Popover } from "antd";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import "./SidebarContainer.scss";
 import { LogoIcon } from "@/assets/images";
@@ -20,13 +20,22 @@ const SidebarContainer = (props: SidebarContainerProps) => {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const screens = Grid.useBreakpoint();
+  const isBelowTablet = !screens.md;
 
   const [collapsed, setCollapsed] = useState<boolean>(true);
   const [popoverOpen, setPopoverOpen] = useState<boolean>(false);
 
   const handleToggleCollapse = () => {
+    if (isBelowTablet) return;
     setCollapsed((prev) => !prev);
   };
+
+  useEffect(() => {
+    if (isBelowTablet && !collapsed) {
+      setCollapsed(true);
+    }
+  }, [collapsed, isBelowTablet]);
 
   const getSelectedKey = (): string => {
     const matched = [...items]

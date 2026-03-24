@@ -39,7 +39,7 @@ import FollowRequestCard from "@/container/card/FollowRequestCard";
 const baseProfileTabs: NonNullable<TabsProps["items"]> = [
   { key: "", label: "Bài viết" },
   { key: SUB_PATH_PROFILE.INTRODUCE, label: "Giới thiệu" },
-  { key: SUB_PATH_PROFILE.FRIENDS, label: "Bạn bè" },
+  { key: SUB_PATH_PROFILE.FOLLOWING, label: "Bạn bè" },
 ];
 const OWNER_ONLY_PROFILE_TABS = new Set<string>([SUB_PATH_PROFILE.DRAFTS, SUB_PATH_PROFILE.SAVED]);
 
@@ -355,7 +355,7 @@ const Profile = () => {
             </>
           )}
         </Flex>
-        <Flex vertical className="pl-32 pr-32">
+        <Flex vertical className="header-information">
           <Flex className="header-info">
             <Flex className="header-info-avatar">
               <Dropdown
@@ -408,43 +408,45 @@ const Profile = () => {
                   {profile?.about && <Text>{`${profile?.about}`}</Text>}
                 </Skeleton>
               </Flex>
-              {!loadingGetProfile &&
-                (isOwnProfile ? (
-                  <Flex gap={6}>
-                    <Button
-                      className="header-info-btn"
-                      icon={<Icon name="PenIcon" size={14} />}
-                      onClick={() => handleChangeTab(SUB_PATH_PROFILE.INTRODUCE)}
-                    >
-                      <Text textType="M14">Chỉnh sửa trang cá nhân</Text>
-                    </Button>
-                  </Flex>
-                ) : (
-                  <Flex gap={6}>
-                    <Button
-                      className="header-info-btn"
-                      icon={<Icon name="MessengerIcon" size={18} />}
-                      onClick={() => navigate(ROUTE_PATHS.MESSAGE)}
-                    >
-                      <Text textType="M14">Message</Text>
-                    </Button>
-                    {profile?.viewerContext && (
-                      <FollowStatusCard
-                        relationship={{
-                          viewerContext: profile?.viewerContext,
-                          id: profile?.id,
-                          firstName: profile?.firstName,
-                          lastName: profile?.lastName,
-                          username: profile?.username,
-                        }}
-                      />
-                    )}
-                  </Flex>
-                ))}
+              <Flex className="header-info-action">
+                {!loadingGetProfile &&
+                  (isOwnProfile ? (
+                    <Flex gap={6}>
+                      <Button
+                        className="header-info-btn"
+                        icon={<Icon name="PenIcon" size={14} />}
+                        onClick={() => handleChangeTab(SUB_PATH_PROFILE.INTRODUCE)}
+                      >
+                        <Text textType="M14">Chỉnh sửa trang cá nhân</Text>
+                      </Button>
+                    </Flex>
+                  ) : (
+                    <Flex gap={6}>
+                      <Button
+                        className="header-info-btn"
+                        icon={<Icon name="MessengerIcon" size={18} />}
+                        onClick={() => navigate(ROUTE_PATHS.MESSAGE)}
+                      >
+                        <Text textType="M14">Message</Text>
+                      </Button>
+                      {profile?.viewerContext && (
+                        <FollowStatusCard
+                          relationship={{
+                            viewerContext: profile?.viewerContext,
+                            id: profile?.id,
+                            firstName: profile?.firstName,
+                            lastName: profile?.lastName,
+                            username: profile?.username,
+                          }}
+                        />
+                      )}
+                    </Flex>
+                  ))}
+              </Flex>
             </Flex>
           </Flex>
           <Divider className="profile-header-divider" />
-          <Flex justify="space-between">
+          <Flex justify="space-between" align="center" gap={8}>
             <Tabs
               activeKey={activeProfileTab}
               items={profileTabs.map((tab) => ({

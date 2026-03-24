@@ -1,4 +1,4 @@
-import { Flex, Modal, Tabs, TabsProps } from "antd";
+import { Flex, Grid, Modal, Tabs, TabsProps } from "antd";
 import "./ProfileIntroduce.scss";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
@@ -11,11 +11,13 @@ import PersonalInfoTab from "./components/PersonalInfo";
 const ProfileIntroduce = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const screens = Grid.useBreakpoint();
 
   const { id: userId } = useParams();
 
   const [isDirty, setIsDirty] = useState<boolean>(false);
   const [pendingTab, setPendingTab] = useState<string | null>(null);
+  const tabPosition: TabsProps["tabPosition"] = !screens.sm ? "top" : "left";
 
   const activeKey = location.pathname.includes(SUB_PATH_PROFILE.PERSONAL_DETAIL)
     ? SUB_PATH_PROFILE.PERSONAL_DETAIL
@@ -76,7 +78,7 @@ const ProfileIntroduce = () => {
       </Modal>
       <Tabs
         destroyInactiveTabPane
-        tabPosition={"left"}
+        tabPosition={tabPosition}
         items={introduce_tabs}
         activeKey={activeKey}
         onChange={handleChangeTab}

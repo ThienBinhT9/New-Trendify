@@ -4,6 +4,11 @@
   justify-content: center;
   width: 1024px;
   margin: 0 auto;
+
+  @include tablet {
+    padding: 12px 0px;
+    width: 100%;
+  }
 }
 
 // ── Shared card base ────────────────────────────────────────────────────────
@@ -38,12 +43,22 @@
 .settings-two-col-card {
   max-width: 1024px;
   min-height: 320px;
+
+  @include tablet {
+    flex-direction: column;
+  }
 }
 
 .settings-col-divider {
   width: 1px;
   background-color: var(--border-color);
   flex-shrink: 0;
+
+  @include tablet {
+    width: 100%;
+    height: 1px;
+    margin: 12px 0;
+  }
 }
 
 // ── Left nav ────────────────────────────────────────────────────────────────
@@ -52,6 +67,10 @@
   flex-shrink: 0;
   padding: 8px;
   flex-direction: column;
+
+  @include tablet {
+    flex: unset;
+  }
 
   .settings-nav-item {
     justify-content: flex-start !important;

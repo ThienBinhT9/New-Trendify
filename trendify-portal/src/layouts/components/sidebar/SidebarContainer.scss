@@ -13,6 +13,10 @@
     padding-left: 6px;
     padding-right: 6px;
 
+    @include tablet-up {
+      width: 200px;
+    }
+
     .sidebar-arrow-icon {
       transform: rotate(0deg);
       transition: 0.2s;
@@ -98,5 +102,9 @@
     height: 46px;
     margin: 4px;
     background-color: var(--bg-body);
+
+    @include mobile {
+      display: none;
+    }
   }
 }

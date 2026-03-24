@@ -10,7 +10,6 @@ import { Plugin } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 
 import { useMention } from "@/hooks";
-import { EVisibility } from "@/interfaces/common.interface";
 import { PostPanelKey } from "../PostCreate";
 import { listFollowing } from "@/stores/profile/api";
 import { useAppSelector } from "@/stores";
@@ -26,7 +25,6 @@ import { EPostActions } from "@/stores/post/constants";
 
 interface IProps {
   selectedLocation?: IPostLocation | null;
-  selectedVisibility: EVisibility;
   editorValue: string;
   editorDoc: JSONContent | null;
   handleChange: ReturnType<typeof useMention>["handleChange"];
@@ -98,7 +96,6 @@ const HashtagHighlight = Extension.create({
 
 const ComposerPanel = ({
   selectedLocation,
-  selectedVisibility,
   editorValue,
   editorDoc,
   handleChange,
@@ -107,7 +104,6 @@ const ComposerPanel = ({
   onCloseModal,
   onNavigatePanel,
 }: IProps) => {
-  const privacyLabel = selectedVisibility === EVisibility.public ? "Công khai" : "Riêng tư";
   const loading = useAppSelector((state) => state.loading);
   const authUser = useAppSelector((state) => state.auth.user);
 
@@ -561,17 +557,7 @@ const ComposerPanel = ({
             className="post-reply-option"
             onClick={() => onNavigatePanel("privacy")}
           >
-            {`Các lựa chọn để kiểm soát câu trả lời`}
-          </Text>
-          <Text textType="M14" onClick={() => onNavigatePanel("privacy")} style={{ opacity: 0.4 }}>
-            {`|`}
-          </Text>
-          <Text
-            textType="M14"
-            className="post-reply-option"
-            onClick={() => onNavigatePanel("privacy")}
-          >
-            {`${privacyLabel}`}
+            {`Ai có thể trả lời`}
           </Text>
         </Flex>
         <Button

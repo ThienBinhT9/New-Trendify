@@ -105,9 +105,7 @@ const SignIn = () => {
         >
           <Text textType="M14">Sign In</Text>
         </Button>
-        <Divider>
-          <Text>Or</Text>
-        </Divider>
+        <Divider>Or</Divider>
         <Flex vertical gap={12}>
           <Button className="guest-btn btn-transparent" icon={<GoogleIcon />}>
             <Text textType="M12">Continue with Google</Text>

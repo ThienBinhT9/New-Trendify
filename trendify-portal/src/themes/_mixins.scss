@@ -1,17 +1,27 @@
+@use "./breakpoints" as *;
+
 @mixin shadow-float {
-  box-shadow: 0 12px 15px 0 rgba(0, 0, 0, 0.22), 0 17px 20px 0 rgba(0, 0, 0, 0.12);
+  box-shadow:
+    0 12px 15px 0 rgba(0, 0, 0, 0.22),
+    0 17px 20px 0 rgba(0, 0, 0, 0.12);
 }
 
 @mixin shadow-high {
-  box-shadow: 0 5px 10px 0 rgba(0, 0, 0, 0.15), 0 4px 14px 0 rgba(0, 0, 0, 0.12);
+  box-shadow:
+    0 5px 10px 0 rgba(0, 0, 0, 0.15),
+    0 4px 14px 0 rgba(0, 0, 0, 0.12);
 }
 
 @mixin shadow-mid {
-  box-shadow: 0 3px 6px 0 rgba(0, 0, 0, 0.15), 0 2px 10px 0 rgba(0, 0, 0, 0.12);
+  box-shadow:
+    0 3px 6px 0 rgba(0, 0, 0, 0.15),
+    0 2px 10px 0 rgba(0, 0, 0, 0.12);
 }
 
 @mixin shadow-low {
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12),
+  box-shadow:
+    0 2px 2px 0 rgba(0, 0, 0, 0.14),
+    0 1px 5px 0 rgba(0, 0, 0, 0.12),
     0 3px 1px -2px rgba(0, 0, 0, 0.2);
 }
 
@@ -38,4 +48,51 @@
     calc(#{$min}px + #{$valDiff} * ((100dvh - #{$minViewport}px) / #{$vhDiff})),
     #{$max}px
   );
+}
+
+// PC trở lên
+@mixin pc-only {
+  @media (min-width: $breakpoint-start-pc) {
+    @content;
+  }
+}
+
+// Tablet range: 768px – 1023px
+@mixin tablet-only {
+  @media (min-width: $breakpoint-start-tablet) and (max-width: $breakpoint-end-tablet) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (max-width: $breakpoint-end-tablet) {
+    @content;
+  }
+}
+
+@mixin tablet-up {
+  @media (min-width: $breakpoint-start-tablet) {
+    @content;
+  }
+}
+
+// Mobile: dưới 767px
+@mixin mobile {
+  @media (max-width: $breakpoint-end-mobile) {
+    @content;
+  }
+}
+
+// Mobile nhỏ: dưới 560px
+@mixin mobile-medium {
+  @media (max-width: $breakpoint-end-mobile-medium) {
+    @content;
+  }
+}
+
+// Mobile nhỏ: dưới 520px
+@mixin mobile-small {
+  @media (max-width: $breakpoint-end-mobile-small) {
+    @content;
+  }
 }

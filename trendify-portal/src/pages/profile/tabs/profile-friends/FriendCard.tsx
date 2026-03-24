@@ -1,4 +1,4 @@
-import { Flex, Image } from "antd";
+import { Avatar, Flex } from "antd";
 
 import "./ProfileFriends.scss";
 import Text from "@/components/text/Text";
@@ -35,11 +35,7 @@ const FriendCard = (props: Props) => {
 
   return (
     <Flex className="friend-card" onClick={handlePress}>
-      <Image
-        preview={{ mask: null }}
-        className="friend-card-avatar"
-        src={relationship.profilePicture?.small}
-      />
+      <Avatar className="friend-card-avatar" src={relationship.profilePicture?.small} />
       <Flex flex={1} vertical gap={4}>
         <Text textType="SB16">{`${relationship?.firstName} ${relationship?.lastName}`}</Text>
         <Text textType="R14" className="friend-card-mutial">

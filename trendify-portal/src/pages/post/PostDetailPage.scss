@@ -5,6 +5,11 @@
   justify-content: center;
   padding: 12px 0 24px;
 
+  @include mobile-medium {
+    padding-top: 0;
+    margin-top: calc(var(--bottom-height-pc) - 4px);
+  }
+
   .post-detail-page__content {
     width: 100%;
     max-width: 680px;
@@ -24,6 +29,10 @@
     z-index: 12;
     box-shadow: none;
     transition: box-shadow 0.3s ease;
+
+    @include mobile-medium {
+      top: var(--bottom-height-pc);
+    }
   }
 
   .post-detail-page__comment-input--pinned {
@@ -33,5 +42,13 @@
   .post-detail-page__empty {
     min-height: 120px;
     align-items: center;
+  }
+}
+
+.header-post-detail {
+  display: none;
+
+  @include mobile-medium {
+    display: flex;
   }
 }

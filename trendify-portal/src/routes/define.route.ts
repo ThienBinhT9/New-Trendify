@@ -40,6 +40,7 @@ import SettingsDetailPanel from "@/pages/settings/components/SettingDetailPanel"
 import Activity from "@/pages/activity/Activity";
 import Home from "@/pages/home/Home";
 import PostDetailPage from "@/pages/post/PostDetailPage";
+import PostDetailHeader from "@/pages/post/PostDetailHeader";
 
 const EmptyRoute: React.FC = () => null;
 
@@ -103,6 +104,7 @@ export const privateRoutes: IRoute[] = [
     layout: MainLayout,
     element: PostDetailPage,
     sidebar: HomeSidebar,
+    header: PostDetailHeader,
   },
   {
     path: ROUTE_PATHS.MESSAGE,

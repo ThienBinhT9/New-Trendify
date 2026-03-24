@@ -50,6 +50,9 @@ const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         colorPrimary: "#aabb9e",
         colorBgContainer: darkMode ? "#1f1f1f" : "#ffffff",
         colorBgTextActive: "#ff5733",
+        screenXSMax: 560,
+        screenSM: 561,
+        screenSMMin: 561,
       },
       components: {
         Menu: {

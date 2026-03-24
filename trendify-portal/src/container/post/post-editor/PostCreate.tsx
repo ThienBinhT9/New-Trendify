@@ -212,7 +212,6 @@ const PostCreate = ({ opened, onClose }: IProps) => {
               {activePanel === "composer" && (
                 <ComposerPanel
                   selectedLocation={selectedLocation}
-                  selectedVisibility={selectedVisibility}
                   editorValue={editorValue}
                   editorDoc={editorDoc}
                   handleChange={handleChange}
