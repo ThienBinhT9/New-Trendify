@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Empty, Flex } from "antd";
+import { Empty, Flex, Spin } from "antd";
 import { useParams } from "react-router-dom";
+import { Virtuoso } from "react-virtuoso";
 
 import "./PostDetailPage.scss";
 
@@ -8,41 +9,13 @@ import Post from "@/container/post/Post";
 import { useAppDispatch, useAppSelector } from "@/stores";
 import { IPost } from "@/interfaces/post.interface";
 import { IComment } from "@/interfaces/comment.interface";
-import { getPostAction } from "@/stores/post/actions";
+import { getPostAction, getPostCommentsAction } from "@/stores/post/actions";
 import { EPostActions } from "@/stores/post/constants";
 import PostCommentItem from "@/container/post/post-comment/PostCommentItem";
 import PostCommentInput, {
   IPostCommentInputRef,
 } from "@/container/post/post-comment/PostCommentInput";
 import PostSkeleton from "@/container/skeleton/post_skeleton/PostSkeleton";
-
-const mockComment: IComment = {
-  id: "comment_001",
-  postId: "",
-  content:
-    "Bài viết hay quá, mình cũng từng đi chỗ này rồi. Cảm ơn bạn đã chia sẻ trải nghiệm nhé!",
-  mentions: [],
-  hashtags: [],
-  author: {
-    id: "697ecce7e4ba55404989e3b5",
-    username: "linhpham",
-    displayName: "Linh Phạm",
-    profilePicture: { original: "https://i.pravatar.cc/150?img=9" },
-  },
-  counters: {
-    likeCount: 12,
-    replyCount: 2,
-  },
-  viewerContext: {
-    isAuthorPost: false,
-    isAuthor: false,
-    isLiked: false,
-    canDelete: false,
-  },
-  parentId: null,
-  createdAt: "2026-03-11T10:15:00.000Z",
-  updatedAt: "2026-03-11T10:15:00.000Z",
-};
 
 const PostDetailPage = () => {
   const { id: postId } = useParams<{ id: string }>();
@@ -58,6 +31,9 @@ const PostDetailPage = () => {
   const savedPosts = useAppSelector((state) => state.posts.savedPosts.posts);
   const followingPosts = useAppSelector((state) => state.posts.followingPosts.posts);
   const loadingPostDetail = useAppSelector((state) => state.loading[EPostActions.GET_POST_DETAIL]);
+  const loadingPostComments = useAppSelector(
+    (state) => state.loading[EPostActions.GET_POST_COMMENTS],
+  );
 
   const cachedPost = useMemo(() => {
     if (!postId) return undefined;
@@ -80,6 +56,10 @@ const PostDetailPage = () => {
   }, [draftPosts, followingPosts, postId, savedPosts, userPosts]);
 
   const [postDetail, setPostDetail] = useState<IPost | null>(cachedPost ?? null);
+  const [comments, setComments] = useState<IComment[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [isLoadingMoreComments, setIsLoadingMoreComments] = useState<boolean>(false);
+  const [scrollParent, setScrollParent] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     const scrollContainer = document.getElementById("mainLayoutChildren");
@@ -127,6 +107,72 @@ const PostDetailPage = () => {
     };
   }, [postDetail?.id]);
 
+  useEffect(() => {
+    setScrollParent(document.getElementById("mainLayoutChildren"));
+  }, []);
+
+  const fetchPostComments = useCallback(
+    async (
+      targetPostId: string,
+      options?: {
+        cursor?: string | null;
+        append?: boolean;
+      },
+    ) => {
+      try {
+        const { cursor, append = false } = options || {};
+
+        const response = await dispatch(
+          getPostCommentsAction({
+            postId: targetPostId,
+            params: { limit: 20, cursor },
+          }),
+        ).unwrap();
+        const fetchedComments = response.comments || [];
+
+        setComments((prevComments) => {
+          if (!append) {
+            return fetchedComments;
+          }
+
+          const existingIds = new Set(prevComments.map((comment) => comment.id));
+          const dedupedIncoming = fetchedComments.filter((comment) => !existingIds.has(comment.id));
+
+          return [...prevComments, ...dedupedIncoming];
+        });
+        setNextCursor(response.nextCursor || null);
+      } catch (error) {
+        console.log("fetch post comments error:", error);
+      } finally {
+        setIsLoadingMoreComments(false);
+      }
+    },
+    [dispatch],
+  );
+
+  useEffect(() => {
+    if (!postId) {
+      setComments([]);
+      return;
+    }
+
+    setComments([]);
+    setNextCursor(null);
+    fetchPostComments(postId);
+  }, [fetchPostComments, postId]);
+
+  const loadMoreComments = useCallback(() => {
+    if (!postId || !nextCursor || isLoadingMoreComments || loadingPostComments) {
+      return;
+    }
+
+    setIsLoadingMoreComments(true);
+    fetchPostComments(postId, {
+      cursor: nextCursor,
+      append: true,
+    });
+  }, [fetchPostComments, isLoadingMoreComments, loadingPostComments, nextCursor, postId]);
+
   const measurePinStart = useCallback(() => {
     const scrollContainer = document.getElementById("mainLayoutChildren");
     const commentInput = commentInputRef.current;
@@ -168,10 +214,42 @@ const PostDetailPage = () => {
     };
   }, [measurePinStart, updatePinnedState, postDetail]);
 
-  const comment = useMemo(() => {
-    if (!postId) return mockComment;
-    return { ...mockComment, postId };
-  }, [postId]);
+  const handleCommentSubmitted = useCallback((comment: IComment) => {
+    setComments((prevComments) => {
+      const exists = prevComments.some((item) => item.id === comment.id);
+      if (exists) return prevComments;
+
+      return [comment, ...prevComments];
+    });
+
+    setPostDetail((prevPostDetail) => {
+      if (!prevPostDetail) return prevPostDetail;
+
+      return {
+        ...prevPostDetail,
+        counters: {
+          ...prevPostDetail.counters,
+          commentCount: prevPostDetail.counters.commentCount + 1,
+        },
+      };
+    });
+  }, []);
+
+  const handleCommentDeleted = useCallback((deletedComment: IComment) => {
+    setComments((prevComments) => prevComments.filter((item) => item.id !== deletedComment.id));
+
+    setPostDetail((prevPostDetail) => {
+      if (!prevPostDetail) return prevPostDetail;
+
+      return {
+        ...prevPostDetail,
+        counters: {
+          ...prevPostDetail.counters,
+          commentCount: Math.max(0, prevPostDetail.counters.commentCount - 1),
+        },
+      };
+    });
+  }, []);
 
   return (
     <Flex className="post-detail-page">
@@ -192,21 +270,49 @@ const PostDetailPage = () => {
                 isCommentInputPinned ? "post-detail-page__comment-input--pinned" : ""
               }`}
             >
-              <PostCommentInput ref={commentInputControlRef} postId={postId} />
+              <PostCommentInput
+                ref={commentInputControlRef}
+                postId={postId}
+                onSubmitted={handleCommentSubmitted}
+              />
             </div>
 
             <Flex className="box-wrapper post-detail-page__comments" vertical gap={12}>
-              <PostCommentItem comment={comment} />
-              <PostCommentItem comment={comment} />
-              <PostCommentItem comment={comment} />
-              <PostCommentItem comment={comment} />
-              <PostCommentItem comment={comment} />
-              <PostCommentItem comment={comment} />
-              <PostCommentItem comment={comment} />
-              <PostCommentItem comment={comment} />
-              <PostCommentItem comment={comment} />
-              <PostCommentItem comment={comment} />
-              <PostCommentItem comment={comment} />
+              {loadingPostComments && !comments.length ? (
+                <PostSkeleton />
+              ) : comments.length ? (
+                <Virtuoso
+                  className="post-detail-page__comments-list"
+                  data={comments}
+                  customScrollParent={scrollParent || undefined}
+                  endReached={loadMoreComments}
+                  increaseViewportBy={240}
+                  itemContent={(_, comment) => (
+                    <div className="post-detail-page__comments-item">
+                      <PostCommentItem
+                        key={comment.id}
+                        comment={comment}
+                        onDeleted={handleCommentDeleted}
+                      />
+                    </div>
+                  )}
+                  components={{
+                    Footer: () => {
+                      if (isLoadingMoreComments) {
+                        return (
+                          <Flex className="post-detail-page__comments-footer" justify="center">
+                            <Spin size="small" />
+                          </Flex>
+                        );
+                      }
+
+                      return null;
+                    },
+                  }}
+                />
+              ) : (
+                <Empty description="Chua co binh luan nao" />
+              )}
             </Flex>
           </>
         ) : (

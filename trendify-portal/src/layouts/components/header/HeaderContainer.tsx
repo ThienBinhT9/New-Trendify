@@ -2,6 +2,8 @@ import { Flex, Tabs, TabsProps } from "antd";
 
 import "./HeaderContainer.scss";
 import { LogoIcon } from "@/assets/images";
+import { useNavigate } from "react-router-dom";
+import ROUTE_PATHS from "@/routes/path.route";
 interface HeaderContainerProps {
   className?: string;
   tabs: TabsProps["items"];
@@ -13,10 +15,13 @@ interface HeaderContainerProps {
 
 const HeaderContainer = (props: HeaderContainerProps) => {
   const { className, tabs, activeKey, onTabChange, showTabs = true, showLogo = true } = props;
+
+  const navigate = useNavigate();
+
   return (
     <Flex className={`header-container ${className || ""}`}>
       {showLogo && (
-        <Flex className="header-logo-icon">
+        <Flex className="header-logo-icon" onClick={() => navigate(ROUTE_PATHS.HOME)}>
           <img src={LogoIcon} />
         </Flex>
       )}

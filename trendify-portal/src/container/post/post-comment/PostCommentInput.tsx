@@ -16,7 +16,7 @@ import { handleBeforeUpload } from "@/utils/common.util";
 import { listFollowing } from "@/stores/profile/api";
 import { useAppDispatch, useAppSelector } from "@/stores";
 import { IUserSuggestion } from "@/interfaces/user.interface";
-import { ICommentMention } from "@/interfaces/comment.interface";
+import { IComment, ICommentMention } from "@/interfaces/comment.interface";
 import { commentPostAction } from "@/stores/post/actions";
 
 import Icon from "@/components/icon/Icon";
@@ -29,7 +29,7 @@ export interface IPostCommentInputRef {
 interface PostCommentInputProps {
   postId?: string;
   parentId?: string | null;
-  onSubmitted?: () => void;
+  onSubmitted?: (comment: IComment) => void;
 }
 
 interface ICommentMentionItem extends MentionNodeAttrs {
@@ -515,7 +515,7 @@ const PostCommentInput = forwardRef<IPostCommentInputRef, PostCommentInputProps>
 
     try {
       setLoading(true);
-      await dispatch(
+      const response = await dispatch(
         commentPostAction({
           content: normalizedContent,
           parentId: parentId || undefined,
@@ -534,7 +534,7 @@ const PostCommentInput = forwardRef<IPostCommentInputRef, PostCommentInputProps>
       }
       setFilePreview(null);
       setFile(null);
-      onSubmitted?.();
+      onSubmitted?.(response.comment);
     } catch (error) {
       console.log("handle comment error: ", error);
     } finally {
@@ -545,7 +545,7 @@ const PostCommentInput = forwardRef<IPostCommentInputRef, PostCommentInputProps>
   return (
     <Flex className="post-comment-input">
       <Avatar
-        className="comment-box__avatar"
+        className={`comment-box__avatar ${parentId ? "comment-box__avatar--reply" : ""}`}
         src="https://i.pinimg.com/1200x/ec/ba/f0/ecbaf03acbe4c5556bbe1756ff482b42.jpg"
       />
 

@@ -96,19 +96,19 @@ export function formatTimeFromNow(dateInput: string | number | Date): string {
   const diffInDays = now.diff(date, "days");
 
   if (diffInSeconds < 60) {
-    return "Just now";
+    return "Vừa xong";
   }
 
   if (diffInMinutes < 60) {
-    return `${diffInMinutes} minute${diffInMinutes > 1 ? "s" : ""} ago`;
+    return `${diffInMinutes} phút trước`;
   }
 
   if (diffInHours < 24) {
-    return `${diffInHours} hour${diffInHours > 1 ? "s" : ""} ago`;
+    return `${diffInHours} giờ trước`;
   }
 
   if (diffInDays < 7) {
-    return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
+    return `${diffInDays} ngày trước`;
   }
 
   const isSameYear = now.year() === date.year();

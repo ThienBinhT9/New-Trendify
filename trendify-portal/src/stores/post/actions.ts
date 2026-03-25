@@ -40,6 +40,19 @@ export const getPostAction = createAsyncThunk(
   },
 );
 
+export const getPostCommentsAction = createAsyncThunk(
+  EPostActions.GET_POST_COMMENTS,
+  async (payload: { postId: string; params?: IListParams }, { rejectWithValue }) => {
+    try {
+      const { postId, params } = payload;
+      const response = await api.listPostComments(postId, params);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
 export const getUserPostsAction = createAsyncThunk(
   EPostActions.GET_USER_POSTS,
   async (payload: { userId: string; params?: IListParams }, { rejectWithValue }) => {
@@ -146,6 +159,19 @@ export const commentPostAction = createAsyncThunk(
     try {
       const response = await api.createComment(payload);
       return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
+export const deleteCommentAction = createAsyncThunk(
+  EPostActions.DELETE_COMMENT,
+  async (payload: { postId: string; commentId: string }, { rejectWithValue }) => {
+    try {
+      const { postId, commentId } = payload;
+      const response = await api.deleteComment(postId, commentId);
+      return response.data;
     } catch (error) {
       return rejectWithValue(error);
     }

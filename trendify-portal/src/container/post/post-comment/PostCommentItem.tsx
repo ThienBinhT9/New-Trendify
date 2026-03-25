@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Avatar, Flex, Skeleton } from "antd";
+import { ReactNode, useMemo, useState } from "react";
+import { App, Avatar, Flex, Skeleton } from "antd";
 
 import "./PostComment.scss";
 import "../Post.scss";
@@ -12,15 +12,21 @@ import Text from "@/components/text/Text";
 import Tooltip from "@/components/tooltip/Tooltip";
 import PostCommentInput from "./PostCommentInput";
 import { IComment } from "@/interfaces/comment.interface";
+import { useAppDispatch } from "@/stores";
+import { deleteCommentAction } from "@/stores/post/actions";
 
 type PostCommentItemProps = {
   isParent?: boolean;
   isChild?: boolean;
   comment: IComment;
+  onDeleted?: (comment: IComment) => void;
 };
 
 const PostCommentItem = (props: PostCommentItemProps) => {
-  const { isParent, isChild, comment } = props;
+  const { isParent, isChild, comment, onDeleted } = props;
+
+  const { message, modal, notification } = App.useApp();
+  const dispatch = useAppDispatch();
 
   const navigate = useNavigate();
 
@@ -30,6 +36,85 @@ const PostCommentItem = (props: PostCommentItemProps) => {
   const [isLiked, setIsLiked] = useState<boolean>(comment.viewerContext.isLiked);
   const [likeCount, setLikeCount] = useState<number>(comment.counters.likeCount);
   const [likeLoading, setLikeLoading] = useState<boolean>(false);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  const commentContent = useMemo(() => {
+    const ranges = [
+      ...comment.mentions.map((mention) => ({
+        userId: mention.userId,
+        startIndex: mention.startIndex,
+        endIndex: mention.endIndex,
+        type: "mention" as const,
+      })),
+      ...comment.hashtags.map((hashtag) => ({
+        tag: hashtag.tag,
+        startIndex: hashtag.startIndex,
+        endIndex: hashtag.endIndex,
+        type: "hashtag" as const,
+      })),
+    ]
+      .filter((range) => range.startIndex >= 0 && range.endIndex > range.startIndex)
+      .sort((a, b) => a.startIndex - b.startIndex);
+
+    if (!ranges.length) return [<span key="comment-text-all">{comment.content}</span>];
+
+    const parts: ReactNode[] = [];
+    let cursor = 0;
+
+    ranges.forEach((range, index) => {
+      if (range.startIndex < cursor) {
+        return;
+      }
+
+      if (cursor < range.startIndex) {
+        parts.push(
+          <span key={`comment-text-${index}`}>
+            {comment.content.slice(cursor, range.startIndex)}
+          </span>,
+        );
+      }
+
+      const highlightedText = comment.content.slice(range.startIndex, range.endIndex);
+
+      if (range.type === "mention") {
+        parts.push(
+          <span
+            key={`comment-mention-${index}`}
+            className="post-content__mention"
+            onClick={(event) => {
+              event.stopPropagation();
+              navigate(ROUTE_PATHS.PROFILE(range.userId));
+            }}
+          >
+            {highlightedText}
+          </span>,
+        );
+      }
+
+      if (range.type === "hashtag") {
+        parts.push(
+          <span
+            key={`comment-hashtag-${index}`}
+            className="post-content__hashtag"
+            onClick={(event) => {
+              event.stopPropagation();
+              navigate(`/hashtag/${range.tag}`);
+            }}
+          >
+            {highlightedText}
+          </span>,
+        );
+      }
+
+      cursor = range.endIndex;
+    });
+
+    if (cursor < comment.content.length) {
+      parts.push(<span key="comment-text-tail">{comment.content.slice(cursor)}</span>);
+    }
+
+    return parts;
+  }, [comment.content, comment.hashtags, comment.mentions, navigate]);
 
   const authorName =
     comment.author.displayName ||
@@ -55,9 +140,48 @@ const PostCommentItem = (props: PostCommentItemProps) => {
     }
   };
 
-  const handleOpenReply = () => {
-    setIsOpenReply(!isOpenReply);
-    handleFetchCommentsReplied();
+  const handleDelete = () => {
+    if (isDeleting) return;
+
+    modal.confirm({
+      centered: true,
+      icon: null,
+      title: <Text textType="SB16">Xoá bình luận?</Text>,
+      content: <Text>Bình luận sẽ bị xoá vĩnh viễn và không thể khôi phục.</Text>,
+      okText: <Text textType="M14">Xoá</Text>,
+      cancelText: <Text textType="M14">Huỷ</Text>,
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          setIsDeleting(true);
+          await dispatch(
+            deleteCommentAction({
+              postId: comment.postId,
+              commentId: comment.id,
+            }),
+          ).unwrap();
+
+          onDeleted?.(comment);
+
+          notification.open({
+            key: `delete-comment-toast-${comment.id}`,
+            message: (
+              <Flex align="center" justify="space-between" style={{ width: "100%" }}>
+                <Text textType="SB16">Đã xoá bình luận</Text>
+              </Flex>
+            ),
+            placement: "bottom",
+            duration: 3,
+            className: "custom-snackbar-notification",
+            closeIcon: null,
+          });
+        } catch {
+          message.error("Xoá bình luận thất bại, vui lòng thử lại.");
+        } finally {
+          setIsDeleting(false);
+        }
+      },
+    });
   };
 
   const naviagateToProfile = () => {
@@ -67,78 +191,114 @@ const PostCommentItem = (props: PostCommentItemProps) => {
   const handleFetchCommentsReplied = async () => {
     try {
       await new Promise((resolve) => setTimeout(() => resolve([]), 2000));
-      setCommentsReply([comment, comment, comment]);
+      setCommentsReply([comment, comment]);
     } catch (error) {
       console.log("fetch list comment reply: ", error);
     }
+  };
+
+  const handleOpenReply = () => {
+    handleFetchCommentsReplied();
   };
 
   return (
     <Flex className="comment-item" gap={8}>
       {/* Line */}
       {isChild && <div className="comment-item-line-child" />}
-      {(isParent || isOpenReply) && <div className="comment-item-line-parent" />}
 
       {/* Content */}
       <Avatar
-        className="comment-item-avatar"
+        className={`comment-item-avatar ${isChild ? "comment-item-avatar--reply" : ""}`}
         src={comment.author.profilePicture?.small || comment.author.profilePicture?.original}
         onClick={naviagateToProfile}
       />
-      <Flex vertical gap={4}>
-        <Flex vertical className="comment-item-content">
-          <Text textType="SB12" className="comment-item-username" onClick={naviagateToProfile}>
-            {authorName}
-          </Text>
-          <Text>{comment.content}</Text>
-        </Flex>
-        <Flex className="comment-item-actions">
-          <Flex align="center" gap={12}>
-            <Tooltip
-              title={formatDate(
-                new Date(comment.createdAt).toISOString(),
-                "dddd, MMMM D, YYYY [at] HH:mm",
-              )}
-              placement="bottom"
-            >
-              <Text textType="R10" className="comment-item-actions__createdat">
-                {formatTimeFromNow(comment.createdAt)}
-              </Text>
-            </Tooltip>
-            <Flex
-              align="center"
-              gap={2}
-              className="comment-item-actions__like"
-              onClick={handleLike}
-            >
-              <Icon name={isLiked ? "HeartFillIcon" : "HeartAltIcon"} size={12} />
-              <Text textType="R10">{`${formatNumberCount(likeCount)}`}</Text>
+      <Flex vertical gap={4} className="content-item-body">
+        <Flex vertical gap={4} style={{ position: "relative" }}>
+          {(isParent || isOpenReply) && <div className="comment-item-line-parent" />}
+          {comment.counters.replyCount > 0 && (
+            <div className="comment-item-line-parent--view-replies" />
+          )}
+
+          <Flex vertical className="comment-item-content">
+            <Text textType="SB12" className="comment-item-username" onClick={naviagateToProfile}>
+              {authorName}
+            </Text>
+            <p className="post-content">{commentContent}</p>
+          </Flex>
+          <Flex className="comment-item-actions">
+            <Flex align="center" gap={12}>
+              <Tooltip
+                title={formatDate(
+                  new Date(comment.createdAt).toISOString(),
+                  "dddd, MMMM D, YYYY [at] HH:mm",
+                )}
+                placement="bottom"
+              >
+                <Text textType="R10" className="comment-item-actions__createdat">
+                  {formatTimeFromNow(comment.createdAt)}
+                </Text>
+              </Tooltip>
+              <Flex
+                align="center"
+                gap={2}
+                className="comment-item-actions__like"
+                onClick={handleLike}
+              >
+                <Icon name={isLiked ? "HeartFillIcon" : "HeartAltIcon"} size={12} />
+                <Text textType="R10">{`${formatNumberCount(likeCount)}`}</Text>
+              </Flex>
+              <Flex align="center" gap={8}>
+                <Text
+                  className="comment-item-actions__reply"
+                  textType="R10"
+                  onClick={() => !isOpenReply && setIsOpenReply(true)}
+                >
+                  Trả lời
+                </Text>
+                {comment.viewerContext.canDelete ? (
+                  <Text
+                    className="comment-item-actions__delete"
+                    textType="R10"
+                    onClick={handleDelete}
+                  >
+                    Xoá
+                  </Text>
+                ) : null}
+              </Flex>
             </Flex>
+          </Flex>
+
+          {commentsReply?.length ? (
+            <Flex vertical gap={12} className="mt-12">
+              {commentsReply.map((commentReply) => (
+                <PostCommentItem
+                  key={commentReply.id}
+                  comment={commentReply}
+                  isChild
+                  onDeleted={onDeleted}
+                />
+              ))}
+            </Flex>
+          ) : null}
+
+          {isParent && comment.counters.replyCount > 0 && (
             <Flex
               align="center"
-              gap={8}
-              className="comment-item-actions__reply"
+              gap={4}
+              className="comment-item-actions__view-replies"
               onClick={handleOpenReply}
             >
-              <Text textType="R10">Trả lời</Text>
+              <div className="comment-item-line-child--view-replies" />
+              <Text textType="M12">{`Xem tất cả ${formatNumberCount(1200)} phản hồi`}</Text>
             </Flex>
-          </Flex>
+          )}
         </Flex>
-
-        {commentsReply?.length ? (
-          <Flex vertical gap={12} className="mt-16">
-            {commentsReply.map((commentReply) => (
-              <PostCommentItem key={commentReply.id} comment={commentReply} isChild />
-            ))}
-          </Flex>
-        ) : null}
 
         {isOpenReply && (
           <Flex style={{ position: "relative", marginTop: 8 }}>
             <div className="comment-item-line-child" />
             <PostCommentInput postId={comment.postId} parentId={comment.id} />
           </Flex>
-          // <PostCommentInput />
         )}
       </Flex>
     </Flex>

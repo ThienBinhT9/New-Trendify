@@ -12,6 +12,8 @@ import {
   ISavePostResponse,
   ICreateCommentRequest,
   ICreateCommentResponse,
+  IPostCommentsResponse,
+  IDeleteCommentResponse,
 } from "./constants";
 import { IListParams } from "@/interfaces/common.interface";
 
@@ -72,4 +74,14 @@ export const unsavePost = async (postId: string) => {
 export const createComment = async (body: ICreateCommentRequest) => {
   const { postId: _postId, ...requestBody } = body;
   return apiClient.post<ICreateCommentResponse>(POST_ENDPOINT.COMMENT_POST(_postId), requestBody);
+};
+
+export const listPostComments = async (postId: string, params?: IListParams) => {
+  return apiClient.get<IPostCommentsResponse>(POST_ENDPOINT.GET_POST_COMMENTS(postId), {
+    params,
+  });
+};
+
+export const deleteComment = async (postId: string, commentId: string) => {
+  return apiClient.delete<IDeleteCommentResponse>(POST_ENDPOINT.DELETE_COMMENT(postId, commentId));
 };

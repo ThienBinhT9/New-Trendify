@@ -21,6 +21,18 @@
 
   .post-detail-page__comments {
     flex-direction: column;
+
+    .post-detail-page__comments-list {
+      width: 100%;
+    }
+
+    .post-detail-page__comments-item {
+      padding-bottom: 12px;
+    }
+
+    .post-detail-page__comments-footer {
+      padding: 4px 0 8px;
+    }
   }
 
   .post-detail-page__comment-input {

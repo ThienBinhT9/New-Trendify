@@ -7,6 +7,7 @@ export enum EPostActions {
   CREATE_POST = "CREATE_POST",
   DELETE_POST = "DELETE_POST",
   GET_POST_DETAIL = "GET_POST_DETAIL",
+  GET_POST_COMMENTS = "GET_POST_COMMENTS",
 
   LIKE_POST = "LIKE_POST",
   UNLIKE_POST = "UNLIKE_POST",
@@ -35,6 +36,7 @@ export const POST_ENDPOINT = {
   UNSAVE_POST: (postId: string) => `/posts/${postId}/save`,
 
   COMMENT_POST: (postId: string) => `/posts/${postId}/comments`,
+  GET_POST_COMMENTS: (postId: string) => `/posts/${postId}/comments`,
   DELETE_COMMENT: (postId: string, commentId: string) => `/posts/${postId}/comments/${commentId}`,
 
   GET_USER_POSTS: (userId: string) => `/users/${userId}/posts`,
@@ -100,6 +102,13 @@ export interface IPostDetailResponse extends IApiResponse {
   data: IPost;
 }
 
+export interface IPostCommentsResponse extends IApiResponse {
+  data: {
+    comments: IComment[];
+    nextCursor: string | null;
+  };
+}
+
 export interface IUserPostsResponse extends IApiResponse {
   data: {
     posts: IPost[];
@@ -143,4 +152,8 @@ export interface ICreateCommentResponse extends IApiResponse {
   data: {
     comment: IComment;
   };
+}
+
+export interface IDeleteCommentResponse extends IApiResponse {
+  message: string;
 }
