@@ -13,7 +13,7 @@ import Tooltip from "@/components/tooltip/Tooltip";
 import PostCommentInput from "./PostCommentInput";
 import { IComment } from "@/interfaces/comment.interface";
 import { useAppDispatch } from "@/stores";
-import { deleteCommentAction } from "@/stores/post/actions";
+import { deleteCommentAction, getCommentRepliesAction } from "@/stores/post/actions";
 
 type PostCommentItemProps = {
   isParent?: boolean;
@@ -37,6 +37,10 @@ const PostCommentItem = (props: PostCommentItemProps) => {
   const [likeCount, setLikeCount] = useState<number>(comment.counters.likeCount);
   const [likeLoading, setLikeLoading] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [replyNextCursor, setReplyNextCursor] = useState<string | null>(null);
+  const [isLoadingReplies, setIsLoadingReplies] = useState<boolean>(false);
+  const [isLoadingMoreReplies, setIsLoadingMoreReplies] = useState<boolean>(false);
+  const [hasLoadedReplies, setHasLoadedReplies] = useState<boolean>(false);
 
   const commentContent = useMemo(() => {
     const ranges = [
@@ -188,17 +192,80 @@ const PostCommentItem = (props: PostCommentItemProps) => {
     navigate(ROUTE_PATHS.PROFILE(comment.author.id));
   };
 
-  const handleFetchCommentsReplied = async () => {
+  const handleFetchCommentsReplied = async (options?: {
+    cursor?: string | null;
+    append?: boolean;
+  }) => {
+    if (!comment.postId || !comment.id) return;
+
     try {
-      await new Promise((resolve) => setTimeout(() => resolve([]), 2000));
-      setCommentsReply([comment, comment]);
+      const { cursor, append = false } = options || {};
+      await new Promise((resolve) => setTimeout(() => resolve([]), 5000));
+      const response = await dispatch(
+        getCommentRepliesAction({
+          postId: comment.postId,
+          commentId: comment.id,
+          params: {
+            limit: 10,
+            cursor,
+          },
+        }),
+      ).unwrap();
+
+      const fetchedReplies = response.replies || [];
+
+      setCommentsReply((prevReplies) => {
+        if (!append) return fetchedReplies;
+
+        const existingIds = new Set(prevReplies.map((reply) => reply.id));
+        const nextReplies = fetchedReplies.filter((reply) => !existingIds.has(reply.id));
+        return [...prevReplies, ...nextReplies];
+      });
+      setReplyNextCursor(response.nextCursor || null);
+      setHasLoadedReplies(true);
     } catch (error) {
       console.log("fetch list comment reply: ", error);
+    } finally {
+      setIsLoadingReplies(false);
+      setIsLoadingMoreReplies(false);
     }
   };
 
   const handleOpenReply = () => {
-    handleFetchCommentsReplied();
+    setIsOpenReply(true);
+  };
+
+  const handleViewReplies = async () => {
+    if (isLoadingReplies || isLoadingMoreReplies) return;
+
+    setIsOpenReply(true);
+
+    if (!hasLoadedReplies) {
+      setIsLoadingReplies(true);
+      await handleFetchCommentsReplied();
+      return;
+    }
+
+    if (!replyNextCursor) return;
+    setIsLoadingMoreReplies(true);
+    await handleFetchCommentsReplied({ cursor: replyNextCursor, append: true });
+  };
+
+  const shouldShowViewRepliesAction =
+    comment.counters.replyCount > 0 &&
+    !isLoadingReplies &&
+    !isLoadingMoreReplies &&
+    (!hasLoadedReplies || !!replyNextCursor);
+
+  const handleReplySubmitted = (replyComment: IComment) => {
+    setCommentsReply((prevReplies) => {
+      if (prevReplies.some((item) => item.id === replyComment.id)) {
+        return prevReplies;
+      }
+
+      return [...prevReplies, replyComment];
+    });
+    setIsOpenReply(true);
   };
 
   return (
@@ -251,7 +318,7 @@ const PostCommentItem = (props: PostCommentItemProps) => {
                 <Text
                   className="comment-item-actions__reply"
                   textType="R10"
-                  onClick={() => !isOpenReply && setIsOpenReply(true)}
+                  onClick={handleOpenReply}
                 >
                   Trả lời
                 </Text>
@@ -281,15 +348,25 @@ const PostCommentItem = (props: PostCommentItemProps) => {
             </Flex>
           ) : null}
 
-          {isParent && comment.counters.replyCount > 0 && (
+          {isLoadingReplies || isLoadingMoreReplies ? (
+            <Text textType="R12" className="comment-item-actions__reply-loading">
+              Đang tải phản hồi...
+            </Text>
+          ) : null}
+
+          {shouldShowViewRepliesAction && (
             <Flex
               align="center"
               gap={4}
               className="comment-item-actions__view-replies"
-              onClick={handleOpenReply}
+              onClick={handleViewReplies}
             >
               <div className="comment-item-line-child--view-replies" />
-              <Text textType="M12">{`Xem tất cả ${formatNumberCount(1200)} phản hồi`}</Text>
+              <Text textType="M12">
+                {!hasLoadedReplies
+                  ? `Xem tất cả ${formatNumberCount(comment.counters.replyCount)} phản hồi`
+                  : "Xem phản hồi khác"}
+              </Text>
             </Flex>
           )}
         </Flex>
@@ -297,7 +374,12 @@ const PostCommentItem = (props: PostCommentItemProps) => {
         {isOpenReply && (
           <Flex style={{ position: "relative", marginTop: 8 }}>
             <div className="comment-item-line-child" />
-            <PostCommentInput postId={comment.postId} parentId={comment.id} />
+            <PostCommentInput
+              postId={comment.postId}
+              parentId={comment.id}
+              replyDisplayName={authorName}
+              onSubmitted={handleReplySubmitted}
+            />
           </Flex>
         )}
       </Flex>

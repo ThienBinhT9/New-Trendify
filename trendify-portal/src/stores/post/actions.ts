@@ -177,3 +177,19 @@ export const deleteCommentAction = createAsyncThunk(
     }
   },
 );
+
+export const getCommentRepliesAction = createAsyncThunk(
+  EPostActions.GET_COMMENT_REPLIES,
+  async (
+    payload: { postId: string; commentId: string; params?: IListParams },
+    { rejectWithValue },
+  ) => {
+    try {
+      const { postId, commentId, params } = payload;
+      const response = await api.listCommentReplies(postId, commentId, params);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);

@@ -29,6 +29,7 @@ export interface IPostCommentInputRef {
 interface PostCommentInputProps {
   postId?: string;
   parentId?: string | null;
+  replyDisplayName?: string;
   onSubmitted?: (comment: IComment) => void;
 }
 
@@ -93,7 +94,12 @@ const HashtagHighlight = Extension.create({
 });
 
 const PostCommentInput = forwardRef<IPostCommentInputRef, PostCommentInputProps>((props, ref) => {
-  const { postId, parentId, onSubmitted } = props;
+  const { postId, parentId, replyDisplayName, onSubmitted } = props;
+
+  const normalizedReplyDisplayName = replyDisplayName?.trim();
+  const placeholderText = normalizedReplyDisplayName
+    ? `Trả lời ${normalizedReplyDisplayName}...`
+    : "Thêm bình luận...";
 
   const dispatch = useAppDispatch();
   const authUser = useAppSelector((state) => state.auth.user);
@@ -364,91 +370,94 @@ const PostCommentInput = forwardRef<IPostCommentInputRef, PostCommentInputProps>
     },
   };
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        blockquote: false,
-        codeBlock: false,
-        heading: false,
-        horizontalRule: false,
-      }),
-      HashtagHighlight,
-      Placeholder.configure({
-        placeholder: "Thêm bình luận...",
-      }),
-      CommentMention.configure({
-        HTMLAttributes: {
-          class: "post-editor-mention",
+  const editor = useEditor(
+    {
+      extensions: [
+        StarterKit.configure({
+          blockquote: false,
+          codeBlock: false,
+          heading: false,
+          horizontalRule: false,
+        }),
+        HashtagHighlight,
+        Placeholder.configure({
+          placeholder: placeholderText,
+        }),
+        CommentMention.configure({
+          HTMLAttributes: {
+            class: "post-editor-mention",
+          },
+          renderText: ({ node, options }) => {
+            const attrs = node.attrs as ICommentMentionAttrs;
+            return `${options.suggestion.char}${attrs.label || attrs.username || attrs.id || ""}`;
+          },
+          suggestion: mentionSuggestion,
+        }),
+      ],
+      editorProps: {
+        attributes: {
+          class: "post-comment-editor-content",
         },
-        renderText: ({ node, options }) => {
-          const attrs = node.attrs as ICommentMentionAttrs;
-          return `${options.suggestion.char}${attrs.label || attrs.username || attrs.id || ""}`;
-        },
-        suggestion: mentionSuggestion,
-      }),
-    ],
-    editorProps: {
-      attributes: {
-        class: "post-comment-editor-content",
       },
-    },
-    content: "",
-    onUpdate: ({ editor: tiptapEditor }) => {
-      const docJson = tiptapEditor.getJSON();
-      const extractedMentions: ICommentMention[] = [];
-      let nextPlainText = "";
+      content: "",
+      onUpdate: ({ editor: tiptapEditor }) => {
+        const docJson = tiptapEditor.getJSON();
+        const extractedMentions: ICommentMention[] = [];
+        let nextPlainText = "";
 
-      const blocks = (docJson.content || []) as Array<{
-        content?: Array<{
-          type?: string;
-          text?: string;
-          attrs?: Record<string, string>;
+        const blocks = (docJson.content || []) as Array<{
+          content?: Array<{
+            type?: string;
+            text?: string;
+            attrs?: Record<string, string>;
+          }>;
         }>;
-      }>;
 
-      blocks.forEach((block, blockIndex) => {
-        if (blockIndex > 0) {
-          nextPlainText += "\n";
-        }
-
-        const children = block.content || [];
-        children.forEach((node) => {
-          if (node.type === "text") {
-            nextPlainText += node.text || "";
-            return;
-          }
-
-          if (node.type === "mention") {
-            const attrs = (node.attrs || {}) as unknown as ICommentMentionAttrs;
-            const displayLabel = (attrs.label || attrs.username || "").trim();
-            const mentionText = `@${displayLabel}`;
-            const mentionStart = nextPlainText.length;
-            const username =
-              (attrs.username || "").trim() ||
-              mentionUserMapRef.current.get((attrs.id || "").trim()) ||
-              displayLabel;
-
-            extractedMentions.push({
-              userId: (attrs.id || username || displayLabel).trim(),
-              username,
-              startIndex: mentionStart,
-              endIndex: mentionStart + mentionText.length,
-            });
-
-            nextPlainText += mentionText;
-            return;
-          }
-
-          if (node.type === "hardBreak") {
+        blocks.forEach((block, blockIndex) => {
+          if (blockIndex > 0) {
             nextPlainText += "\n";
           }
-        });
-      });
 
-      setPlainText(nextPlainText.replace(/@@+/g, "@"));
-      setMentions(extractedMentions);
+          const children = block.content || [];
+          children.forEach((node) => {
+            if (node.type === "text") {
+              nextPlainText += node.text || "";
+              return;
+            }
+
+            if (node.type === "mention") {
+              const attrs = (node.attrs || {}) as unknown as ICommentMentionAttrs;
+              const displayLabel = (attrs.label || attrs.username || "").trim();
+              const mentionText = `@${displayLabel}`;
+              const mentionStart = nextPlainText.length;
+              const username =
+                (attrs.username || "").trim() ||
+                mentionUserMapRef.current.get((attrs.id || "").trim()) ||
+                displayLabel;
+
+              extractedMentions.push({
+                userId: (attrs.id || username || displayLabel).trim(),
+                username,
+                startIndex: mentionStart,
+                endIndex: mentionStart + mentionText.length,
+              });
+
+              nextPlainText += mentionText;
+              return;
+            }
+
+            if (node.type === "hardBreak") {
+              nextPlainText += "\n";
+            }
+          });
+        });
+
+        setPlainText(nextPlainText.replace(/@@+/g, "@"));
+        setMentions(extractedMentions);
+      },
     },
-  });
+    [placeholderText],
+  );
 
   const focus = useCallback(() => {
     if (!editor) return;
@@ -515,6 +524,7 @@ const PostCommentInput = forwardRef<IPostCommentInputRef, PostCommentInputProps>
 
     try {
       setLoading(true);
+      await new Promise((resolve) => setTimeout(resolve, 5000));
       const response = await dispatch(
         commentPostAction({
           content: normalizedContent,

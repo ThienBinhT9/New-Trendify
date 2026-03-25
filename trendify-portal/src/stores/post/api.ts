@@ -14,6 +14,7 @@ import {
   ICreateCommentResponse,
   IPostCommentsResponse,
   IDeleteCommentResponse,
+  ICommentRepliesResponse,
 } from "./constants";
 import { IListParams } from "@/interfaces/common.interface";
 
@@ -84,4 +85,17 @@ export const listPostComments = async (postId: string, params?: IListParams) => 
 
 export const deleteComment = async (postId: string, commentId: string) => {
   return apiClient.delete<IDeleteCommentResponse>(POST_ENDPOINT.DELETE_COMMENT(postId, commentId));
+};
+
+export const listCommentReplies = async (
+  postId: string,
+  commentId: string,
+  params?: IListParams,
+) => {
+  return apiClient.get<ICommentRepliesResponse>(
+    POST_ENDPOINT.GET_COMMENT_REPLIES(postId, commentId),
+    {
+      params,
+    },
+  );
 };

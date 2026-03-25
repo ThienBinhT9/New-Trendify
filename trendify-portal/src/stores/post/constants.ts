@@ -17,6 +17,7 @@ export enum EPostActions {
 
   COMMENT_POST = "COMMENT_POST",
   DELETE_COMMENT = "DELETE_COMMENT",
+  GET_COMMENT_REPLIES = "GET_COMMENT_REPLIES",
 
   GET_USER_POSTS = "GET_USER_POSTS",
   GET_FOLLOWING_POSTS = "GET_FOLLOWING_POSTS",
@@ -37,6 +38,8 @@ export const POST_ENDPOINT = {
 
   COMMENT_POST: (postId: string) => `/posts/${postId}/comments`,
   GET_POST_COMMENTS: (postId: string) => `/posts/${postId}/comments`,
+  GET_COMMENT_REPLIES: (postId: string, commentId: string) =>
+    `/posts/${postId}/comments/${commentId}/replies`,
   DELETE_COMMENT: (postId: string, commentId: string) => `/posts/${postId}/comments/${commentId}`,
 
   GET_USER_POSTS: (userId: string) => `/users/${userId}/posts`,
@@ -156,4 +159,11 @@ export interface ICreateCommentResponse extends IApiResponse {
 
 export interface IDeleteCommentResponse extends IApiResponse {
   message: string;
+}
+
+export interface ICommentRepliesResponse extends IApiResponse {
+  data: {
+    replies: IComment[];
+    nextCursor: string | null;
+  };
 }
