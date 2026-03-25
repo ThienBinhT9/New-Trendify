@@ -1,15 +1,15 @@
-export interface IAvatar {
-  id: string;
-  path: string;
-  name: string;
-}
+import { IPictureUrl } from "./user.interface";
 
 export interface ICommentAuthor {
   id: string;
   username: string;
-  profilePicture: string;
-  firstName: string;
-  lastName: string;
+  displayName: string;
+  profilePicture?: IPictureUrl;
+  isVerified?: boolean;
+
+  // Backward-compatible optional fields for existing mock data
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface ICommentMention {
@@ -30,6 +30,12 @@ export interface ICommentCounters {
   replyCount: number;
 }
 
+export interface ICommentViewerContext {
+  isAuthorPost: boolean;
+  isAuthor: boolean;
+  isLiked: boolean;
+  canDelete: boolean;
+}
 export interface IComment {
   id: string;
   postId: string;
@@ -37,8 +43,9 @@ export interface IComment {
   mentions: ICommentMention[];
   hashtags: ICommentHashtag[];
   author: ICommentAuthor;
-  isLiked: boolean;
+  viewerContext: ICommentViewerContext;
   parentId: string | null;
+  rootCommentId?: string | null;
   createdAt: string;
   updatedAt: string;
   counters: ICommentCounters;

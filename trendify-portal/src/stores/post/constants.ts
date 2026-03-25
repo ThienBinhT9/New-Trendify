@@ -1,6 +1,7 @@
 import { IApiResponse } from "@/interfaces/api.interface";
 import { EVisibility } from "@/interfaces/common.interface";
 import { IPost, IPostLocation, IPostMention } from "@/interfaces/post.interface";
+import { IComment, ICommentMention } from "@/interfaces/comment.interface";
 
 export enum EPostActions {
   CREATE_POST = "CREATE_POST",
@@ -33,8 +34,8 @@ export const POST_ENDPOINT = {
   SAVE_POST: (postId: string) => `/posts/${postId}/save`,
   UNSAVE_POST: (postId: string) => `/posts/${postId}/save`,
 
-  COMMENT_POST: (postId: string) => `/posts/${postId}/comment`,
-  DELETE_COMMENT: (postId: string, commentId: string) => `/posts/${postId}/comment/${commentId}`,
+  COMMENT_POST: (postId: string) => `/posts/${postId}/comments`,
+  DELETE_COMMENT: (postId: string, commentId: string) => `/posts/${postId}/comments/${commentId}`,
 
   GET_USER_POSTS: (userId: string) => `/users/${userId}/posts`,
   GET_FOLLOWING_POSTS: "/posts/following",
@@ -77,6 +78,13 @@ export interface ICreatePostRequest {
   allowComment?: boolean;
   allowShare?: boolean;
   isDraft?: boolean;
+}
+
+export interface ICreateCommentRequest {
+  postId: string;
+  content: string;
+  parentId?: string;
+  mentions?: ICommentMention[];
 }
 
 //============= RESPONSE =============
@@ -128,5 +136,11 @@ export interface ILikePostResponse extends IApiResponse {
 export interface ISavePostResponse extends IApiResponse {
   data: {
     isSaved: boolean;
+  };
+}
+
+export interface ICreateCommentResponse extends IApiResponse {
+  data: {
+    comment: IComment;
   };
 }

@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { EPostActions, ICreatePostRequest } from "./constants";
+import { EPostActions, ICreateCommentRequest, ICreatePostRequest } from "./constants";
 
 import * as api from "./api";
 import { IListParams } from "@/interfaces/common.interface";
@@ -133,6 +133,18 @@ export const unsavePostAction = createAsyncThunk(
   async (postId: string, { rejectWithValue }) => {
     try {
       const response = await api.unsavePost(postId);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
+export const commentPostAction = createAsyncThunk(
+  EPostActions.COMMENT_POST,
+  async (payload: ICreateCommentRequest, { rejectWithValue }) => {
+    try {
+      const response = await api.createComment(payload);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error);

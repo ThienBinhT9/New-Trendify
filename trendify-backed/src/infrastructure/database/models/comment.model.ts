@@ -2,8 +2,7 @@ import { Schema, model, Document, Types } from "mongoose";
 import { ICommentProps, ECommentStatus } from "@/domain/comment";
 
 export interface ICommentDocument
-  extends Omit<ICommentProps, "postId" | "authorId" | "parentId" | "rootCommentId">,
-    Document {
+  extends Omit<ICommentProps, "postId" | "authorId" | "parentId" | "rootCommentId">, Document {
   postId: Types.ObjectId;
   authorId: Types.ObjectId;
   parentId?: Types.ObjectId;
@@ -20,6 +19,23 @@ const mentionSchema = new Schema(
   { _id: false },
 );
 
+const hashtagSchema = new Schema(
+  {
+    tag: { type: String, required: true },
+    startIndex: { type: Number, required: true },
+    endIndex: { type: Number, required: true },
+  },
+  { _id: false },
+);
+
+const countersSchema = new Schema(
+  {
+    replyCount: { type: Number, default: 0, min: 0 },
+    likeCount: { type: Number, default: 0, min: 0 },
+  },
+  { _id: false },
+);
+
 const commentSchema = new Schema<ICommentDocument>(
   {
     postId: { type: Schema.Types.ObjectId, ref: "Post", required: true },
@@ -29,9 +45,8 @@ const commentSchema = new Schema<ICommentDocument>(
 
     content: { type: String, required: true, maxlength: 2200 },
     mentions: { type: [mentionSchema], default: [] },
-
-    replyCount: { type: Number, default: 0, min: 0 },
-    likeCount: { type: Number, default: 0, min: 0 },
+    hashtags: { type: [hashtagSchema], default: [] },
+    counters: { type: countersSchema, default: () => ({ replyCount: 0, likeCount: 0 }) },
 
     status: {
       type: String,

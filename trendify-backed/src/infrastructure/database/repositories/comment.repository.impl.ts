@@ -119,7 +119,7 @@ export class MongooseCommentRepository
   async incrementReplyCount(commentId: string, by: number = 1): Promise<void> {
     await CommentModel.updateOne(
       { _id: new Types.ObjectId(commentId) },
-      { $inc: { replyCount: by } },
+      { $inc: { "counters.replyCount": by } },
       { session: this.session },
     );
   }
@@ -146,6 +146,11 @@ export class MongooseCommentRepository
       authorId: authorId.toString(),
       parentId: parentId?.toString() ?? undefined,
       rootCommentId: rootCommentId?.toString() ?? undefined,
+      hashtags: rest.hashtags ?? [],
+      counters: rest.counters ?? {
+        replyCount: rest.replyCount ?? 0,
+        likeCount: rest.likeCount ?? 0,
+      },
       createdAt: createdAt ? new Date(createdAt) : new Date(),
       updatedAt: updatedAt ? new Date(updatedAt) : new Date(),
     };

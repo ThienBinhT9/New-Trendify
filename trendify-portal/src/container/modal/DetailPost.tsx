@@ -36,15 +36,19 @@ const comment: IComment = {
   author: {
     id: "697ecce7e4ba55404989e3b5",
     username: "linhpham",
-    profilePicture: "https://i.pravatar.cc/150?img=9",
-    firstName: "Linh",
-    lastName: "Phạm",
+    displayName: "Linh Phạm",
+    profilePicture: { original: "https://i.pravatar.cc/150?img=9" },
   },
   counters: {
     likeCount: 5453543,
     replyCount: 2,
   },
-  isLiked: false,
+  viewerContext: {
+    isAuthorPost: false,
+    isAuthor: false,
+    isLiked: false,
+    canDelete: false,
+  },
   parentId: null,
   createdAt: "2026-03-11T10:15:00.000Z",
   updatedAt: "2026-03-11T10:15:00.000Z",
@@ -66,7 +70,7 @@ const ModalDetailPost = (props: Props) => {
           </Flex>
         </Flex>
         <div className="modal-detail-post__footer">
-          <PostCommentInput />
+          <PostCommentInput postId={comment.postId} />
         </div>
       </Flex>
     </Modal>

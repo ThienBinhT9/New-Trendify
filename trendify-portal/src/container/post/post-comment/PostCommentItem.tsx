@@ -24,13 +24,17 @@ const PostCommentItem = (props: PostCommentItemProps) => {
 
   const navigate = useNavigate();
 
-  const [loading, setLoading] = useState<boolean>(false);
   const [isOpenReply, setIsOpenReply] = useState<boolean>(false);
   const [commentsReply, setCommentsReply] = useState<IComment[]>([]);
 
-  const [isLiked, setIsLiked] = useState<boolean>(comment.isLiked);
+  const [isLiked, setIsLiked] = useState<boolean>(comment.viewerContext.isLiked);
   const [likeCount, setLikeCount] = useState<number>(comment.counters.likeCount);
   const [likeLoading, setLikeLoading] = useState<boolean>(false);
+
+  const authorName =
+    comment.author.displayName ||
+    `${comment.author.firstName || ""} ${comment.author.lastName || ""}`.trim() ||
+    comment.author.username;
 
   const handleLike = async () => {
     if (likeLoading) return;
@@ -62,14 +66,10 @@ const PostCommentItem = (props: PostCommentItemProps) => {
 
   const handleFetchCommentsReplied = async () => {
     try {
-      setLoading(true);
-
       await new Promise((resolve) => setTimeout(() => resolve([]), 2000));
       setCommentsReply([comment, comment, comment]);
     } catch (error) {
       console.log("fetch list comment reply: ", error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -82,13 +82,13 @@ const PostCommentItem = (props: PostCommentItemProps) => {
       {/* Content */}
       <Avatar
         className="comment-item-avatar"
-        src={comment.author.profilePicture}
+        src={comment.author.profilePicture?.small || comment.author.profilePicture?.original}
         onClick={naviagateToProfile}
       />
       <Flex vertical gap={4}>
         <Flex vertical className="comment-item-content">
           <Text textType="SB12" className="comment-item-username" onClick={naviagateToProfile}>
-            {`${comment.author.firstName} ${comment.author.lastName}`}
+            {authorName}
           </Text>
           <Text>{comment.content}</Text>
         </Flex>
@@ -116,7 +116,7 @@ const PostCommentItem = (props: PostCommentItemProps) => {
             </Flex>
             <Flex
               align="center"
-              gap={2}
+              gap={8}
               className="comment-item-actions__reply"
               onClick={handleOpenReply}
             >
@@ -136,7 +136,7 @@ const PostCommentItem = (props: PostCommentItemProps) => {
         {isOpenReply && (
           <Flex style={{ position: "relative", marginTop: 8 }}>
             <div className="comment-item-line-child" />
-            <PostCommentInput />
+            <PostCommentInput postId={comment.postId} parentId={comment.id} />
           </Flex>
           // <PostCommentInput />
         )}

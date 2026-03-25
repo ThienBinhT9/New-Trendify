@@ -5,6 +5,12 @@ import { ICommentRepository, CommentEntity } from "@/domain/comment";
 import { IBlockRepository } from "@/domain/block";
 import { IMessageProducer } from "@/application/services";
 import { ROUTING_KEYS } from "@/domain/events";
+import { IUserRepository } from "@/domain/user";
+import { IMediaRepository } from "@/domain/media";
+import { IFileStorageService } from "@/application/services/fileStorage.service";
+import { fetchMediaRecordFromGroups } from "@/application/mappers/media.mapper";
+import { CommentMapper, UserMapper } from "@/application/mappers";
+import { ViewerContextBuilder } from "@/application/policies/viewer-context.builder";
 
 export class CreateCommentUseCase {
   constructor(
@@ -12,6 +18,9 @@ export class CreateCommentUseCase {
     private readonly commentRepo: ICommentRepository,
     private readonly blockRepo: IBlockRepository,
     private readonly producer: IMessageProducer,
+    private readonly userRepo: IUserRepository,
+    private readonly mediaRepo: IMediaRepository,
+    private readonly storageSvc: IFileStorageService,
   ) {}
 
   async execute(dto: CreateCommentDTO) {
@@ -83,10 +92,29 @@ export class CreateCommentUseCase {
       await this.postRepo.incrementCommentCount(postId);
     }
 
+    const author = await this.userRepo.findById(created.authorId);
+    if (!author) {
+      throw new Response.NotFoundError("Author not found");
+    }
+
+    const profilePictureId =
+      typeof author.data.profilePicture === "string" ? author.data.profilePicture : undefined;
+    const mediaRecord = await fetchMediaRecordFromGroups([[profilePictureId]], (ids) =>
+      this.mediaRepo.findByIds(ids),
+    );
+
+    const authorMapped = UserMapper.toAuthorDTO(author, mediaRecord, this.storageSvc);
+    const viewerContext = ViewerContextBuilder.buildComment({
+      viewerId: userId,
+      postAuthorId: post.authorId,
+      commentAuthorId: created.authorId,
+      isLiked: false,
+    });
+
     return new Response.SuccessResponse({
       statusCode: 201,
       message: "Comment created successfully",
-      data: { comment: created.toSnapshot() },
+      data: { comment: CommentMapper.toResponseDTO(created, authorMapped, viewerContext) },
     });
   }
 }

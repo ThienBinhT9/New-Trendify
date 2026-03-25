@@ -105,9 +105,29 @@ const unlikePostUseCase = new UnlikePostUseCase(postRepo, likeRepo, producer);
 const getPostLikesUseCase = new GetPostLikesUseCase(postRepo, likeRepo, userRepo);
 
 // Comment Use Cases
-const createCommentUseCase = new CreateCommentUseCase(postRepo, commentRepo, blockRepo, producer);
-const getCommentsUseCase = new GetCommentsUseCase(postRepo, commentRepo, userRepo);
-const getCommentRepliesUseCase = new GetCommentRepliesUseCase(commentRepo, userRepo);
+const createCommentUseCase = new CreateCommentUseCase(
+  postRepo,
+  commentRepo,
+  blockRepo,
+  producer,
+  userRepo,
+  mediaRepo,
+  storageSvc,
+);
+const getCommentsUseCase = new GetCommentsUseCase(
+  postRepo,
+  commentRepo,
+  userRepo,
+  mediaRepo,
+  storageSvc,
+);
+const getCommentRepliesUseCase = new GetCommentRepliesUseCase(
+  postRepo,
+  commentRepo,
+  userRepo,
+  mediaRepo,
+  storageSvc,
+);
 const deleteCommentUseCase = new DeleteCommentUseCase(postRepo, commentRepo, producer);
 
 // Save Use Cases

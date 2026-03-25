@@ -9,10 +9,14 @@ import {
   IPostProps,
   IPostSettings,
 } from "@/domain/post";
-import { ICommentMention } from "@/domain/comment";
+import { ICommentCounters, ICommentHashtag, ICommentMention } from "@/domain/comment";
 import { AuthorDTO } from "@/application/mappers/user.mapper";
 import { MediaDisplay } from "@/application/mappers/media.mapper";
-import { IPostViewerContext } from "@/application/policies/viewer-context.builder";
+import {
+  ICommentViewerContext,
+  IPostViewerContext,
+} from "@/application/policies/viewer-context.builder";
+import { ECommentStatus } from "@/domain/comment";
 
 export interface CreatePostDTO {
   authorId: string;
@@ -168,12 +172,14 @@ export interface CreateCommentDTO {
 }
 
 export interface GetCommentsDTO {
+  viewerId: string;
   postId: string;
   limit?: number;
   cursor?: string;
 }
 
 export interface GetCommentRepliesDTO {
+  viewerId: string;
   postId: string;
   commentId: string;
   limit?: number;
@@ -184,4 +190,23 @@ export interface DeleteCommentDTO {
   userId: string;
   postId: string;
   commentId: string;
+}
+
+export interface CommentCoreResponseDTO {
+  id: string;
+  postId: string;
+  parentId?: string;
+  rootCommentId?: string;
+  content: string;
+  mentions: ICommentMention[];
+  hashtags: ICommentHashtag[];
+  counters: ICommentCounters;
+  status: ECommentStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CommentResponseDTO extends CommentCoreResponseDTO {
+  author: AuthorDTO;
+  viewerContext: ICommentViewerContext;
 }

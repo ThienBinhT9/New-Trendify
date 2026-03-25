@@ -149,9 +149,11 @@ class PostController {
   };
 
   getComments = async (request: Request, response: Response) => {
+    const viewerId = response.locals?.auth?.userId;
     const { postId } = request.params;
 
     const result = await this.getCommentsUseCase.execute({
+      viewerId,
       postId,
       ...request.query,
     });
@@ -160,9 +162,11 @@ class PostController {
   };
 
   getCommentReplies = async (request: Request, response: Response) => {
+    const viewerId = response.locals?.auth?.userId;
     const { postId, commentId } = request.params;
 
     const result = await this.getCommentRepliesUseCase.execute({
+      viewerId,
       postId,
       commentId,
       ...request.query,

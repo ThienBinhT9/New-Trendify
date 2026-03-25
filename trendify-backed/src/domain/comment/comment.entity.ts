@@ -1,6 +1,7 @@
 import {
   ECommentStatus,
   ICommentCreateInput,
+  ICommentHashtag,
   ICommentProps,
 } from "./comment.type";
 
@@ -46,11 +47,11 @@ export class CommentEntity {
   }
 
   get replyCount(): number {
-    return this.props.replyCount;
+    return this.props.counters.replyCount;
   }
 
   get likeCount(): number {
-    return this.props.likeCount;
+    return this.props.counters.likeCount;
   }
 
   get status(): ECommentStatus {
@@ -113,22 +114,47 @@ export class CommentEntity {
     }
 
     const now = new Date();
+    const normalizedContent = input.content.trim();
+    const hashtags = this.extractHashtags(normalizedContent);
 
     const props: ICommentProps = {
       postId: input.postId,
       authorId: input.authorId,
       parentId: input.parentId,
       rootCommentId: input.rootCommentId,
-      content: input.content.trim(),
+      content: normalizedContent,
       mentions: input.mentions ?? [],
-      replyCount: 0,
-      likeCount: 0,
+      hashtags,
+      counters: {
+        replyCount: 0,
+        likeCount: 0,
+      },
       status: ECommentStatus.ACTIVE,
       createdAt: now,
       updatedAt: now,
     };
 
     return new CommentEntity(props);
+  }
+
+  private static extractHashtags(content: string): ICommentHashtag[] {
+    const hashtags: ICommentHashtag[] = [];
+    const hashtagRegex = /(^|\s)(#[\p{L}\p{N}_]+)/gu;
+    let match: RegExpExecArray | null = null;
+
+    while ((match = hashtagRegex.exec(content)) !== null) {
+      const prefix = match[1] || "";
+      const tagWithHash = match[2] || "";
+      if (!tagWithHash) continue;
+
+      const startIndex = match.index + prefix.length;
+      const endIndex = startIndex + tagWithHash.length;
+      const tag = tagWithHash.slice(1).toLowerCase();
+
+      hashtags.push({ tag, startIndex, endIndex });
+    }
+
+    return hashtags;
   }
 
   // --------------------------------------------------------------------------

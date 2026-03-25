@@ -4,7 +4,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 import "./Guest.scss";
 import ROUTE_PATHS from "@/routes/path.route";
-import { EmailIcon } from "@/assets/icons/Icon";
 import { IApiError } from "@/interfaces/api.interface";
 import { emailRules } from "@/utils/rules.util";
 import { EAuthActions } from "@/stores/auth/constants";
@@ -15,6 +14,7 @@ import { forgotPasswordAction, signupStartAction } from "@/stores/auth/actions";
 import Text from "@/components/text/Text";
 import Input from "@/components/input/Input";
 import Button from "@/components/button/Button";
+import Icon from "@/components/icon/Icon";
 
 const INITIAL_COOLDOWN = 120 * 1000; // 120s
 const title = {
@@ -108,7 +108,7 @@ const RequestEmailVerification = () => {
         <Form.Item name="email" label="Email" rules={emailRules}>
           <Input
             placeholder="Enter your email"
-            prefix={<EmailIcon />}
+            prefix={<Icon name="EmailIcon" size={18} />}
             onPressEnter={(e) => {
               e.preventDefault();
               form.submit();

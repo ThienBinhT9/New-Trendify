@@ -33,6 +33,20 @@ export interface IPostViewerContext {
   canDelete: boolean;
 }
 
+export interface ICommentViewerContext {
+  isAuthorPost: boolean;
+  isAuthor: boolean;
+  isLiked: boolean;
+  canDelete: boolean;
+}
+
+interface ICommentViewerContextInput {
+  viewerId?: string | null;
+  postAuthorId: string;
+  commentAuthorId: string;
+  isLiked: boolean;
+}
+
 interface IPostViewerContextInput {
   viewerId?: string | null;
   postAuthorId: string;
@@ -56,6 +70,13 @@ export class ViewerContextBuilder {
     canSave: false,
     canShare: true,
     canComment: false,
+    canDelete: false,
+  };
+
+  private static readonly GUEST_COMMENT_CONTEXT: ICommentViewerContext = {
+    isAuthorPost: false,
+    isAuthor: false,
+    isLiked: false,
     canDelete: false,
   };
 
@@ -114,6 +135,24 @@ export class ViewerContextBuilder {
       canShare: !isBlocked && postSettings.allowShare,
       canComment: !isRestricted && postSettings.allowComment,
       canDelete: isAuthor,
+    };
+  }
+
+  static buildComment(input: ICommentViewerContextInput): ICommentViewerContext {
+    const { viewerId, postAuthorId, commentAuthorId, isLiked } = input;
+
+    if (!viewerId) {
+      return { ...this.GUEST_COMMENT_CONTEXT };
+    }
+
+    const isAuthorPost = viewerId === postAuthorId;
+    const isAuthor = viewerId === commentAuthorId;
+
+    return {
+      isAuthorPost,
+      isAuthor,
+      isLiked,
+      canDelete: isAuthorPost || isAuthor,
     };
   }
 }

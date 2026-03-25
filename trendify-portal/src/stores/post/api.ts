@@ -10,6 +10,8 @@ import {
   IDraftPostsResponse,
   ILikePostResponse,
   ISavePostResponse,
+  ICreateCommentRequest,
+  ICreateCommentResponse,
 } from "./constants";
 import { IListParams } from "@/interfaces/common.interface";
 
@@ -65,4 +67,9 @@ export const savePost = async (postId: string) => {
 
 export const unsavePost = async (postId: string) => {
   return apiClient.delete<ISavePostResponse>(POST_ENDPOINT.UNSAVE_POST(postId));
+};
+
+export const createComment = async (body: ICreateCommentRequest) => {
+  const { postId: _postId, ...requestBody } = body;
+  return apiClient.post<ICreateCommentResponse>(POST_ENDPOINT.COMMENT_POST(_postId), requestBody);
 };

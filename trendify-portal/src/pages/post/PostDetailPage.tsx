@@ -26,15 +26,19 @@ const mockComment: IComment = {
   author: {
     id: "697ecce7e4ba55404989e3b5",
     username: "linhpham",
-    profilePicture: "https://i.pravatar.cc/150?img=9",
-    firstName: "Linh",
-    lastName: "Phạm",
+    displayName: "Linh Phạm",
+    profilePicture: { original: "https://i.pravatar.cc/150?img=9" },
   },
   counters: {
     likeCount: 12,
     replyCount: 2,
   },
-  isLiked: false,
+  viewerContext: {
+    isAuthorPost: false,
+    isAuthor: false,
+    isLiked: false,
+    canDelete: false,
+  },
   parentId: null,
   createdAt: "2026-03-11T10:15:00.000Z",
   updatedAt: "2026-03-11T10:15:00.000Z",
@@ -188,7 +192,7 @@ const PostDetailPage = () => {
                 isCommentInputPinned ? "post-detail-page__comment-input--pinned" : ""
               }`}
             >
-              <PostCommentInput ref={commentInputControlRef} />
+              <PostCommentInput ref={commentInputControlRef} postId={postId} />
             </div>
 
             <Flex className="box-wrapper post-detail-page__comments" vertical gap={12}>

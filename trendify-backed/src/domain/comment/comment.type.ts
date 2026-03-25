@@ -21,6 +21,17 @@ export interface ICommentMention {
   endIndex: number;
 }
 
+export interface ICommentHashtag {
+  tag: string;
+  startIndex: number;
+  endIndex: number;
+}
+
+export interface ICommentCounters {
+  replyCount: number;
+  likeCount: number;
+}
+
 // ============================================================================
 // MAIN INTERFACE
 // ============================================================================
@@ -37,10 +48,10 @@ export interface ICommentProps {
   // Content
   content: string;
   mentions: ICommentMention[];
+  hashtags: ICommentHashtag[];
 
   // Counters
-  replyCount: number;
-  likeCount: number;
+  counters: ICommentCounters;
 
   // Status
   status: ECommentStatus;
