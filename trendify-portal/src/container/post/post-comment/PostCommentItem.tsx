@@ -1,4 +1,4 @@
-import { ReactNode, useMemo, useState } from "react";
+import { memo, ReactNode, useCallback, useMemo, useState } from "react";
 import { App, Avatar, Flex, Skeleton } from "antd";
 
 import "./PostComment.scss";
@@ -19,11 +19,12 @@ type PostCommentItemProps = {
   isParent?: boolean;
   isChild?: boolean;
   comment: IComment;
-  onDeleted?: (comment: IComment) => void;
+  onDeleted?: (comment: IComment, deletedCount?: number) => void;
+  onCreated?: (comment: IComment) => void;
 };
 
 const PostCommentItem = (props: PostCommentItemProps) => {
-  const { isParent, isChild, comment, onDeleted } = props;
+  const { isParent, isChild, comment, onDeleted, onCreated } = props;
 
   const { message, modal, notification } = App.useApp();
   const dispatch = useAppDispatch();
@@ -41,6 +42,7 @@ const PostCommentItem = (props: PostCommentItemProps) => {
   const [isLoadingReplies, setIsLoadingReplies] = useState<boolean>(false);
   const [isLoadingMoreReplies, setIsLoadingMoreReplies] = useState<boolean>(false);
   const [hasLoadedReplies, setHasLoadedReplies] = useState<boolean>(false);
+  const [isLocallyDeleted, setIsLocallyDeleted] = useState<boolean>(false);
 
   const commentContent = useMemo(() => {
     const ranges = [
@@ -158,14 +160,19 @@ const PostCommentItem = (props: PostCommentItemProps) => {
       onOk: async () => {
         try {
           setIsDeleting(true);
-          await dispatch(
+          const deleteResponse = await dispatch(
             deleteCommentAction({
               postId: comment.postId,
               commentId: comment.id,
             }),
           ).unwrap();
 
-          onDeleted?.(comment);
+          const deletedCount = deleteResponse?.data?.deletedCount || 1;
+          // Hide this whole subtree immediately, then propagate upward.
+          setCommentsReply([]);
+          setIsOpenReply(false);
+          setIsLocallyDeleted(true);
+          onDeleted?.(comment, deletedCount);
 
           notification.open({
             key: `delete-comment-toast-${comment.id}`,
@@ -200,7 +207,6 @@ const PostCommentItem = (props: PostCommentItemProps) => {
 
     try {
       const { cursor, append = false } = options || {};
-      await new Promise((resolve) => setTimeout(() => resolve([]), 5000));
       const response = await dispatch(
         getCommentRepliesAction({
           postId: comment.postId,
@@ -257,6 +263,16 @@ const PostCommentItem = (props: PostCommentItemProps) => {
     !isLoadingMoreReplies &&
     (!hasLoadedReplies || !!replyNextCursor);
 
+  const handleChildDeleted = useCallback(
+    (deletedComment: IComment, deletedCount: number = 1) => {
+      setCommentsReply((prevReplies) =>
+        prevReplies.filter((replyItem) => replyItem.id !== deletedComment.id),
+      );
+      onDeleted?.(deletedComment, deletedCount);
+    },
+    [onDeleted],
+  );
+
   const handleReplySubmitted = (replyComment: IComment) => {
     setCommentsReply((prevReplies) => {
       if (prevReplies.some((item) => item.id === replyComment.id)) {
@@ -266,7 +282,12 @@ const PostCommentItem = (props: PostCommentItemProps) => {
       return [...prevReplies, replyComment];
     });
     setIsOpenReply(true);
+    onCreated?.(replyComment);
   };
+
+  if (isLocallyDeleted) {
+    return null;
+  }
 
   return (
     <Flex className="comment-item" gap={8}>
@@ -342,7 +363,8 @@ const PostCommentItem = (props: PostCommentItemProps) => {
                   key={commentReply.id}
                   comment={commentReply}
                   isChild
-                  onDeleted={onDeleted}
+                  onDeleted={handleChildDeleted}
+                  onCreated={onCreated}
                 />
               ))}
             </Flex>
@@ -398,4 +420,4 @@ export const CommentItemSkeleton = ({ widthPercent = "100%" }: { widthPercent?: 
   );
 };
 
-export default PostCommentItem;
+export default memo(PostCommentItem);

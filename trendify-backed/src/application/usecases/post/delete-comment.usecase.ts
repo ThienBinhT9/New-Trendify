@@ -34,9 +34,11 @@ export class DeleteCommentUseCase {
       throw new Response.ForbiddenError("You cannot delete this comment");
     }
 
-    // Soft delete
-    comment.delete();
-    await this.commentRepo.save(comment);
+    // Hard delete the full subtree (comment + descendants)
+    const deletedCount = await this.commentRepo.hardDeleteSubtree(commentId);
+    if (!deletedCount) {
+      throw new Response.NotFoundError("Comment not found");
+    }
 
     // Decrement replyCount on parent comment if this is a reply
     if (comment.parentId) {
@@ -51,15 +53,18 @@ export class DeleteCommentUseCase {
         commentId,
         commenterId: userId,
         parentId: comment.parentId,
-        delta: -1,
+        delta: -deletedCount,
       });
     } catch (error) {
       console.error("[DeleteComment] Failed to publish event:", error);
-      await this.postRepo.incrementCommentCount(postId, -1);
+      await this.postRepo.incrementCommentCount(postId, -deletedCount);
     }
 
     return new Response.SuccessResponse({
       message: "Comment deleted successfully",
+      data: {
+        deletedCount,
+      },
     });
   }
 }

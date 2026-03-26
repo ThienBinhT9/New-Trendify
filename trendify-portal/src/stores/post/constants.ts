@@ -159,6 +159,9 @@ export interface ICreateCommentResponse extends IApiResponse {
 
 export interface IDeleteCommentResponse extends IApiResponse {
   message: string;
+  data?: {
+    deletedCount?: number;
+  };
 }
 
 export interface ICommentRepliesResponse extends IApiResponse {

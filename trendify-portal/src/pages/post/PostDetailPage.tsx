@@ -235,7 +235,7 @@ const PostDetailPage = () => {
     });
   }, []);
 
-  const handleCommentDeleted = useCallback((deletedComment: IComment) => {
+  const handleCommentDeleted = useCallback((deletedComment: IComment, deletedCount: number = 1) => {
     setComments((prevComments) => prevComments.filter((item) => item.id !== deletedComment.id));
 
     setPostDetail((prevPostDetail) => {
@@ -245,11 +245,55 @@ const PostDetailPage = () => {
         ...prevPostDetail,
         counters: {
           ...prevPostDetail.counters,
-          commentCount: Math.max(0, prevPostDetail.counters.commentCount - 1),
+          commentCount: Math.max(0, prevPostDetail.counters.commentCount - deletedCount),
         },
       };
     });
   }, []);
+
+  const handleNestedCommentCreated = useCallback(() => {
+    setPostDetail((prevPostDetail) => {
+      if (!prevPostDetail) return prevPostDetail;
+
+      return {
+        ...prevPostDetail,
+        counters: {
+          ...prevPostDetail.counters,
+          commentCount: prevPostDetail.counters.commentCount + 1,
+        },
+      };
+    });
+  }, []);
+
+  const renderCommentItem = useCallback(
+    (_: number, comment: IComment) => (
+      <div className="post-detail-page__comments-item">
+        <PostCommentItem
+          comment={comment}
+          onDeleted={handleCommentDeleted}
+          onCreated={handleNestedCommentCreated}
+        />
+      </div>
+    ),
+    [handleCommentDeleted, handleNestedCommentCreated],
+  );
+
+  const commentListComponents = useMemo(
+    () => ({
+      Footer: () => {
+        if (isLoadingMoreComments) {
+          return (
+            <Flex className="post-detail-page__comments-footer" justify="center">
+              <Spin size="small" />
+            </Flex>
+          );
+        }
+
+        return null;
+      },
+    }),
+    [isLoadingMoreComments],
+  );
 
   return (
     <Flex className="post-detail-page">
@@ -287,28 +331,8 @@ const PostDetailPage = () => {
                   customScrollParent={scrollParent || undefined}
                   endReached={loadMoreComments}
                   increaseViewportBy={240}
-                  itemContent={(_, comment) => (
-                    <div className="post-detail-page__comments-item">
-                      <PostCommentItem
-                        key={comment.id}
-                        comment={comment}
-                        onDeleted={handleCommentDeleted}
-                      />
-                    </div>
-                  )}
-                  components={{
-                    Footer: () => {
-                      if (isLoadingMoreComments) {
-                        return (
-                          <Flex className="post-detail-page__comments-footer" justify="center">
-                            <Spin size="small" />
-                          </Flex>
-                        );
-                      }
-
-                      return null;
-                    },
-                  }}
+                  itemContent={renderCommentItem}
+                  components={commentListComponents}
                 />
               ) : (
                 <Empty description="Chua co binh luan nao" />

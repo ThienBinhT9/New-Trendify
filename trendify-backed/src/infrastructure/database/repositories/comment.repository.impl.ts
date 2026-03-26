@@ -124,6 +124,77 @@ export class MongooseCommentRepository
     );
   }
 
+  async hardDeleteSubtree(commentId: string): Promise<number> {
+    const commentObjectId = new Types.ObjectId(commentId);
+
+    const aggregateQuery = CommentModel.aggregate<{
+      nodes: Array<{ _id: Types.ObjectId; status: ECommentStatus }>;
+    }>([
+      {
+        $match: {
+          _id: commentObjectId,
+          status: ECommentStatus.ACTIVE,
+        },
+      },
+      {
+        $graphLookup: {
+          from: CommentModel.collection.name,
+          startWith: "$_id",
+          connectFromField: "_id",
+          connectToField: "parentId",
+          as: "descendants",
+        },
+      },
+      {
+        $project: {
+          nodes: {
+            $concatArrays: [
+              [
+                {
+                  _id: "$_id",
+                  status: "$status",
+                },
+              ],
+              {
+                $map: {
+                  input: "$descendants",
+                  as: "desc",
+                  in: {
+                    _id: "$$desc._id",
+                    status: "$$desc.status",
+                  },
+                },
+              },
+            ],
+          },
+        },
+      },
+    ]);
+
+    if (this.session) {
+      aggregateQuery.session(this.session);
+    }
+
+    const [commentTree] = await aggregateQuery;
+    if (!commentTree?.nodes?.length) {
+      return 0;
+    }
+
+    const ids = commentTree.nodes.map((node) => node._id);
+    const activeDeletedCount = commentTree.nodes.filter(
+      (node) => node.status === ECommentStatus.ACTIVE,
+    ).length;
+
+    await CommentModel.deleteMany(
+      {
+        _id: { $in: ids },
+      },
+      { session: this.session },
+    );
+
+    return activeDeletedCount;
+  }
+
   async deleteByPost(postId: string): Promise<number> {
     const result = await CommentModel.deleteMany({ postId: new Types.ObjectId(postId) });
     return result.deletedCount;

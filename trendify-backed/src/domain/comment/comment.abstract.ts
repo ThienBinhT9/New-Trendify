@@ -62,6 +62,12 @@ export interface ICommentRepository {
   incrementReplyCount(commentId: string, by?: number): Promise<void>;
 
   /**
+   * Hard delete a comment and all descendants.
+   * Returns number of ACTIVE comments removed (used to update counters).
+   */
+  hardDeleteSubtree(commentId: string): Promise<number>;
+
+  /**
    * Delete all comments for a post (cleanup when post is deleted).
    * Returns count of deleted comments.
    */
