@@ -77,6 +77,8 @@ import EmojiIcon from "./Emoji.svg?react";
 import BookmarkOutlineIcon from "./BookmarkOutline.svg?react";
 import BookmarkOffIcon from "./BookmarkOff.svg?react";
 import HeartComIcon from "./HeartCom.svg?react";
+import HeartDecorationIcon from "./HeartDecoration.svg?react";
+import UserWhiteIcon from "./UserWhite.svg?react";
 
 export {
   GoogleIcon,
@@ -158,6 +160,8 @@ export {
   BookmarkOffIcon,
   BookmarkOutlineIcon,
   HeartComIcon,
+  HeartDecorationIcon,
+  UserWhiteIcon,
 };
 
 export default {
@@ -240,4 +244,6 @@ export default {
   BookmarkOffIcon,
   BookmarkOutlineIcon,
   HeartComIcon,
+  HeartDecorationIcon,
+  UserWhiteIcon,
 };

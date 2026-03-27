@@ -31,7 +31,6 @@ import ProfileIntroduce from "@/pages/profile/tabs/profile-introduce/ProfileIntr
 import ProfileSavedPosts from "@/pages/profile/tabs/profile-saved-posts/ProfileSavedPosts";
 import ProfileDraftPosts from "@/pages/profile/tabs/profile-draft-posts/ProfileDraftPosts";
 import VerifyEmailCallback from "@/pages/guest/VerifyEmailCallback";
-import Notification from "@/pages/notification/Notification";
 
 import Settings from "@/pages/settings/Settings";
 import SettingsPrivacy from "@/pages/settings/sections/settings-privacy/SettingsPrivacy";
@@ -41,6 +40,7 @@ import Activity from "@/pages/activity/Activity";
 import Home from "@/pages/home/Home";
 import PostDetailPage from "@/pages/post/PostDetailPage";
 import PostDetailHeader from "@/pages/post/PostDetailHeader";
+import ActivityHeader from "@/pages/activity/ActivityHeader";
 
 const EmptyRoute: React.FC = () => null;
 
@@ -98,6 +98,7 @@ export const privateRoutes: IRoute[] = [
     layout: MainLayout,
     element: Activity,
     sidebar: HomeSidebar,
+    header: ActivityHeader,
   },
   {
     path: ROUTE_PATHS.POST_DETAIL(),
@@ -116,12 +117,6 @@ export const privateRoutes: IRoute[] = [
     path: ROUTE_PATHS.SEARCH,
     layout: MainLayout,
     element: Search,
-    sidebar: HomeSidebar,
-  },
-  {
-    path: ROUTE_PATHS.NOTIFICATIONS,
-    layout: MainLayout,
-    element: Notification,
     sidebar: HomeSidebar,
   },
   {

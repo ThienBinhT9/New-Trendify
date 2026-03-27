@@ -1,0 +1,283 @@
+.activity-page {
+  width: 100%;
+  justify-content: center;
+
+  @include mobile-medium {
+    margin-top: var(--header-height-pc);
+    padding-top: 0;
+  }
+
+  &__content {
+    width: 100%;
+    max-width: 680px;
+    flex-direction: column;
+    min-height: 100%;
+  }
+
+  &__list-wrapper {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  &__list {
+    width: 100%;
+  }
+
+  &__list-item {
+    margin-bottom: 2px;
+  }
+
+  &__skeleton {
+    margin-top: 8px;
+  }
+}
+
+.header-activity-container {
+  .header-tabs {
+    .ant-tabs-nav {
+      .ant-tabs-tab {
+        padding: 0 56px;
+
+        @include mobile-medium {
+          padding: 0 14px;
+        }
+      }
+    }
+  }
+}
+
+.activity-notification-item {
+  width: 100%;
+  min-height: 104px;
+  align-items: flex-start;
+  gap: 12px;
+  border-radius: 20px;
+  border: 1px solid var(--gray-200);
+  background-color: var(--switch-bg);
+  padding: 16px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--gray-100);
+    transition: 0.3s;
+  }
+
+  @include mobile-medium {
+    min-height: 88px;
+    border-radius: 14px;
+    padding: 12px;
+  }
+
+  &__main {
+    flex: 1;
+    min-width: 0;
+    gap: 12px;
+  }
+
+  &__actors {
+    width: 56px;
+    min-width: 56px;
+    height: 56px;
+    position: relative;
+    justify-content: center;
+    align-items: center;
+
+    @include mobile-medium {
+      width: 48px;
+      min-width: 48px;
+      height: 48px;
+    }
+  }
+
+  &__avatar {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border: 2px solid var(--switch-bg);
+    font-weight: 600;
+    font-size: 12px;
+
+    @include mobile-medium {
+      width: 38px;
+      height: 38px;
+      min-width: 38px;
+    }
+  }
+
+  &__actors--stacked {
+    .activity-notification-item__avatar--0 {
+      position: absolute;
+      top: 2px;
+      left: 0;
+      z-index: 2;
+    }
+
+    .activity-notification-item__avatar--1 {
+      position: absolute;
+      right: 0;
+      bottom: 4px;
+      z-index: 1;
+    }
+  }
+
+  &__badge {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    border: 2px solid var(--switch-bg);
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    z-index: 10;
+    display: flex;
+
+    svg {
+      cursor: default !important;
+    }
+  }
+
+  &__badge--like {
+    background-color: #e65261;
+  }
+
+  &__badge--follow {
+    background-color: #3f6f21;
+  }
+
+  &__badge--reply {
+    background-color: #1f9f80;
+  }
+
+  &__badge--repost {
+    background-color: #8e8e8e;
+  }
+
+  &__badge--mention {
+    background-color: #2468d6;
+  }
+
+  &__content {
+    flex: 1;
+    min-width: 0;
+    gap: 4px;
+    padding-top: 2px;
+  }
+
+  &__title,
+  &__preview {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__title {
+    font-size: 18px;
+    line-height: 1.35;
+    color: var(--text-color);
+
+    @include mobile-medium {
+      font-size: 15px;
+    }
+  }
+
+  &__actor-text {
+    font-weight: 600;
+  }
+
+  &__preview {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.35;
+
+    @include mobile-medium {
+      font-size: 14px;
+    }
+  }
+
+  &__meta {
+    min-width: 94px;
+    flex-shrink: 0;
+    gap: 10px;
+    align-items: flex-end;
+
+    @include mobile-medium {
+      min-width: 72px;
+      gap: 6px;
+    }
+  }
+
+  &__follow-btn {
+    height: 38px;
+    min-width: 90px;
+    border-radius: 10px;
+    padding: 0 20px;
+    font-size: 20px;
+    font-weight: 600;
+
+    @include mobile-medium {
+      height: 36px;
+      min-width: 84px;
+      font-size: 14px;
+      padding: 0 14px;
+      border-radius: 10px;
+    }
+  }
+
+  &__thumb {
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+    border: 1px solid var(--gray-300);
+    background-color: var(--bg-body);
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+
+    @include mobile-medium {
+      width: 52px;
+      height: 52px;
+      border-radius: 10px;
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    svg {
+      color: var(--gray-400);
+      cursor: default !important;
+
+      @include mobile-medium {
+        width: 18px;
+        height: 18px;
+      }
+    }
+  }
+
+  &--skeleton {
+    .activity-notification-item--skeleton__content {
+      min-width: 0;
+      gap: 8px;
+      padding-left: 12px;
+    }
+
+    .activity-notification-item--skeleton__meta {
+      min-width: 100px;
+      gap: 12px;
+
+      @include mobile-medium {
+        min-width: 72px;
+      }
+    }
+  }
+}
+
+.activity-notification-skeleton {
+  width: 100%;
+}
