@@ -15,12 +15,12 @@ import { startTransition, useCallback, useEffect, useMemo, useState } from "reac
 import "./Profile.scss";
 import dayjs from "dayjs";
 
-import { UploadIcon, EllipsisIcon } from "@/assets/icons/Icon";
+import { EllipsisIcon } from "@/assets/icons/Icon";
 import ROUTE_PATHS, { SUB_PATH_PROFILE } from "@/routes/path.route";
 import { blockAction } from "@/stores/follow/actions";
 import { EMediaPurpose } from "@/interfaces/common.interface";
 import { getProfileTab } from "@/utils/common.util";
-import { EProfileActions } from "@/stores/profile/constants";
+import { EProfileActions, IUserProfile } from "@/stores/profile/constants";
 import { useImageUploadCrop } from "@/hooks";
 import { useAppDispatch, useAppSelector } from "@/stores";
 import { getUserPostsAction } from "@/stores/post/actions";
@@ -227,25 +227,6 @@ const Profile = () => {
       : []),
   ];
 
-  const cover_avatar_dropdown: MenuProps["items"] = [
-    {
-      key: "upload-cover-picture",
-      label: "Chọn ảnh bìa",
-      icon: <UploadIcon width={18} height={18} />,
-      onClick: coverUpload.openFilePicker,
-    },
-    ...(profile?.coverPicture
-      ? [
-          { type: "divider" } as const,
-          {
-            key: "remove-cover-picture",
-            label: "Xóa ảnh bìa",
-            icon: <Icon name="TrashAltIcon" size={20} />,
-          },
-        ]
-      : []),
-  ];
-
   const options_user_dropdown: MenuProps["items"] = [
     {
       key: "copy-link",
@@ -341,108 +322,88 @@ const Profile = () => {
               />
 
               {isOwnProfile && (
-                <Dropdown
-                  menu={{ items: cover_avatar_dropdown }}
-                  trigger={["click"]}
-                  placement="bottom"
-                  disabled={loadingGetProfile}
+                <Button
+                  className="edit-cover-btn"
+                  icon={<Icon name="CameraIcon" size={18} />}
+                  onClick={coverUpload.openFilePicker}
                 >
-                  <Button className="edit-cover-btn" icon={<Icon name="CameraIcon" size={18} />}>
-                    <Text textType="M14">Chỉnh sửa ảnh bìa</Text>
-                  </Button>
-                </Dropdown>
+                  <Text textType="M14">Chỉnh sửa ảnh bìa</Text>
+                </Button>
               )}
             </>
           )}
         </Flex>
         <Flex vertical className="header-information">
           <Flex className="header-info">
-            <Flex className="header-info-avatar">
-              <Dropdown
-                arrow
-                menu={{ items: avatar_dropdown }}
-                trigger={["click"]}
-                placement="bottom"
-                disabled={loadingGetProfile}
-              >
-                <Avatar
-                  className="avatar"
-                  src={avatarUpload.localPreview || profile?.profilePicture?.medium}
-                />
-              </Dropdown>
-              <Image
-                style={{ display: "none" }}
-                src={avatarUpload.localPreview || profile?.profilePicture?.original}
-                preview={{
-                  visible: isPreviewOpen,
-                  onVisibleChange: (vis) => setIsPreviewOpen(vis),
-                }}
-              />
-            </Flex>
-            <Flex className="header-info-detail">
-              <Flex vertical gap={8} flex={1}>
-                <Skeleton
-                  title={{ width: "40%", style: { height: 24 } }}
-                  loading={loadingGetProfile}
-                  paragraph={{ rows: 2 }}
-                  active
+            <Flex justify="space-between" align="center" className="header-info-detail">
+              <Flex className="header-info-avatar">
+                <Dropdown
+                  arrow
+                  menu={{ items: avatar_dropdown }}
+                  trigger={["click"]}
+                  placement="bottom"
+                  disabled={loadingGetProfile}
                 >
-                  <Text
-                    textType="SB22"
-                    className="profile-name-link"
-                    onClick={() => setIsIntroduceOpen(true)}
-                  >{`${profile?.lastName} ${profile?.firstName}`}</Text>
-                  <Flex gap={6}>
-                    <Text
-                      textType="M14"
-                      className="header-info-folow"
-                      onClick={() => navigate(ROUTE_PATHS.PROFILE_FOLLOWERS(userId))}
-                    >{`${profile?.followerCount} nguời theo dõi`}</Text>
-                    <Text textType="M14">{`•`}</Text>
-                    <Text
-                      textType="M14"
-                      className="header-info-folow"
-                      onClick={() => navigate(ROUTE_PATHS.PROFILE_FOLLOWING(userId))}
-                    >{`${profile?.followingCount} đang theo dõi`}</Text>
-                  </Flex>
-                  {profile?.about && <Text>{`${profile?.about}`}</Text>}
-                </Skeleton>
+                  <Avatar
+                    className="avatar"
+                    src={avatarUpload.localPreview || profile?.profilePicture?.medium}
+                  />
+                </Dropdown>
+                <Image
+                  style={{ display: "none" }}
+                  src={avatarUpload.localPreview || profile?.profilePicture?.original}
+                  preview={{
+                    visible: isPreviewOpen,
+                    onVisibleChange: (vis) => setIsPreviewOpen(vis),
+                  }}
+                />
               </Flex>
               <Flex className="header-info-action">
-                {!loadingGetProfile &&
-                  (isOwnProfile ? (
-                    <Flex gap={6}>
-                      <Button
-                        className="header-info-btn"
-                        icon={<Icon name="PenIcon" size={14} />}
-                        onClick={() => handleChangeTab(SUB_PATH_PROFILE.INTRODUCE)}
-                      >
-                        <Text textType="M14">Chỉnh sửa trang cá nhân</Text>
-                      </Button>
-                    </Flex>
-                  ) : (
-                    <Flex gap={6}>
-                      <Button
-                        className="header-info-btn"
-                        icon={<Icon name="MessengerIcon" size={18} />}
-                        onClick={() => navigate(ROUTE_PATHS.MESSAGE)}
-                      >
-                        <Text textType="M14">Message</Text>
-                      </Button>
-                      {profile?.viewerContext && (
-                        <FollowStatusCard
-                          relationship={{
-                            viewerContext: profile?.viewerContext,
-                            id: profile?.id,
-                            firstName: profile?.firstName,
-                            lastName: profile?.lastName,
-                            username: profile?.username,
-                          }}
-                        />
-                      )}
-                    </Flex>
-                  ))}
+                {!loadingGetProfile && profile && (
+                  <ProfileActions
+                    profile={profile}
+                    isOwnProfile={isOwnProfile}
+                    onEditProfile={() => handleChangeTab(SUB_PATH_PROFILE.INTRODUCE)}
+                  />
+                )}
               </Flex>
+            </Flex>
+            <Flex vertical gap={8} flex={1}>
+              <Skeleton
+                title={{ width: "40%", style: { height: 24 } }}
+                loading={loadingGetProfile}
+                paragraph={{ rows: 2 }}
+                active
+              >
+                <Text
+                  textType="SB22"
+                  className="profile-name-link"
+                  onClick={() => setIsIntroduceOpen(true)}
+                >{`${profile?.lastName} ${profile?.firstName}`}</Text>
+                <Flex gap={6}>
+                  <Text
+                    textType="M14"
+                    className="header-info-folow"
+                    onClick={() => navigate(ROUTE_PATHS.PROFILE_FOLLOWERS(userId))}
+                  >{`${profile?.followerCount} nguời theo dõi`}</Text>
+                  <Text textType="M14">{`•`}</Text>
+                  <Text
+                    textType="M14"
+                    className="header-info-folow"
+                    onClick={() => navigate(ROUTE_PATHS.PROFILE_FOLLOWING(userId))}
+                  >{`${profile?.followingCount} đang theo dõi`}</Text>
+                </Flex>
+                {profile?.about && <Text>{`${profile?.about}`}</Text>}
+                {!loadingGetProfile && profile && (
+                  <Flex className="header-info-action--mobile">
+                    <ProfileActions
+                      profile={profile}
+                      isOwnProfile={isOwnProfile}
+                      onEditProfile={() => handleChangeTab(SUB_PATH_PROFILE.INTRODUCE)}
+                    />
+                  </Flex>
+                )}
+              </Skeleton>
             </Flex>
           </Flex>
           <Divider className="profile-header-divider" />
@@ -455,6 +416,7 @@ const Profile = () => {
               }))}
               className="custom-tabs"
               onChange={handleChangeTab}
+              moreIcon={null}
             />
             <Dropdown
               menu={{ items: options_user_dropdown }}
@@ -563,3 +525,49 @@ const Profile = () => {
 };
 
 export default Profile;
+interface ProfileActionsProps {
+  profile: IUserProfile;
+  isOwnProfile: boolean;
+  onEditProfile: () => void;
+}
+
+const ProfileActions = ({ profile, isOwnProfile, onEditProfile }: ProfileActionsProps) => {
+  const navigate = useNavigate();
+
+  if (isOwnProfile) {
+    return (
+      <Flex gap={6}>
+        <Button
+          className="header-info-btn"
+          icon={<Icon name="PenIcon" size={14} />}
+          onClick={onEditProfile}
+        >
+          <Text textType="M14">Chỉnh sửa trang cá nhân</Text>
+        </Button>
+      </Flex>
+    );
+  }
+
+  return (
+    <Flex gap={6}>
+      <Button
+        className="header-info-btn"
+        icon={<Icon name="MessengerIcon" size={18} />}
+        onClick={() => navigate(ROUTE_PATHS.MESSAGE)}
+      >
+        <Text textType="M14">Message</Text>
+      </Button>
+      {profile.viewerContext && (
+        <FollowStatusCard
+          relationship={{
+            viewerContext: profile.viewerContext,
+            id: profile.id,
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            username: profile.username,
+          }}
+        />
+      )}
+    </Flex>
+  );
+};

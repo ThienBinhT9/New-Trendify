@@ -34,6 +34,7 @@
     "react-mentions": "^4.4.10",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.6.2",
+    "react-slot-counter": "^3.3.2",
     "react-spinners": "^0.17.0",
     "react-top-loading-bar": "^3.0.2",
     "react-truncate-markup": "^5.1.2",

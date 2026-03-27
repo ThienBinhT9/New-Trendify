@@ -4,6 +4,7 @@
   width: 100%;
   justify-content: center;
   padding: 12px 0 24px;
+  position: relative;
 
   @include mobile-medium {
     padding-top: 0;

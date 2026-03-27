@@ -92,8 +92,6 @@ const Post = ({ expandedTitle, post = postDummy.post, viewerContext }: IProps) =
   const handleNavigateToDetail = useCallback(() => {
     if (!post.id) return;
 
-    console.log("fwefew");
-
     navigate(ROUTE_PATHS.POST_DETAIL(post.id));
   }, [navigate, post.id]);
 

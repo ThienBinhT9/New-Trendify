@@ -9,6 +9,7 @@ import {
   ISavedPostsResponse,
   IDraftPostsResponse,
   ILikePostResponse,
+  IPostLikesResponse,
   ISavePostResponse,
   ICreateCommentRequest,
   ICreateCommentResponse,
@@ -58,6 +59,12 @@ export const listDraftPosts = async (params?: IListParams) => {
 
 export const likePost = async (postId: string) => {
   return apiClient.post<ILikePostResponse>(POST_ENDPOINT.LIKE_POST(postId));
+};
+
+export const listPostLikes = async (postId: string, params?: IListParams) => {
+  return apiClient.get<IPostLikesResponse>(POST_ENDPOINT.GET_POST_LIKES(postId), {
+    params,
+  });
 };
 
 export const unlikePost = async (postId: string) => {

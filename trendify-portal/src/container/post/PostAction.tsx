@@ -4,11 +4,12 @@ import { Flex } from "antd";
 import { formatNumberCount } from "@/utils/common.util";
 import { useAppDispatch } from "@/stores";
 import { likePostAction, unlikePostAction } from "@/stores/post/actions";
+import { IPost, IPostViewerContext } from "@/interfaces/post.interface";
 
 import Icon from "@/components/icon/Icon";
 import Text from "@/components/text/Text";
+import SlotCounter from "react-slot-counter";
 import ModalLikePost from "@/container/modal/LikePost";
-import { IPost, IPostViewerContext } from "@/interfaces/post.interface";
 
 const LIKE_TRAILING_DEBOUNCE_MS = 300;
 
@@ -155,14 +156,32 @@ const PostAction = ({ post, viewerContext, onNavigateToDetail }: PostActionProps
             handleClickLike();
           }}
         >
-          <Icon name={isLiked ? "HeartFillIcon" : "HeartAltIcon"} />
-          <Text
+          {
+            <Icon
+              name={isLiked ? "HeartComIcon" : "HeartAltIcon"}
+              stroke={isLiked ? undefined : "currentColor"}
+            />
+          }
+          <span
             className="post-action__text"
             onClick={(e) => {
               e.stopPropagation();
               setVisibleModalLike(true);
             }}
-          >{`${formatNumberCount(likeCount)}`}</Text>
+          >
+            {likeCount >= 1000 ? (
+              formatNumberCount(likeCount)
+            ) : (
+              <SlotCounter
+                value={likeCount}
+                startValue={likeCount}
+                animateOnVisible={false}
+                duration={0.2}
+                useMonospaceWidth
+                containerClassName="slot-counter-fix"
+              />
+            )}
+          </span>
         </Flex>
         <Flex
           className="post-action"
@@ -181,7 +200,11 @@ const PostAction = ({ post, viewerContext, onNavigateToDetail }: PostActionProps
       </Flex>
 
       {visibleModalLike && (
-        <ModalLikePost open={visibleModalLike} onCancel={() => setVisibleModalLike(false)} />
+        <ModalLikePost
+          open={visibleModalLike}
+          postId={post.id}
+          onCancel={() => setVisibleModalLike(false)}
+        />
       )}
     </>
   );

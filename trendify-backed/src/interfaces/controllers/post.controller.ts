@@ -123,9 +123,11 @@ class PostController {
   };
 
   getPostLikes = async (request: Request, response: Response) => {
+    const viewerId = response.locals?.auth?.userId;
     const { postId } = request.params;
 
     const result = await this.getPostLikesUseCase.execute({
+      viewerId,
       postId,
       ...request.query,
     });

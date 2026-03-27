@@ -2,12 +2,14 @@ import { IApiResponse } from "@/interfaces/api.interface";
 import { EVisibility } from "@/interfaces/common.interface";
 import { IPost, IPostLocation, IPostMention } from "@/interfaces/post.interface";
 import { IComment, ICommentMention } from "@/interfaces/comment.interface";
+import { IUserViewContext } from "@/stores/profile/constants";
 
 export enum EPostActions {
   CREATE_POST = "CREATE_POST",
   DELETE_POST = "DELETE_POST",
   GET_POST_DETAIL = "GET_POST_DETAIL",
   GET_POST_COMMENTS = "GET_POST_COMMENTS",
+  GET_POST_LIKES = "GET_POST_LIKES",
 
   LIKE_POST = "LIKE_POST",
   UNLIKE_POST = "UNLIKE_POST",
@@ -29,6 +31,7 @@ export const POST_ENDPOINT = {
   CREATE_POST: "/posts",
   DELETE_POST: (postId: string) => `/posts/${postId}`,
   GET_POST_DETAIL: (postId: string) => `/posts/${postId}`,
+  GET_POST_LIKES: (postId: string) => `/posts/${postId}/likes`,
 
   LIKE_POST: (postId: string) => `/posts/${postId}/like`,
   UNLIKE_POST: (postId: string) => `/posts/${postId}/like`,
@@ -145,6 +148,29 @@ export interface ILikePostResponse extends IApiResponse {
     isLiked: boolean;
   };
 }
+
+export interface IPostLikeUser {
+  id: string;
+  userId: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  profilePicture?: {
+    small?: string;
+    medium?: string;
+    large?: string;
+  } | null;
+  viewerContext: IUserViewContext;
+  createdAt: string;
+}
+
+export interface IPostLikesResponse extends IApiResponse {
+  data: {
+    likes: IPostLikeUser[];
+    nextCursor?: string | null;
+  };
+}
+
 export interface ISavePostResponse extends IApiResponse {
   data: {
     isSaved: boolean;

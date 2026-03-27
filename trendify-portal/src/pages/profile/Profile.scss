@@ -3,7 +3,7 @@
   margin: 0 auto;
   gap: 12px;
   width: 100%;
-  max-width: 1024px;
+  max-width: 680px;
   height: fit-content;
 
   .profile-header {
@@ -61,26 +61,34 @@
   }
 
   .header-information {
-    padding: 0 32px;
+    padding: 0 16px;
 
     @include mobile-medium {
       padding: 0 8px;
     }
 
     .header-info-action {
+      height: fit-content;
+
       @include mobile-medium {
         display: none;
+      }
+
+      &--mobile {
+        display: none;
+
+        @include mobile-medium {
+          display: flex;
+          margin-top: 4px;
+        }
       }
     }
   }
 
   .header-info {
-    margin-top: -42px;
+    margin-top: -48px;
     gap: 12px;
-
-    @include mobile-medium {
-      flex-direction: column;
-    }
+    flex-direction: column;
 
     .header-info-avatar {
       padding: 4px;
@@ -88,10 +96,7 @@
       background-color: var(--switch-bg);
       z-index: 1;
       cursor: pointer;
-
-      @include mobile-medium {
-        width: fit-content;
-      }
+      width: fit-content;
 
       .avatar {
         width: 154px;
@@ -105,26 +110,16 @@
       }
     }
 
-    .header-info-detail {
-      gap: 24px;
-      flex: 1;
-      margin-top: 58px;
-
-      @include mobile-medium {
-        margin-top: 0;
+    .header-info-folow {
+      &:hover {
+        cursor: pointer;
+        text-decoration: underline;
       }
+    }
 
-      .header-info-folow {
-        &:hover {
-          cursor: pointer;
-          text-decoration: underline;
-        }
-      }
-
-      .header-info-detail-description {
-        width: 300px;
-        color: var(--gray-500);
-      }
+    .header-info-detail-description {
+      width: 300px;
+      color: var(--gray-500);
     }
   }
 

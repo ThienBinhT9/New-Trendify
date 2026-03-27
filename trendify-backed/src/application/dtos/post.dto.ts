@@ -120,6 +120,7 @@ export interface UnlikePostDTO {
 }
 
 export interface GetPostLikesDTO {
+  viewerId: string;
   postId: string;
   limit?: number;
   cursor?: string;

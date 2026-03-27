@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { memo, useEffect, useState } from "react";
 import { App, Avatar, Dropdown, Flex, MenuProps } from "antd";
 
@@ -28,6 +28,7 @@ const PostHeader = ({ post, viewerContext }: PostHeaderProps) => {
   const { canDelete, canSave, isAuthor } = viewerContext;
   const currentUserId = useAppSelector((state) => state.auth.user?.id);
 
+  const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
@@ -59,6 +60,12 @@ const PostHeader = ({ post, viewerContext }: PostHeaderProps) => {
       onOk: async () => {
         try {
           await dispatch(deletePostAction(post.id)).unwrap();
+
+          const isOnDetailPage = location.pathname === ROUTE_PATHS.POST_DETAIL(post.id);
+          if (isOnDetailPage) {
+            navigate(-1);
+          }
+
           notification.open({
             key: `delete-toast-${post.id}`,
             message: (
@@ -153,10 +160,10 @@ const PostHeader = ({ post, viewerContext }: PostHeaderProps) => {
       ? [
           {
             key: EPostActions.SAVE_POST,
-            icon: <Icon name="SaveAltIcon" size={22} />,
+            icon: <Icon name={isSaved ? "BookmarkOffIcon" : "BookmarkOutlineIcon"} size={22} />,
             label: (
               <PostOptionItem
-                title={isSaved ? "Đã lưu bài viết" : "Lưu bài viết"}
+                title={isSaved ? "Bỏ lưu" : "Lưu bài viết"}
                 description={isSaved ? "Xoá khỏi danh sách đã lưu" : "Thêm vào danh sách đã lưu"}
               />
             ),

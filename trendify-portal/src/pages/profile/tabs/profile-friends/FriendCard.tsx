@@ -12,10 +12,12 @@ import { getProfileTab } from "@/utils/common.util";
 
 interface Props {
   relationship: IUserRelationship;
+  hideFollowAction?: boolean;
+  className?: string;
 }
 
 const FriendCard = (props: Props) => {
-  const { relationship } = props;
+  const { relationship, hideFollowAction = false, className } = props;
   const location = useLocation();
 
   const navigate = useNavigate();
@@ -34,15 +36,18 @@ const FriendCard = (props: Props) => {
   };
 
   return (
-    <Flex className="friend-card" onClick={handlePress}>
+    <Flex className={`friend-card ${className || ""}`} onClick={handlePress}>
       <Avatar className="friend-card-avatar" src={relationship.profilePicture?.small} />
       <Flex flex={1} vertical gap={4}>
-        <Text textType="SB16">{`${relationship?.firstName} ${relationship?.lastName}`}</Text>
+        <Text
+          textType="SB16"
+          className="friend-card-displayname"
+        >{`${relationship?.firstName} ${relationship?.lastName}`}</Text>
         <Text textType="R14" className="friend-card-mutial">
-          {`@${relationship?.username}`}
+          {`${relationship?.username}`}
         </Text>
       </Flex>
-      {relationship.viewerContext && (
+      {!hideFollowAction && relationship.viewerContext && (
         <Flex onClick={(e) => e.stopPropagation()}>
           <FollowStatusCard relationship={relationship} variant={getVariant()} />
         </Flex>

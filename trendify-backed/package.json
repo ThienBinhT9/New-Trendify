@@ -33,7 +33,6 @@
     "amqplib": "^0.10.9",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.66.5",
-
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -54,6 +53,7 @@
     "multer": "^2.0.2",
     "nodemailer": "^7.0.5",
     "sharp": "^0.34.5",
+    "socket.io": "^4.8.3",
     "zod": "^4.0.17"
   }
 }

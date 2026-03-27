@@ -1,45 +1,96 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Avatar, Divider, Empty, Flex, Skeleton } from "antd";
-import InfiniteScroll from "react-infinite-scroll-component";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Divider, Empty, Flex, Skeleton } from "antd";
+import { Virtuoso } from "react-virtuoso";
 
 import "./modal.scss";
-import ROUTE_PATHS from "@/routes/path.route";
+import { listPostLikes } from "@/stores/post/api";
+import { IPostLikeUser } from "@/stores/post/constants";
+import { IUserRelationship } from "@/stores/profile/constants";
 
-import Icon from "@/components/icon/Icon";
 import Text from "@/components/text/Text";
 import Modal from "@/components/modal/Modal";
-import Button from "@/components/button/Button";
+import FriendCard from "@/pages/profile/tabs/profile-friends/FriendCard";
 
-const fakeData = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+const LIKE_LIMIT = 20;
 
 interface Props {
   open: boolean;
+  postId: string;
   onCancel: () => void;
 }
 
 const ModalLikePost = (props: Props) => {
-  const { open, onCancel } = props;
+  const { open, postId, onCancel } = props;
 
   const [loading, setLoading] = useState<boolean>(true);
-  const [usersLiked, setUsersLiked] = useState<number[]>([]);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
+  const [usersLiked, setUsersLiked] = useState<IPostLikeUser[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState<boolean>(false);
 
-  const handleFetchUsersLiked = async (params: { page: number; limit: number }) => {
-    try {
-      setLoading(true);
-      await new Promise((resolve) => setTimeout(() => resolve(params), 2000));
-      setUsersLiked(fakeData);
-    } catch (error) {
-      console.log("fetch users liked error: ", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const mapLikeToRelationship = useCallback((likeUser: IPostLikeUser): IUserRelationship => {
+    return {
+      id: likeUser.id,
+      username: likeUser.username,
+      firstName: likeUser.firstName || "",
+      lastName: likeUser.lastName,
+      profilePicture: likeUser.profilePicture || undefined,
+      viewerContext: likeUser.viewerContext,
+    };
+  }, []);
+
+  const handleFetchUsersLiked = useCallback(
+    async (cursor?: string | null) => {
+      if (!postId) return;
+
+      const isInitialRequest = !cursor;
+      try {
+        if (isInitialRequest) {
+          setLoading(true);
+        } else {
+          setLoadingMore(true);
+        }
+
+        const response = await listPostLikes(postId, {
+          cursor: cursor || undefined,
+          limit: LIKE_LIMIT,
+        });
+
+        const { likes, nextCursor: next } = response.data.data;
+
+        setUsersLiked((prev) => (isInitialRequest ? likes : [...prev, ...likes]));
+        setNextCursor(next || null);
+        setHasMore(Boolean(next));
+      } catch (error) {
+        console.log("fetch users liked error: ", error);
+      } finally {
+        if (isInitialRequest) {
+          setLoading(false);
+        } else {
+          setLoadingMore(false);
+        }
+      }
+    },
+    [postId],
+  );
+
+  const handleLoadMore = useCallback(() => {
+    if (loading || loadingMore || !hasMore || !nextCursor) return;
+    void handleFetchUsersLiked(nextCursor);
+  }, [loading, loadingMore, hasMore, nextCursor, handleFetchUsersLiked]);
+
+  const users = useMemo(
+    () => usersLiked.map((likeUser) => mapLikeToRelationship(likeUser)),
+    [usersLiked, mapLikeToRelationship],
+  );
 
   useEffect(() => {
-    const params = { page: 1, limit: 20 };
-    handleFetchUsersLiked(params);
-  }, []);
+    if (!open || !postId) return;
+    setUsersLiked([]);
+    setNextCursor(null);
+    setHasMore(false);
+    void handleFetchUsersLiked();
+  }, [open, postId, handleFetchUsersLiked]);
 
   return (
     <Modal
@@ -51,7 +102,6 @@ const ModalLikePost = (props: Props) => {
     >
       <Flex gap={6} vertical className="p-16">
         <Text textType="M20">Likes</Text>
-        <Text textType="R16">1.2K</Text>
         {loading ? (
           <Flex vertical>
             <UserItemSkeleton />
@@ -60,92 +110,31 @@ const ModalLikePost = (props: Props) => {
             <UserItemSkeleton />
           </Flex>
         ) : (
-          <Flex className="list-user-liked" id="scrollableLikedPost">
-            <InfiniteScroll
-              dataLength={0}
-              hasMore={true}
-              scrollableTarget="scrollableLikedPost"
-              loader={<UserItemSkeleton />}
-              next={async () => {}}
-            >
-              {usersLiked.length ? (
-                usersLiked.map((_, index: number) => (
-                  <UserItem key={index} isLast={index === usersLiked.length - 1} />
-                ))
-              ) : (
-                <Empty description="Nobody has liked this post yet." />
-              )}
-            </InfiniteScroll>
+          <Flex className="list-user-liked">
+            {users.length ? (
+              <Virtuoso
+                style={{ height: "60vh" }}
+                data={users}
+                endReached={handleLoadMore}
+                itemContent={(index, relationship) => (
+                  <Flex vertical>
+                    {index > 0 && (
+                      <Divider style={{ margin: "12px 0", borderColor: "#e8e8e8ff" }} />
+                    )}
+                    <FriendCard relationship={relationship} className="item-user-liked" />
+                  </Flex>
+                )}
+                components={{
+                  Footer: () => (loadingMore ? <UserItemSkeleton /> : null),
+                }}
+              />
+            ) : (
+              <Empty description="Nobody has liked this post yet." />
+            )}
           </Flex>
         )}
       </Flex>
     </Modal>
-  );
-};
-
-const UserItem = ({ isLast = false }: { isLast: boolean }) => {
-  const navigate = useNavigate();
-
-  const [loading, setLoading] = useState<boolean>(false);
-  const [isFollowing, setIsFollowing] = useState<boolean>(true);
-
-  const naviagateToProfile = () => {
-    navigate(ROUTE_PATHS.PROFILE("fewfewfew"));
-  };
-
-  const handleFollow = async () => {
-    try {
-      setLoading(true);
-      await new Promise((resolve) => setTimeout(() => resolve([]), 2000));
-      setIsFollowing(!isFollowing);
-    } catch (error) {
-      console.log("follow error: ", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleUnFollow = async () => {
-    try {
-      setLoading(true);
-      await new Promise((resolve) => setTimeout(() => resolve([]), 2000));
-      setIsFollowing(!isFollowing);
-    } catch (error) {
-      console.log("follow error: ", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Flex vertical>
-      <Flex gap={8} align="center" justify="space-between">
-        <Flex gap={8} align="center">
-          <Avatar
-            onClick={naviagateToProfile}
-            src="https://i.pinimg.com/1200x/90/70/ed/9070edc42387e02b2d69b8154acf4524.jpg"
-          />
-          <Text textType="M14" className="username-liked" onClick={naviagateToProfile}>
-            Trần Thu Uyên
-          </Text>
-        </Flex>
-        {isFollowing ? (
-          <Button
-            type="primary"
-            loading={loading}
-            icon={<Icon name="UserPlusIcon" />}
-            onClick={handleFollow}
-          >
-            <Text textType="M14">Follow</Text>
-          </Button>
-        ) : (
-          <Button loading={loading} icon={<Icon name="UserBlockIcon" />} onClick={handleUnFollow}>
-            <Text textType="M14">Unfollow</Text>
-          </Button>
-        )}
-      </Flex>
-      {!isLast && <Divider style={{ margin: "12px 0", borderColor: "#e8e8e8ff" }} />}
-    </Flex>
   );
 };
 

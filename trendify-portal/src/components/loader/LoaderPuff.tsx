@@ -9,9 +9,9 @@ interface Props {
 }
 
 const LoaderPuff = (props: Props) => {
-  const { size = 16 } = props;
+  const { size = 16, overlay = false } = props;
   return (
-    <Flex className="loader-container">
+    <Flex className={`loader-container ${overlay ? "loader-container--overlay" : ""}`}>
       <PuffLoader size={size} color="var(--primary-color)" />
     </Flex>
   );

@@ -74,6 +74,9 @@ import PlusIcon from "./Plus.svg?react";
 import LocationAltIcon from "./LocationAlt.svg?react";
 import GifIcon from "./Gif.svg?react";
 import EmojiIcon from "./Emoji.svg?react";
+import BookmarkOutlineIcon from "./BookmarkOutline.svg?react";
+import BookmarkOffIcon from "./BookmarkOff.svg?react";
+import HeartComIcon from "./HeartCom.svg?react";
 
 export {
   GoogleIcon,
@@ -152,6 +155,9 @@ export {
   LocationAltIcon,
   GifIcon,
   EmojiIcon,
+  BookmarkOffIcon,
+  BookmarkOutlineIcon,
+  HeartComIcon,
 };
 
 export default {
@@ -231,4 +237,7 @@ export default {
   LocationAltIcon,
   GifIcon,
   EmojiIcon,
+  BookmarkOffIcon,
+  BookmarkOutlineIcon,
+  HeartComIcon,
 };
