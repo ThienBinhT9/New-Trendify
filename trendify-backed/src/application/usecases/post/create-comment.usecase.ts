@@ -85,6 +85,7 @@ export class CreateCommentUseCase {
         commentId: created.id,
         commenterId: userId,
         parentId,
+        mentions,
         delta: 1,
       });
     } catch (error) {

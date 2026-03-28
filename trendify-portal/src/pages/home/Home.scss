@@ -143,3 +143,16 @@
     margin-bottom: 12px;
   }
 }
+
+.notification-dot {
+  .ant-badge-dot {
+    width: 10px;
+    min-width: 10px;
+    height: 10px;
+    background-color: #ff4d4f;
+    box-shadow: 0 2px 8px rgba(255, 77, 79, 0.32);
+    transform: translate(16%, -16%);
+    top: 2px;
+    right: 2px;
+  }
+}

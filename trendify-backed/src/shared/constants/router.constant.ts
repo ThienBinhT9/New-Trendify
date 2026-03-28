@@ -16,6 +16,10 @@ export const AUTH_ROUTES = {
 export const USER_ROUTES = {
   BASE: `${API_PREFIX}/users`,
   ME: "/me",
+  NOTIFICATIONS: "/me/notifications",
+  NOTIFICATIONS_UNREAD_COUNT: "/me/notifications/unread-count",
+  NOTIFICATION_READ: "/me/notifications/:notificationId/read",
+  NOTIFICATIONS_READ_ALL: "/me/notifications/read-all",
   PROFILE: "/:id",
   SETTINGS: "/me/settings",
   FOLLOWERS: "/:userId/followers",

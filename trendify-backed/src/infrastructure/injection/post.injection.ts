@@ -102,7 +102,14 @@ const getFollowingFeedUseCase = new GetFollowingFeedUseCase(
 // Like Use Cases
 const likePostUseCase = new LikePostUseCase(postRepo, likeRepo, blockRepo, producer);
 const unlikePostUseCase = new UnlikePostUseCase(postRepo, likeRepo, producer);
-const getPostLikesUseCase = new GetPostLikesUseCase(postRepo, likeRepo, userRepo);
+const getPostLikesUseCase = new GetPostLikesUseCase(
+  postRepo,
+  likeRepo,
+  userRepo,
+  followRepo,
+  mediaRepo,
+  storageSvc,
+);
 
 // Comment Use Cases
 const createCommentUseCase = new CreateCommentUseCase(

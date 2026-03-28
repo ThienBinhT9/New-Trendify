@@ -82,6 +82,20 @@ export const rabbitMQConfig: RabbitMQConfig = {
         durable: true,
       },
     },
+    {
+      name: "notification.queue",
+      options: {
+        durable: true,
+        deadLetterExchange: "app.dlx",
+        messageTtl: 3600000,
+      },
+    },
+    {
+      name: "notification.queue.dlx",
+      options: {
+        durable: true,
+      },
+    },
   ],
   bindings: [
     {
@@ -113,6 +127,16 @@ export const rabbitMQConfig: RabbitMQConfig = {
       exchange: "app.dlx",
       queue: "media.queue.dlx",
       routingKey: "media.queue",
+    },
+    {
+      exchange: "app.events",
+      queue: "notification.queue",
+      routingKey: "counter.*",
+    },
+    {
+      exchange: "app.dlx",
+      queue: "notification.queue.dlx",
+      routingKey: "notification.queue",
     },
   ],
 };

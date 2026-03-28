@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import helmet from "helmet";
 import morgan from "morgan";
 import express from "express";
+import http from "http";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 
@@ -12,8 +13,10 @@ import { notfound, error } from "@/interfaces/middlewares/error.middleware";
 import { convertRequestCase } from "@/interfaces/middlewares/case.middleware";
 import { consumerManager } from "@/infrastructure/messaging/consumer.manager";
 import { connectionManager } from "@/infrastructure/messaging/connection.manager";
+import { initializeSocket } from "@/config/socket.config";
 
 const app = express();
+const httpServer = http.createServer(app);
 dotenv.config();
 
 // ============================================
@@ -48,12 +51,15 @@ async function startServer() {
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     await connectionManager.initialize();
 
-    // 3. Khởi động consumers
+    // 3. Khởi tạo Socket.IO trước khi consumer bắt đầu xử lý message
+    initializeSocket(httpServer);
+
+    // 4. Khởi động consumers
     await consumerManager.start();
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
-    // 4. Khởi động Express server
-    app.listen(process.env.DEV_APP_PORT, () => {
+    // 5. Khởi động Express server
+    httpServer.listen(process.env.DEV_APP_PORT, () => {
       console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
       console.log(`✅ Server is running on port ${process.env.DEV_APP_PORT}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);

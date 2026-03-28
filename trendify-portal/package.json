@@ -40,6 +40,7 @@
     "react-truncate-markup": "^5.1.2",
     "react-virtuoso": "^4.18.3",
     "redux-persist": "^6.0.0",
+    "socket.io-client": "^4.8.3",
     "tippy.js": "^6.3.7",
     "vite-tsconfig-paths": "^5.1.4"
   },

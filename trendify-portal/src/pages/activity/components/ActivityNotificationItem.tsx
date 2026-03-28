@@ -1,37 +1,36 @@
 import { Avatar, Flex } from "antd";
-import { type ComponentProps, memo } from "react";
+import { memo } from "react";
 
 import Button from "@/components/button/Button";
 import Icon from "@/components/icon/Icon";
 
-import type { ActivityEventType, ActivityNotification } from "../activity.types";
+import type { ActivityNotification } from "../activity.types";
 import Text from "@/components/text/Text";
-
-type IconName = ComponentProps<typeof Icon>["name"];
-
-type ActivityBadge = {
-  icon: IconName;
-  toneClass: string;
-};
-
-const badgeConfig: Record<ActivityEventType, ActivityBadge> = {
-  like: { icon: "HeartDecorationIcon", toneClass: "activity-notification-item__badge--like" },
-  follow: { icon: "UserWhiteIcon", toneClass: "activity-notification-item__badge--follow" },
-  reply: { icon: "CommentIcon", toneClass: "activity-notification-item__badge--reply" },
-  repost: { icon: "ShareIcon", toneClass: "activity-notification-item__badge--repost" },
-  mention: { icon: "MessageCircleIcon", toneClass: "activity-notification-item__badge--mention" },
-};
+import { formatTimeFromNow } from "@/utils/common.util";
 
 interface ActivityNotificationItemProps {
   notification: ActivityNotification;
+  isPendingRead?: boolean;
+  onClick?: () => void;
 }
 
-const ActivityNotificationItem = ({ notification }: ActivityNotificationItemProps) => {
-  const badge = badgeConfig[notification.type];
+const ActivityNotificationItem = ({
+  notification,
+  isPendingRead = false,
+  onClick,
+}: ActivityNotificationItemProps) => {
   const visibleActors = notification.actors.slice(0, 2);
+  const relativeTimeLabel = formatTimeFromNow(notification.createdAt);
 
   return (
-    <Flex className="activity-notification-item" align="flex-start" justify="space-between">
+    <Flex
+      className={`activity-notification-item ${notification.isRead ? "" : "activity-notification-item--unread"} ${
+        isPendingRead ? "activity-notification-item--pending" : ""
+      }`}
+      align="flex-start"
+      justify="space-between"
+      onClick={onClick}
+    >
       <Flex className="activity-notification-item__main" align="center">
         <Flex
           className={`activity-notification-item__actors ${
@@ -43,17 +42,15 @@ const ActivityNotificationItem = ({ notification }: ActivityNotificationItemProp
               key={`${notification.id}-${actor.id}`}
               className={`activity-notification-item__avatar activity-notification-item__avatar--${index}`}
               style={{ backgroundColor: actor.avatarBg, color: actor.avatarColor }}
+              src={actor.avatarUrl}
             >
               {actor.initials}
             </Avatar>
           ))}
-
-          <Flex className={`activity-notification-item__badge ${badge.toneClass}`}>
-            <Icon name={badge.icon} size={10} />
-          </Flex>
         </Flex>
 
         <Flex vertical className="activity-notification-item__content">
+          {!notification.isRead && <span className="activity-notification-item__unread-dot" />}
           <p
             className="activity-notification-item__title"
             title={`${notification.actorSummary} ${notification.actionText}`}
@@ -71,7 +68,7 @@ const ActivityNotificationItem = ({ notification }: ActivityNotificationItemProp
       </Flex>
 
       <Flex vertical align="flex-end" className="activity-notification-item__meta">
-        <Text textType="M14">{notification.timeLabel}</Text>
+        <Text textType="M14">{relativeTimeLabel}</Text>
 
         {notification.actionType === "follow" ? (
           <Button className="activity-notification-item__follow-btn">

@@ -9,6 +9,7 @@ import { MongooseUserIntentRepository } from "./user-intent.repository.impl";
 import { MongooseBlockRepository } from "./block.repository.impl";
 import { MongooseMediaRepository } from "./media.repository.impl";
 import { MongooseCommentRepository } from "./comment.repository.impl";
+import { MongooseNotificationRepository } from "./notification.repository.impl";
 
 export {
   MongooseFollowRepository,
@@ -22,4 +23,5 @@ export {
   MongooseBlockRepository,
   MongooseMediaRepository,
   MongooseCommentRepository,
+  MongooseNotificationRepository,
 };

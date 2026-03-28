@@ -31,6 +31,8 @@ const ForyouPage = ({ isActive = false, prefetch = false }: ForyouPageProps) => 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const hasFetchedRef = useRef<boolean>(false);
 
+  console.log({ cursor, hasNext });
+
   const fetchPosts = useCallback(async (nextCursor: number) => {
     try {
       setIsLoading(true);

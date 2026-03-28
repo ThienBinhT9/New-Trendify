@@ -8,14 +8,20 @@ export interface ActivityActor {
   id: string;
   displayName: string;
   initials: string;
+  avatarUrl?: string;
   avatarBg: string;
   avatarColor: string;
 }
 
 export interface ActivityNotification {
   id: string;
+  sourceType: "post_like" | "post_comment" | "post_mention" | "follow";
+  actorId: string;
+  targetId: string;
+  referenceId?: string;
   category: ActivityCategory;
   type: ActivityEventType;
+  isRead: boolean;
   actors: ActivityActor[];
   actorSummary: string;
   actionText: string;

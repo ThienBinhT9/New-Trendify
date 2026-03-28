@@ -65,6 +65,7 @@ export interface PostCommentMessage extends BaseMessage {
     commentId: string;
     commenterId: string;
     parentId?: string;
+    mentions?: { userId: string }[];
     delta: number; // +1 for create, -1 for delete
   };
 }

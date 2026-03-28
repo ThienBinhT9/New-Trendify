@@ -7,6 +7,7 @@ import { LikeModel } from "./like.model";
 import { SaveModel } from "./save.model";
 import { BlockModel } from "./block.model";
 import { MediaModel } from "./media.model";
+import { NotificationModel } from "./notification.model";
 
 export {
   FollowModel,
@@ -18,4 +19,5 @@ export {
   SaveModel,
   BlockModel,
   MediaModel,
+  NotificationModel,
 };

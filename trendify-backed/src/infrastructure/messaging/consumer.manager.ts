@@ -2,6 +2,7 @@ import { BaseConsumer } from "./consumer.base";
 import { EmailConsumer } from "./consumers/email.consumer";
 import { CounterConsumer } from "./consumers/counter.consumer";
 import { MediaConsumer } from "./consumers/media.consumer";
+import { NotificationConsumer } from "./consumers/notification.consumer";
 
 /**
  * Consumer Manager - Quản lý tất cả message consumers
@@ -23,7 +24,12 @@ class ConsumerManager {
     }
 
     try {
-      this.consumers = [new EmailConsumer(), new CounterConsumer(), new MediaConsumer()];
+      this.consumers = [
+        new EmailConsumer(),
+        new CounterConsumer(),
+        new MediaConsumer(),
+        new NotificationConsumer(),
+      ];
 
       // Start tất cả
       await Promise.all(this.consumers.map((c) => c.start()));

@@ -92,7 +92,7 @@ const FollowStatusCard = (props: Props) => {
           <Flex className="follows-status-modal-body">
             <Avatar style={{ width: 84, height: 84 }} src={relationship?.profilePicture?.small} />
             <Flex align="center" gap={4}>
-              <Text>Remove</Text>
+              <Text>Xoá</Text>
               <Text textType="M14">{`${relationship?.firstName} ${relationship?.lastName}?`}</Text>
             </Flex>
           </Flex>
@@ -103,11 +103,11 @@ const FollowStatusCard = (props: Props) => {
               loading={isLoading}
             >
               <Text textType="SB14" style={{ color: "var(--color-error)" }}>
-                Remove
+                Xoá
               </Text>
             </Button>
             <Button className="follows-status-modal-btn" onClick={() => setShowOptionRemove(false)}>
-              Cancel
+              Huỷ
             </Button>
           </Flex>
         </Modal>
@@ -130,26 +130,26 @@ const FollowStatusCard = (props: Props) => {
           <Flex className="follows-status-modal-body">
             <Avatar style={{ width: 84, height: 84 }} src={relationship?.profilePicture?.small} />
             <Flex align="center" gap={4}>
-              <Text>Unfollow</Text>
+              <Text>Bỏ theo dõi</Text>
               <Text textType="M14">{`${relationship?.firstName} ${relationship?.lastName}?`}</Text>
             </Flex>
           </Flex>
           <Flex vertical className="follows-status-modal-footer">
             <Button className="follows-status-modal-btn" onClick={handleUnfollow}>
               <Text textType="SB14" style={{ color: "var(--color-error)" }}>
-                Unfollow
+                Bỏ theo dõi
               </Text>
             </Button>
             <Button
               className="follows-status-modal-btn"
               onClick={() => setShowOptionFollowing(false)}
             >
-              Cancel
+              Huỷ
             </Button>
           </Flex>
         </Modal>
         <Button type="default" onClick={() => setShowOptionFollowing(true)} loading={isLoading}>
-          <Text textType="SB14">Following</Text>
+          <Text textType="SB14">Đang theo dõi</Text>
         </Button>
       </>
     );
@@ -167,7 +167,7 @@ const FollowStatusCard = (props: Props) => {
           <Flex className="follows-status-modal-body">
             <Avatar style={{ width: 84, height: 84 }} src={relationship?.profilePicture?.small} />
             <Flex align="center" gap={4}>
-              <Text>Cancel follow request to</Text>
+              <Text>Huỷ yêu cầu theo dõi</Text>
               <Text textType="M14">{`${relationship?.firstName} ${relationship?.lastName}?`}</Text>
             </Flex>
           </Flex>
@@ -178,14 +178,14 @@ const FollowStatusCard = (props: Props) => {
               loading={isLoading}
             >
               <Text textType="SB14" style={{ color: "var(--color-error)" }}>
-                Cancel request
+                Huỷ yêu cầu
               </Text>
             </Button>
             <Button
               className="follows-status-modal-btn"
               onClick={() => setShowOptionRequested(false)}
             >
-              Keep
+              Giữ
             </Button>
           </Flex>
         </Modal>
@@ -201,7 +201,7 @@ const FollowStatusCard = (props: Props) => {
   return (
     <Button type="primary" onClick={handleFollow} loading={isLoading}>
       <Text textType="SB14">
-        {relationship?.viewerContext?.isFollowedBy ? "Follow back" : "Follow"}
+        {relationship?.viewerContext?.isFollowedBy ? "Theo dõi lại" : "Theo dõi"}
       </Text>
     </Button>
   );

@@ -1,4 +1,4 @@
-import { Grid, MenuProps } from "antd";
+import { Badge, Grid, MenuProps } from "antd";
 
 import "./Home.scss";
 import ROUTE_PATHS from "@/routes/path.route";
@@ -14,6 +14,14 @@ const SidebarHome = () => {
   const screens = Grid.useBreakpoint();
   const useBottomNav = !screens.sm;
 
+  const renderActivityIcon = () => {
+    return (
+      <Badge dot className="notification-dot">
+        <Icon name="HeartAltIcon" size={32} />
+      </Badge>
+    );
+  };
+
   const sidebarMenuItems: Required<MenuProps>["items"][number][] = [
     {
       key: ROUTE_PATHS.HOME,
@@ -22,7 +30,7 @@ const SidebarHome = () => {
     },
     {
       key: ROUTE_PATHS.ACTIVITY,
-      icon: <Icon name="HeartAltIcon" size={32} />,
+      icon: renderActivityIcon(),
       label: <Text textType="M14">Hoạt động</Text>,
     },
     {
@@ -55,7 +63,7 @@ const SidebarHome = () => {
     },
     {
       key: ROUTE_PATHS.ACTIVITY,
-      icon: <Icon name="HeartAltIcon" size={32} />,
+      icon: renderActivityIcon(),
       label: <Text textType="M14">Hoạt động</Text>,
     },
     {

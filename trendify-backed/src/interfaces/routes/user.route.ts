@@ -4,11 +4,13 @@ import userController from "@/infrastructure/injection/user.injection";
 import followController from "@/infrastructure/injection/follow.injection";
 import blockController from "@/infrastructure/injection/block.injection";
 import postController from "@/infrastructure/injection/post.injection";
+import notificationController from "@/infrastructure/injection/notification.injection";
 
 import { authMiddleware } from "@/interfaces/middlewares/auth.middleware";
 import { validate, validateParams, validateQuery } from "../middlewares/validate.middleware";
 
 import * as schema from "../validators/user.validator";
+import * as notificationSchema from "../validators/notification.validator";
 import { USER_ROUTES } from "@/shared/constants/router.constant";
 
 const route = Router();
@@ -31,6 +33,22 @@ route.patch(
   validate(schema.updateSettingsSchema),
   userController.updateSettings,
 );
+
+route.get(
+  USER_ROUTES.NOTIFICATIONS,
+  validateQuery(notificationSchema.getNotificationsQuerySchema),
+  notificationController.getNotifications,
+);
+
+route.get(USER_ROUTES.NOTIFICATIONS_UNREAD_COUNT, notificationController.getUnreadCount);
+
+route.patch(
+  USER_ROUTES.NOTIFICATION_READ,
+  validateParams(notificationSchema.notificationIdParamSchema),
+  notificationController.markAsRead,
+);
+
+route.patch(USER_ROUTES.NOTIFICATIONS_READ_ALL, notificationController.markAllAsRead);
 
 route.get(USER_ROUTES.FOLLOWERS, followController.getFollowers);
 

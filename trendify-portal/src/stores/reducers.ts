@@ -6,6 +6,7 @@ import { profileReducer } from "./profile";
 import { followReducer } from "./follow";
 import { settingsReducer } from "./settings";
 import { postReducer } from "./post";
+import { notificationReducer } from "./notification";
 
 const rootReducer = combineReducers({
   loading: loadingReducer,
@@ -14,6 +15,7 @@ const rootReducer = combineReducers({
   follow: followReducer,
   settings: settingsReducer,
   posts: postReducer,
+  notification: notificationReducer,
 });
 
 export default rootReducer;

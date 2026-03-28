@@ -62,6 +62,16 @@
     transition: 0.3s;
   }
 
+  &--unread {
+    border-color: #b7d0ff;
+    box-shadow: 0 0 0 1px rgba(36, 104, 214, 0.08);
+  }
+
+  &--pending {
+    opacity: 0.75;
+    pointer-events: none;
+  }
+
   @include mobile-medium {
     min-height: 88px;
     border-radius: 14px;
@@ -164,6 +174,23 @@
     min-width: 0;
     gap: 4px;
     padding-top: 2px;
+    position: relative;
+  }
+
+  &__unread-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #2f76ef;
+    position: absolute;
+    top: 8px;
+    left: -14px;
+    z-index: 10;
+
+    @include mobile-medium {
+      top: 7px;
+      left: -10px;
+    }
   }
 
   &__title,
