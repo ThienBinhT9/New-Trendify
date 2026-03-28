@@ -44,8 +44,6 @@ export class FollowUserUseCase {
         await uow.follows.create(followRequest);
         await uow.commit();
 
-        // TODO: Send notification to target user
-
         return new Response.SuccessResponse({
           message: "Follow request sent",
           data: {
