@@ -68,7 +68,7 @@ const ActivityNotificationItem = ({
       </Flex>
 
       <Flex vertical align="flex-end" className="activity-notification-item__meta">
-        <Text textType="M14">{relativeTimeLabel}</Text>
+        <Text textType="M10">{relativeTimeLabel}</Text>
 
         {notification.actionType === "follow" ? (
           <Button className="activity-notification-item__follow-btn">

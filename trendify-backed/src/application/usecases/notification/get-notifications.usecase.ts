@@ -1,7 +1,7 @@
 import * as Response from "@/shared/responses";
 
 import { GetNotificationsDTO } from "@/application/dtos/notification.dto";
-import { fetchMediaRecordFromGroups } from "@/application/mappers/media.mapper";
+import { toMediaRecord } from "@/application/mappers/media.mapper";
 import { UserMapper } from "@/application/mappers";
 import { IFileStorageService } from "@/application/services/fileStorage.service";
 import { IMediaRepository } from "@/domain/media";
@@ -73,24 +73,34 @@ export class GetNotificationsUseCase {
     const actorMap = new Map(
       actors.filter((actor) => !!actor.id).map((actor) => [actor.id!, actor]),
     );
-    const profilePictureIds = actors
+    const avatarMediaIds = actors
       .map((actor) =>
         typeof actor.data.profilePicture === "string" ? actor.data.profilePicture : undefined,
       )
       .filter((id): id is string => !!id);
 
-    const mediaRecord = await fetchMediaRecordFromGroups([profilePictureIds], (ids) =>
-      this.mediaRepo.findByIds(ids),
-    );
+    const avatarMediaEntities = await this.mediaRepo.findByIds([...new Set(avatarMediaIds)]);
+    const avatarRecord = toMediaRecord(avatarMediaEntities);
 
     return notifications.map((notification) => {
       const actor = actorMap.get(notification.actorId);
+      const actorDTO = actor
+        ? UserMapper.toAuthorDTO(actor, avatarRecord, this.storageSvc)
+        : {
+            id: notification.actorId,
+            username: "unknown",
+            displayName: "Unknown user",
+            isVerified: false,
+            profilePicture: undefined,
+          };
 
       return {
         id: notification.id,
         type: notification.type,
-        actorId: notification.actorId,
-        actor: actor ? UserMapper.toAuthorDTO(actor, mediaRecord, this.storageSvc) : null,
+        actor: {
+          ...actorDTO,
+          profilePicture: actorDTO.profilePicture ?? null,
+        },
         targetId: notification.targetId,
         referenceId: notification.referenceId,
         isRead: notification.isRead,

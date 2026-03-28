@@ -97,15 +97,10 @@ const ActivityNotificationList = ({
 
   const mapNotificationToActivity = useCallback(
     (item: INotificationItem | NotificationSocketPayload): ActivityNotification => {
-      const actorId = item.actor?.id || item.actorId;
-      const displayName = resolveDisplayName(
-        actorId,
-        item.actor?.displayName,
-        item.actor?.username,
-      );
+      const actorId = item.actor.id;
+      const displayName = resolveDisplayName(actorId, item.actor.displayName, item.actor.username);
       const initials = resolveInitials(displayName, actorId);
-      const avatarUrl =
-        item.actor?.profilePicture?.small || item.actor?.profilePicture?.original || undefined;
+      const avatarUrl = item.actor.profilePicture?.small || item.actor.profilePicture?.original;
 
       const mappedType =
         item.type === "post_like"
@@ -121,7 +116,7 @@ const ActivityNotificationList = ({
       return {
         id: item.id,
         sourceType: item.type,
-        actorId: actorId || "",
+        actorId,
         targetId: item.targetId,
         referenceId: item.referenceId,
         category: derivedCategory,
@@ -129,7 +124,7 @@ const ActivityNotificationList = ({
         isRead: item.isRead,
         actors: [
           {
-            id: actorId || "",
+            id: actorId,
             displayName,
             initials,
             avatarUrl,

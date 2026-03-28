@@ -6,7 +6,7 @@ import {
   MongooseMediaRepository,
   MongooseUserRepository,
 } from "@/infrastructure/database/repositories";
-import { fetchMediaRecordFromGroups } from "@/application/mappers/media.mapper";
+import { toMediaRecord } from "@/application/mappers/media.mapper";
 import { UserMapper } from "@/application/mappers";
 import S3Service from "@/infrastructure/services/s3.service";
 import { getIO } from "@/config/socket.config";
@@ -77,10 +77,8 @@ export class NotificationConsumer extends BaseConsumer {
       targetId: postId,
     });
 
-    const [saved, actor] = await Promise.all([
-      notificationRepo.upsert(notification),
-      this.buildActorDTO(likerId),
-    ]);
+    const saved = await notificationRepo.upsert(notification);
+    const actor = await this.buildActorDTOSafe(likerId);
 
     // Emit real-time tới đúng user qua Socket.IO room
     this.emitToUser(postAuthorId, saved, actor);
@@ -99,7 +97,7 @@ export class NotificationConsumer extends BaseConsumer {
     const notificationRepo = new MongooseNotificationRepository();
 
     // 1. Notification cho post author (nếu không phải chính mình comment)
-    const actor = await this.buildActorDTO(commenterId);
+    const actor = await this.buildActorDTOSafe(commenterId);
 
     if (commenterId !== postAuthorId) {
       const notification = NotificationEntity.create({
@@ -148,13 +146,23 @@ export class NotificationConsumer extends BaseConsumer {
     notification: NotificationEntity,
     actor: ReturnType<typeof UserMapper.toAuthorDTO> | null,
   ): void {
+    const fallbackActor = {
+      id: notification.actorId,
+      username: "unknown",
+      displayName: "Unknown user",
+      isVerified: false,
+      profilePicture: null,
+    };
+
     try {
       const io = getIO();
       io.to(`user:${userId}`).emit("notification:new", {
         id: notification.id,
         type: notification.type,
-        actorId: notification.actorId,
-        actor,
+        actor: {
+          ...(actor || fallbackActor),
+          profilePicture: actor?.profilePicture ?? null,
+        },
         targetId: notification.targetId,
         referenceId: notification.referenceId,
         isRead: notification.isRead,
@@ -178,12 +186,20 @@ export class NotificationConsumer extends BaseConsumer {
 
     const profilePictureId =
       typeof actor.data.profilePicture === "string" ? actor.data.profilePicture : undefined;
-    const profilePictureIds = profilePictureId ? [profilePictureId] : [];
-    const mediaRecord = await fetchMediaRecordFromGroups([profilePictureIds], (ids) =>
-      this.mediaRepo.findByIds(ids),
-    );
+    const avatarMediaIds = profilePictureId ? [profilePictureId] : [];
+    const avatarMediaEntities = await this.mediaRepo.findByIds([...new Set(avatarMediaIds)]);
+    const avatarRecord = toMediaRecord(avatarMediaEntities);
 
-    return UserMapper.toAuthorDTO(actor, mediaRecord, this.storageSvc);
+    return UserMapper.toAuthorDTO(actor, avatarRecord, this.storageSvc);
+  }
+
+  private async buildActorDTOSafe(actorId: string) {
+    try {
+      return await this.buildActorDTO(actorId);
+    } catch (error) {
+      console.error("[NotificationConsumer] Failed to enrich notification actor:", error);
+      return null;
+    }
   }
 
   private async emitUnreadCount(

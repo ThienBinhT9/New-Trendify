@@ -63,12 +63,16 @@ export class MongooseMediaRepository
   }
 
   async findByIds(mediaIds: string[]): Promise<MediaEntity[]> {
-    try {
-      const docs = await MediaModel.find({ _id: { $in: mediaIds } }).lean();
-      return docs.map((doc) => this.mapToEntity(doc, MediaEntity));
-    } catch (error) {
+    const validObjectIds = mediaIds
+      .filter((id) => Types.ObjectId.isValid(id))
+      .map((id) => new Types.ObjectId(id));
+
+    if (validObjectIds.length === 0) {
       return [];
     }
+
+    const docs = await MediaModel.find({ _id: { $in: validObjectIds } }).lean();
+    return docs.map((doc) => this.mapToEntity(doc, MediaEntity));
   }
 
   async findByUser(options: FindMediaByUserOptions): Promise<MediaEntity[]> {

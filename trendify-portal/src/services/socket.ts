@@ -16,8 +16,7 @@ export type SocketConnectionStatus =
 export interface NotificationSocketPayload {
   id: string;
   type: "follow" | "post_like" | "post_comment" | "post_mention";
-  actorId: string;
-  actor?: INotificationActor | null;
+  actor: INotificationActor;
   targetId: string;
   referenceId?: string;
   isRead: boolean;
@@ -43,7 +42,20 @@ type ClientToServerEvents = Record<string, never>;
 
 export type AppSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL;
+const normalizeSocketBaseUrl = (value?: string): string | undefined => {
+  if (!value) return undefined;
+
+  try {
+    const parsed = new URL(value);
+    return parsed.origin;
+  } catch {
+    return value;
+  }
+};
+
+const SOCKET_URL = normalizeSocketBaseUrl(
+  import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL,
+);
 
 const SOCKET_OPTIONS = {
   autoConnect: false,

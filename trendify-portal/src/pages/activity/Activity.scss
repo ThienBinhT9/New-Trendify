@@ -56,6 +56,7 @@
   background-color: var(--switch-bg);
   padding: 16px;
   cursor: pointer;
+  position: relative;
 
   &:hover {
     background-color: var(--gray-100);
@@ -81,7 +82,7 @@
   &__main {
     flex: 1;
     min-width: 0;
-    gap: 12px;
+    gap: 6px;
   }
 
   &__actors {
@@ -174,17 +175,16 @@
     min-width: 0;
     gap: 4px;
     padding-top: 2px;
-    position: relative;
   }
 
   &__unread-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background-color: #2f76ef;
+    background-color: var(--text-color-blue);
     position: absolute;
     top: 8px;
-    left: -14px;
+    left: -2px;
     z-index: 10;
 
     @include mobile-medium {

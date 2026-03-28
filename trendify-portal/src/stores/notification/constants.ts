@@ -19,15 +19,14 @@ export interface INotificationActor {
   id: string;
   username: string;
   displayName: string;
-  profilePicture?: IPictureUrl;
+  profilePicture?: IPictureUrl | null;
   isVerified: boolean;
 }
 
 export interface INotificationItem {
   id: string;
   type: "post_like" | "post_comment" | "post_mention" | "follow";
-  actorId: string;
-  actor?: INotificationActor | null;
+  actor: INotificationActor;
   targetId: string;
   referenceId?: string;
   isRead: boolean;
