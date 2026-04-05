@@ -2,18 +2,19 @@ import { Avatar, Flex } from "antd";
 
 import "./ProfileFriends.scss";
 import Text from "@/components/text/Text";
-import { IUserRelationship } from "@/stores/profile/constants";
+import { IUserRelationship, IUserViewContext } from "@/stores/profile/constants";
 import { useLocation, useNavigate } from "react-router-dom";
 import ROUTE_PATHS, { SUB_PATH_PROFILE } from "@/routes/path.route";
 import FollowStatusCard from "@/container/card/FollowStatusCard";
 import { useAppSelector } from "@/stores";
-import { getProfileTab } from "@/utils/common.util";
+import { getAvatarUrl, getProfileTab } from "@/utils/common.util";
 // import FollowStatusCard from "@/container/card/FollowStatusCard";
 
 interface Props {
   relationship: IUserRelationship;
   hideFollowAction?: boolean;
   className?: string;
+  onFollowChange?: (newViewContext: Partial<IUserViewContext>) => void;
 }
 
 const FriendCard = (props: Props) => {
@@ -37,19 +38,23 @@ const FriendCard = (props: Props) => {
 
   return (
     <Flex className={`friend-card ${className || ""}`} onClick={handlePress}>
-      <Avatar className="friend-card-avatar" src={relationship.profilePicture?.small} />
+      <Avatar className="friend-card-avatar" src={getAvatarUrl(relationship.profilePicture)} />
       <Flex flex={1} vertical gap={4}>
         <Text
           textType="SB16"
           className="friend-card-displayname"
-        >{`${relationship?.firstName} ${relationship?.lastName}`}</Text>
+        >{`${relationship?.displayName}`}</Text>
         <Text textType="R14" className="friend-card-mutial">
           {`${relationship?.username}`}
         </Text>
       </Flex>
       {!hideFollowAction && relationship.viewerContext && (
         <Flex onClick={(e) => e.stopPropagation()}>
-          <FollowStatusCard relationship={relationship} variant={getVariant()} />
+          <FollowStatusCard
+            relationship={relationship}
+            variant={getVariant()}
+            onUpdate={props.onFollowChange}
+          />
         </Flex>
       )}
     </Flex>

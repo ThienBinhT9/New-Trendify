@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, type SetStateAction, useState } from "
 
 import {
   getSocket,
+  type AggregatedNotificationPayload,
   type NotificationReadPayload,
   type NotificationSocketPayload,
   type NotificationUnreadCountPayload,
@@ -27,27 +28,36 @@ const AUTO_SYNC_COOLDOWN_MS = 12000;
 
 let unreadCountCache = 0;
 const unreadSubscribers = new Set<(value: number) => void>();
-const sharedSeenIds = new Set<string>();
-const sharedSeenEventKeys = new Set<string>();
+const sharedSeenEventAt = new Map<string, number>();
 const sharedReadIds = new Set<string>();
 let autoSyncInFlight: Promise<void> | null = null;
 let lastAutoSyncAt = 0;
 
 const MAX_SEEN_EVENT_KEYS = 500;
+const EVENT_DEDUP_WINDOW_MS = 2500;
 
-const rememberSeenEventKey = (eventKey: string) => {
-  sharedSeenEventKeys.add(eventKey);
+const shouldSkipDuplicateEvent = (eventKey: string): boolean => {
+  const now = Date.now();
+  const seenAt = sharedSeenEventAt.get(eventKey);
+  sharedSeenEventAt.set(eventKey, now);
 
-  if (sharedSeenEventKeys.size <= MAX_SEEN_EVENT_KEYS) {
-    return;
+  if (typeof seenAt === "number" && now - seenAt < EVENT_DEDUP_WINDOW_MS) {
+    return true;
   }
 
-  const firstKey = sharedSeenEventKeys.values().next().value;
-  if (!firstKey) {
-    return;
+  if (sharedSeenEventAt.size > MAX_SEEN_EVENT_KEYS) {
+    for (const [key, timestamp] of sharedSeenEventAt) {
+      if (now - timestamp > EVENT_DEDUP_WINDOW_MS) {
+        sharedSeenEventAt.delete(key);
+      }
+
+      if (sharedSeenEventAt.size <= MAX_SEEN_EVENT_KEYS) {
+        break;
+      }
+    }
   }
 
-  sharedSeenEventKeys.delete(firstKey);
+  return false;
 };
 
 const publishUnreadCount = (nextValue: number) => {
@@ -65,7 +75,10 @@ const subscribeUnreadCount = (subscriber: (value: number) => void) => {
 
 interface UseNotificationsOptions {
   enabled?: boolean;
+  listenSocket?: boolean;
   autoSyncOnConnected?: boolean;
+  syncMissedOnConnected?: boolean;
+  syncUnreadCountOnConnected?: boolean;
   showToast?: boolean;
   onReceive?: (payload: NotificationSocketPayload) => void;
 }
@@ -79,7 +92,16 @@ const setLastSeenAt = (value: string) => {
 };
 
 const useNotifications = (options?: UseNotificationsOptions) => {
-  const { enabled = true, autoSyncOnConnected = true, showToast = true, onReceive } = options || {};
+  const {
+    enabled = true,
+    listenSocket = true,
+    autoSyncOnConnected = true,
+    syncMissedOnConnected = true,
+    syncUnreadCountOnConnected = true,
+    showToast = true,
+    onReceive,
+  } = options || {};
+
   const { notification } = App.useApp();
   const { status } = useSocket();
   const dispatch = useAppDispatch();
@@ -110,12 +132,10 @@ const useNotifications = (options?: UseNotificationsOptions) => {
   const applyRealtimePayload = useCallback(
     (payload: NotificationSocketPayload) => {
       const eventKey = `${payload.id}:${payload.createdAt}:${payload.isRead ? 1 : 0}`;
-      if (sharedSeenEventKeys.has(eventKey)) {
+      if (shouldSkipDuplicateEvent(eventKey)) {
         return;
       }
 
-      rememberSeenEventKey(eventKey);
-      sharedSeenIds.add(payload.id);
       dispatch(
         upsertNotificationItem({
           ...payload,
@@ -143,6 +163,43 @@ const useNotifications = (options?: UseNotificationsOptions) => {
     [dispatch, notification, onReceive, showToast],
   );
 
+  /**
+   * Handle aggregated notification update (post_like).
+   * Converts the payload into an INotificationItem with actors + totalActorCount,
+   * then upserts it into the store maintaining the latest actor at the front.
+   */
+  const applyAggregatedPayload = useCallback(
+    (payload: AggregatedNotificationPayload) => {
+      const eventKey = `agg:${payload.id}:${payload.totalActorCount}`;
+      if (shouldSkipDuplicateEvent(eventKey)) return;
+
+      dispatch(
+        upsertNotificationItem({
+          id: payload.id,
+          type: payload.type,
+          actor: payload.actor,
+          actors: [payload.actor],
+          totalActorCount: payload.totalActorCount,
+          targetId: payload.targetId,
+          isRead: payload.isRead,
+          createdAt: payload.createdAt || new Date().toISOString(),
+        }),
+      );
+
+      setLastSeenAt(payload.createdAt || new Date().toISOString());
+
+      if (showToast) {
+        notification.open({
+          message: "Bạn có thông báo mới",
+          description: "Nhấn vào Hoạt động để xem chi tiết.",
+          duration: 3,
+          placement: "topRight",
+        });
+      }
+    },
+    [dispatch, notification, showToast],
+  );
+
   const syncMissedNotifications = useCallback(async () => {
     try {
       const result = await dispatch(
@@ -153,10 +210,7 @@ const useNotifications = (options?: UseNotificationsOptions) => {
       ).unwrap();
 
       result.items.forEach((item) => {
-        if (!sharedSeenIds.has(item.id)) {
-          sharedSeenIds.add(item.id);
-          onReceive?.(item);
-        }
+        if (item.actor) onReceive?.(item as any);
       });
 
       const latestCreatedAt = result.items
@@ -225,7 +279,7 @@ const useNotifications = (options?: UseNotificationsOptions) => {
   }, [dispatch]);
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || !listenSocket) {
       return;
     }
 
@@ -233,6 +287,8 @@ const useNotifications = (options?: UseNotificationsOptions) => {
 
     socket.off("notification:new", applyRealtimePayload);
     socket.on("notification:new", applyRealtimePayload);
+    socket.off("notification:updated", applyAggregatedPayload);
+    socket.on("notification:updated", applyAggregatedPayload);
     socket.off("notification:unread-count", handleUnreadCountEvent);
     socket.on("notification:unread-count", handleUnreadCountEvent);
     socket.off("notification:read", handleReadEvent);
@@ -242,11 +298,20 @@ const useNotifications = (options?: UseNotificationsOptions) => {
 
     return () => {
       socket.off("notification:new", applyRealtimePayload);
+      socket.off("notification:updated", applyAggregatedPayload);
       socket.off("notification:unread-count", handleUnreadCountEvent);
       socket.off("notification:read", handleReadEvent);
       socket.off("notification:read-all", handleReadAllEvent);
     };
-  }, [applyRealtimePayload, enabled, handleReadAllEvent, handleReadEvent, handleUnreadCountEvent]);
+  }, [
+    applyAggregatedPayload,
+    applyRealtimePayload,
+    enabled,
+    handleReadAllEvent,
+    handleReadEvent,
+    handleUnreadCountEvent,
+    listenSocket,
+  ]);
 
   useEffect(() => {
     const unsubscribe = subscribeUnreadCount(setLocalUnreadCount);
@@ -260,6 +325,10 @@ const useNotifications = (options?: UseNotificationsOptions) => {
       return;
     }
 
+    if (!syncMissedOnConnected && !syncUnreadCountOnConnected) {
+      return;
+    }
+
     if (autoSyncInFlight) {
       return;
     }
@@ -270,12 +339,30 @@ const useNotifications = (options?: UseNotificationsOptions) => {
     }
 
     autoSyncInFlight = (async () => {
-      await Promise.all([syncMissedNotifications(), syncUnreadCount()]);
+      const tasks: Promise<unknown>[] = [];
+
+      if (syncMissedOnConnected) {
+        tasks.push(syncMissedNotifications());
+      }
+
+      if (syncUnreadCountOnConnected) {
+        tasks.push(syncUnreadCount());
+      }
+
+      await Promise.all(tasks);
       lastAutoSyncAt = Date.now();
     })().finally(() => {
       autoSyncInFlight = null;
     });
-  }, [autoSyncOnConnected, enabled, status, syncMissedNotifications, syncUnreadCount]);
+  }, [
+    autoSyncOnConnected,
+    enabled,
+    status,
+    syncMissedNotifications,
+    syncUnreadCount,
+    syncMissedOnConnected,
+    syncUnreadCountOnConnected,
+  ]);
 
   return useMemo(
     () => ({

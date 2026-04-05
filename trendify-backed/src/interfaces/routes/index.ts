@@ -5,6 +5,7 @@ import userRoute from "./user.route";
 import followRoute from "./follow.route";
 import mediaRoute from "./media.route";
 import postRoute from "./post.route";
+import searchRoute from "./search.route";
 
 import {
   AUTH_ROUTES,
@@ -12,6 +13,7 @@ import {
   FOLLOW_ROUTES,
   MEDIA_ROUTES,
   POST_ROUTES,
+  SEARCH_ROUTES,
 } from "@/shared/constants/router.constant";
 
 const routes = (app: Application) => {
@@ -20,6 +22,8 @@ const routes = (app: Application) => {
   app.use(FOLLOW_ROUTES.BASE, followRoute);
   app.use(MEDIA_ROUTES.BASE, mediaRoute);
   app.use(POST_ROUTES.BASE, postRoute);
+  app.use(SEARCH_ROUTES.BASE, searchRoute);
 };
 
 export default routes;
+

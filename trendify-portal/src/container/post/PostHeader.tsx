@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { memo, useEffect, useState } from "react";
-import { App, Avatar, Dropdown, Flex, MenuProps } from "antd";
+import { App, Dropdown, Flex, MenuProps, Avatar } from "antd";
 
 import "./Post.scss";
 import ROUTE_PATHS from "@/routes/path.route";
@@ -8,7 +8,7 @@ import { EVisibility } from "@/interfaces/common.interface";
 import { EPostActions } from "@/stores/post/constants";
 import { useAppDispatch, useAppSelector } from "@/stores";
 import { IPost, IPostViewerContext } from "@/interfaces/post.interface";
-import { formatDate, formatTimeFromNow } from "@/utils/common.util";
+import { formatDate, formatTimeFromNow, getAvatarUrl } from "@/utils/common.util";
 import { deletePostAction, savePostAction, unsavePostAction } from "@/stores/post/actions";
 
 import Icon from "@/components/icon/Icon";
@@ -193,7 +193,7 @@ const PostHeader = ({ post, viewerContext }: PostHeaderProps) => {
       <Flex gap={8} align="center">
         <Avatar
           className="post-header-avatar"
-          src={author.profilePicture?.small}
+          src={getAvatarUrl(author.profilePicture)}
           onClick={navigateToProfile}
         />
         <Flex vertical>

@@ -12,8 +12,6 @@ const HeaderHome = () => {
   const tabs = [
     { label: <Text textType="SB14">Dành cho bạn</Text>, key: ROUTE_PATHS.HOME },
     { label: <Text textType="SB14">Đang theo dõi</Text>, key: ROUTE_PATHS.FOLLOWING },
-    { label: <Text textType="SB14">Khám phá</Text>, key: ROUTE_PATHS.FOLLOWING },
-    { label: <Text textType="SB14">Tin tức</Text>, key: ROUTE_PATHS.FOLLOWING },
   ];
 
   const handleTabChange = (key: string) => {

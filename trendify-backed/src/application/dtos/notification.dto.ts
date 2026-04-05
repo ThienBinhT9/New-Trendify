@@ -3,6 +3,7 @@ export interface GetNotificationsDTO {
   cursor?: string;
   limit?: number;
   since?: string;
+  isRead?: boolean;
 }
 
 export interface MarkNotificationReadDTO {

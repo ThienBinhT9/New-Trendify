@@ -1,53 +1,32 @@
 import { Flex } from "antd";
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useLocation } from "react-router-dom";
+import { useLayoutEffect } from "react";
+
+import ROUTE_PATHS from "@/routes/path.route";
+import ActivityAll from "./tabs/ActivityAll";
+import ActivityUnread from "./tabs/ActivityUnread";
+import { getActivityScrollPosition, writeActivityScrollTop } from "./activity.helper";
 
 import "./Activity.scss";
 
-import ActivityNotificationList from "./components/ActivityNotificationList";
-import {
-  getActivityScrollPosition,
-  readActivityScrollTop,
-  setActivityScrollPosition,
-  writeActivityScrollTop,
-} from "./activityScrollStore";
-import { ACTIVITY_TABS, getActivityTabFromSearch, type ActivityTabKey } from "./activityTabs";
-
 const Activity = () => {
   const location = useLocation();
-  const activeTab = useMemo(() => getActivityTabFromSearch(location.search), [location.search]);
-
-  const previousTabRef = useRef<ActivityTabKey>(activeTab);
+  const isUnread = location.pathname.startsWith(ROUTE_PATHS.ACTIVITY_UNREAD);
 
   useLayoutEffect(() => {
-    const previousTab = previousTabRef.current;
-
-    if (previousTab !== activeTab) {
-      setActivityScrollPosition(previousTab, readActivityScrollTop());
-    }
-
-    writeActivityScrollTop(getActivityScrollPosition(activeTab));
-    previousTabRef.current = activeTab;
-  }, [activeTab]);
-
-  useEffect(() => {
-    return () => {
-      setActivityScrollPosition(previousTabRef.current, readActivityScrollTop());
-    };
-  }, []);
+    const key = isUnread ? "unread" : "all";
+    writeActivityScrollTop(getActivityScrollPosition(key));
+  }, [isUnread]);
 
   return (
     <Flex className="activity-page">
       <Flex vertical className="activity-page__content">
-        {ACTIVITY_TABS.map((tab) => {
-          const isActive = tab.key === activeTab;
-
-          return (
-            <div key={tab.key} style={{ display: isActive ? "block" : "none" }}>
-              <ActivityNotificationList tabKey={tab.key} isActive={isActive} prefetch={false} />
-            </div>
-          );
-        })}
+        <div style={{ display: isUnread ? "none" : "block", height: "100%" }}>
+          <ActivityAll isActive={!isUnread} />
+        </div>
+        <div style={{ display: isUnread ? "block" : "none", height: "100%" }}>
+          <ActivityUnread isActive={isUnread} />
+        </div>
       </Flex>
     </Flex>
   );

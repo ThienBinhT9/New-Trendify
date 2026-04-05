@@ -4,7 +4,7 @@ import { App, Avatar, Flex, Skeleton } from "antd";
 import "./PostComment.scss";
 import "../Post.scss";
 import ROUTE_PATHS from "@/routes/path.route";
-import { formatDate, formatNumberCount, formatTimeFromNow } from "@/utils/common.util";
+import { formatDate, formatNumberCount, formatTimeFromNow, getAvatarUrl } from "@/utils/common.util";
 import { useNavigate } from "react-router-dom";
 
 import Icon from "@/components/icon/Icon";
@@ -297,7 +297,7 @@ const PostCommentItem = (props: PostCommentItemProps) => {
       {/* Content */}
       <Avatar
         className={`comment-item-avatar ${isChild ? "comment-item-avatar--reply" : ""}`}
-        src={comment.author.profilePicture?.small || comment.author.profilePicture?.original}
+        src={getAvatarUrl(comment.author.profilePicture)}
         onClick={naviagateToProfile}
       />
       <Flex vertical gap={4} className="content-item-body">

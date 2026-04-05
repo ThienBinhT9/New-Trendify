@@ -28,7 +28,6 @@ const Following = ({ isActive = true, prefetch = false }: FollowingProps) => {
 
   const fetchPosts = useCallback(async (nextCursor?: string | null) => {
     try {
-      console.log("vao following page");
       await dispatch(getFollowingPostsAction({ params: { cursor: nextCursor } })).unwrap();
     } catch (error) {
       console.error(error);

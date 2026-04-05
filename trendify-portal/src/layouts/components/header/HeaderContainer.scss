@@ -7,6 +7,7 @@
   z-index: 99;
   justify-content: center;
   align-items: center;
+  flex-shrink: 0;
 
   @include mobile-medium {
     padding: 0 12px;

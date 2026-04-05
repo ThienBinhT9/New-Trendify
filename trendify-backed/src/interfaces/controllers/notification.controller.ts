@@ -19,9 +19,14 @@ class NotificationController {
   getNotifications = async (request: Request, response: Response) => {
     const userId = response.locals?.auth?.userId;
 
+    const { isRead: isReadQuery, ...restQuery } = request.query;
+    const isRead =
+      isReadQuery === "true" ? true : isReadQuery === "false" ? false : undefined;
+
     const result = await this.getNotificationsUseCase.execute({
       userId,
-      ...request.query,
+      isRead,
+      ...restQuery,
     });
 
     return response.status(200).json(result);

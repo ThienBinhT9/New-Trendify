@@ -8,15 +8,18 @@ import Text from "@/components/text/Text";
 import Icon from "@/components/icon/Icon";
 import SidebarContainer from "../../layouts/components/sidebar/SidebarContainer";
 import BottomNavContainer from "../../layouts/components/sidebar/BottomNavContainer";
+import Avatar from "antd/es/avatar/Avatar";
+import { getAvatarUrl } from "@/utils/common.util";
 
 const SidebarHome = () => {
   const { user } = useAppSelector((state) => state.auth);
+  const unreadCount = useAppSelector((state) => state.notification.unreadCount);
   const screens = Grid.useBreakpoint();
   const useBottomNav = !screens.sm;
 
   const renderActivityIcon = () => {
     return (
-      <Badge dot className="notification-dot">
+      <Badge dot={unreadCount > 0} className="notification-dot">
         <Icon name="HeartAltIcon" size={32} />
       </Badge>
     );
@@ -45,7 +48,7 @@ const SidebarHome = () => {
     },
     {
       key: ROUTE_PATHS.PROFILE(user?.id),
-      icon: <Icon name="UserCircleGrayIcon" size={30} />,
+      icon: <Avatar src={getAvatarUrl(user?.profilePicture)} />,
       label: <Text textType="M14">{`${user?.username}`}</Text>,
     },
   ].map((item) => ({ ...item, title: "" }));

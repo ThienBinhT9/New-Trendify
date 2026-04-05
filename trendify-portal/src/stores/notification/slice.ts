@@ -1,13 +1,22 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-import { INotificationItem, INotificationState } from "@/stores/notification/constants";
+import {
+  INotificationItem,
+  INotificationState,
+  INotificationTabData,
+} from "@/stores/notification/constants";
 import * as actions from "./actions";
 
-const initialState: INotificationState = {
+const initialTabData: INotificationTabData = {
   items: [],
-  unreadCount: 0,
   cursor: null,
   hasNext: false,
+};
+
+const initialState: INotificationState = {
+  all: { ...initialTabData },
+  unread: { ...initialTabData },
+  unreadCount: 0,
 };
 
 const notificationSlice = createSlice({
@@ -24,35 +33,52 @@ const notificationSlice = createSlice({
       state.unreadCount = Math.max(0, state.unreadCount - 1);
     },
     upsertNotificationItem: (state, action: PayloadAction<INotificationItem>) => {
-      const index = state.items.findIndex((item) => item.id === action.payload.id);
-
-      if (index >= 0) {
-        state.items[index] = action.payload;
-        return;
+      // Upsert to "all" tab
+      const indexAll = state.all.items.findIndex((item) => item.id === action.payload.id);
+      if (indexAll >= 0) {
+        state.all.items[indexAll] = action.payload;
+      } else {
+        state.all.items.unshift(action.payload);
       }
 
-      state.items.unshift(action.payload);
+      // Upsert to "unread" tab if it's unread
+      if (!action.payload.isRead) {
+        const indexUnread = state.unread.items.findIndex((item) => item.id === action.payload.id);
+        if (indexUnread >= 0) {
+          state.unread.items[indexUnread] = action.payload;
+        } else {
+          state.unread.items.unshift(action.payload);
+        }
+      } else {
+        // If it was in "unread", remove it
+        state.unread.items = state.unread.items.filter((item) => item.id !== action.payload.id);
+      }
     },
     markNotificationAsReadLocal: (state, action: PayloadAction<string>) => {
-      const target = state.items.find((item) => item.id === action.payload);
-      if (target) {
-        target.isRead = true;
+      // Mark as read in ALL tabs where it exists
+      const targetAll = state.all.items.find((item) => item.id === action.payload);
+      if (targetAll) {
+        targetAll.isRead = true;
       }
+
+      // Remove from "unread" list entirely
+      state.unread.items = state.unread.items.filter((item) => item.id !== action.payload);
     },
   },
   extraReducers(builder) {
     builder.addCase(actions.getNotificationsAction.fulfilled, (state, action) => {
       const { items, cursor, hasNext, unreadCount } = action.payload;
       const isFirstPage = !action.meta.arg?.cursor;
+      const tab = action.meta.arg?.isRead === false ? "unread" : "all";
 
       if (isFirstPage) {
-        state.items = items;
+        state[tab].items = items;
       } else {
-        state.items = [...state.items, ...items];
+        state[tab].items = [...state[tab].items, ...items];
       }
 
-      state.cursor = cursor;
-      state.hasNext = hasNext;
+      state[tab].cursor = cursor;
+      state[tab].hasNext = hasNext;
       state.unreadCount = Math.max(0, unreadCount || 0);
     });
 
@@ -63,17 +89,23 @@ const notificationSlice = createSlice({
     builder.addCase(actions.markNotificationAsReadAction.fulfilled, (state, action) => {
       state.unreadCount = Math.max(0, action.payload.unreadCount || 0);
 
-      if (action.payload.notificationId) {
-        const target = state.items.find((item) => item.id === action.payload.notificationId);
-        if (target) {
-          target.isRead = true;
+      const id = action.payload.notificationId;
+      if (id) {
+        const targetAll = state.all.items.find((item) => item.id === id);
+        if (targetAll) {
+          targetAll.isRead = true;
         }
+        // Remove from unread items
+        state.unread.items = state.unread.items.filter((item) => item.id !== id);
       }
     });
 
     builder.addCase(actions.markAllNotificationsAsReadAction.fulfilled, (state, action) => {
       state.unreadCount = Math.max(0, action.payload.unreadCount || 0);
-      state.items = state.items.map((item) => ({ ...item, isRead: true }));
+      state.all.items = state.all.items.map((item) => ({ ...item, isRead: true }));
+      state.unread.items = [];
+      state.unread.cursor = null;
+      state.unread.hasNext = false;
     });
   },
 });

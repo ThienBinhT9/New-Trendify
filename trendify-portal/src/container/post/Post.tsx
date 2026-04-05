@@ -83,9 +83,10 @@ interface IProps {
   expandedTitle?: boolean;
   post?: IPost;
   viewerContext?: IPostViewerContext;
+  className?: string;
 }
 
-const Post = ({ expandedTitle, post = postDummy.post, viewerContext }: IProps) => {
+const Post = ({ expandedTitle, post = postDummy.post, viewerContext, className }: IProps) => {
   const navigate = useNavigate();
   const resolvedViewerContext = viewerContext ?? post.viewerContext ?? postDummy.viewerContext;
 
@@ -96,7 +97,7 @@ const Post = ({ expandedTitle, post = postDummy.post, viewerContext }: IProps) =
   }, [navigate, post.id]);
 
   return (
-    <Flex className="box-wrapper post-container" onClick={handleNavigateToDetail}>
+    <Flex className={`box-wrapper post-container ${className}`}>
       <Flex onClick={(e) => e.stopPropagation()}>
         <PostHeader post={post} viewerContext={resolvedViewerContext} />
       </Flex>

@@ -1,365 +1,262 @@
 import { Flex } from "antd";
-import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Virtuoso } from "react-virtuoso";
+import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import EmptyState from "@/container/empty/EmptyState";
-import Icon from "@/components/icon/Icon";
 import { useNotifications } from "@/hooks";
-import { useAppDispatch } from "@/stores";
+import { useAppDispatch, useAppSelector } from "@/stores";
 import { getNotificationsAction } from "@/stores/notification/actions";
+import { upsertNotificationItem } from "@/stores/notification/slice";
 import type { INotificationItem } from "@/stores/notification/constants";
-import ROUTE_PATHS from "@/routes/path.route";
-import type { NotificationSocketPayload } from "@/services/socket";
+import type { ActivityNotification, ActivityTabKey } from "../activity.types";
+import {
+  getSocket,
+  type NotificationSocketPayload,
+  type AggregatedNotificationPayload,
+} from "@/services/socket";
+import {
+  resolveNavigatePath,
+  writeActivityScrollTop,
+  getActivityScrollPosition,
+  mapNotificationToActivity,
+  setActivityScrollPosition,
+} from "../activity.helper";
+import {
+  FETCH_LIMIT,
+  SCROLL_PARENT_ID,
+  EMPTY_STATE_TITLE,
+  EMPTY_STATE_DESCRIPTION,
+} from "../activity.constants";
 
-import type { ActivityNotification } from "../activity.types";
-import type { ActivityTabKey } from "../activityTabs";
-
+import Icon from "@/components/icon/Icon";
+import EmptyState from "@/container/empty/EmptyState";
 import ActivityNotificationItem from "./ActivityNotificationItem";
 import ActivityNotificationSkeleton from "./ActivityNotificationSkeleton";
 
 interface ActivityNotificationListProps {
   tabKey: ActivityTabKey;
   isActive?: boolean;
-  prefetch?: boolean;
 }
 
-const ActivityNotificationList = ({
-  tabKey,
-  isActive = true,
-  prefetch = false,
-}: ActivityNotificationListProps) => {
+const ActivityNotificationList = ({ tabKey, isActive = true }: ActivityNotificationListProps) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState<ActivityNotification[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [hasNext, setHasNext] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [scrollParent, setScrollParent] = useState<HTMLElement | null>(null);
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
+  const hasAttemptedFetch = useRef(false);
+
+  const tabData = useAppSelector((state) => state.notification[tabKey]);
+  const [isLoading, setIsLoading] = useState(false);
   const [pendingReadIds, setPendingReadIds] = useState<Set<string>>(new Set());
+  const [scrollParent, setScrollParent] = useState<HTMLElement | null>(null);
 
-  const hasFetchedRef = useRef<boolean>(false);
-
-  const formatTimeLabel = (createdAt: string) => {
-    const now = Date.now();
-    const target = new Date(createdAt).getTime();
-    const diffInMinutes = Math.max(1, Math.floor((now - target) / 60000));
-
-    if (diffInMinutes < 60) {
-      return `${diffInMinutes}m`;
-    }
-
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) {
-      return `${diffInHours}h`;
-    }
-
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) {
-      return `${diffInDays}d`;
-    }
-
-    return `${Math.floor(diffInDays / 7)}w`;
-  };
-
-  const resolveDisplayName = (actorId?: string, displayName?: string, username?: string) => {
-    if (displayName && displayName.trim().length > 0) {
-      return displayName;
-    }
-
-    if (username && username.trim().length > 0) {
-      return username;
-    }
-
-    if (actorId) {
-      return `user.${actorId.slice(-6)}`;
-    }
-
-    return "user";
-  };
-
-  const resolveInitials = (name: string, actorId?: string) => {
-    const parts = name
-      .split(" ")
-      .map((part) => part.trim())
-      .filter((part) => part.length > 0);
-
-    if (parts.length > 0) {
-      return parts
-        .slice(0, 2)
-        .map((part) => part[0])
-        .join("")
-        .toUpperCase();
-    }
-
-    return actorId ? actorId.slice(-2).toUpperCase() : "";
-  };
-
-  const mapNotificationToActivity = useCallback(
-    (item: INotificationItem | NotificationSocketPayload): ActivityNotification => {
-      const actorId = item.actor.id;
-      const displayName = resolveDisplayName(actorId, item.actor.displayName, item.actor.username);
-      const initials = resolveInitials(displayName, actorId);
-      const avatarUrl = item.actor.profilePicture?.small || item.actor.profilePicture?.original;
-
-      const mappedType =
-        item.type === "post_like"
-          ? "like"
-          : item.type === "post_comment"
-            ? "reply"
-            : item.type === "follow"
-              ? "follow"
-              : "mention";
-
-      const derivedCategory = item.type === "post_mention" ? "mentions" : "following";
-
-      return {
-        id: item.id,
-        sourceType: item.type,
-        actorId,
-        targetId: item.targetId,
-        referenceId: item.referenceId,
-        category: derivedCategory,
-        type: mappedType,
-        isRead: item.isRead,
-        actors: [
-          {
-            id: actorId,
-            displayName,
-            initials,
-            avatarUrl,
-            avatarBg: "#dceafb",
-            avatarColor: "#1f5b96",
-          },
-        ],
-        actorSummary: displayName,
-        actionText:
-          item.type === "post_like"
-            ? "đã thích bài viết của bạn."
-            : item.type === "post_comment"
-              ? "đã bình luận bài viết của bạn."
-              : item.type === "follow"
-                ? "đã bắt đầu theo dõi bạn."
-                : "đã nhắc đến bạn trong một bình luận.",
-        previewText: undefined,
-        actionType: item.type === "follow" ? "follow" : "none",
-        followLabel: item.type === "follow" ? "Theo dõi" : undefined,
-        mediaUrl: undefined,
-        createdAt: item.createdAt,
-        timeLabel: formatTimeLabel(item.createdAt),
-      };
-    },
-    [],
+  const notifications = useMemo(
+    () => tabData.items.map(mapNotificationToActivity),
+    [tabData.items],
   );
-
-  const filterByTab = useCallback(
-    (items: ActivityNotification[]) => {
-      if (tabKey === "all") {
-        return items;
-      }
-
-      if (tabKey === "mentions") {
-        return items.filter((item) => item.category === "mentions");
-      }
-
-      return items.filter((item) => item.category === "following");
-    },
-    [tabKey],
-  );
-
-  const handleRealtimeReceive = useCallback(
-    (payload: NotificationSocketPayload) => {
-      const mapped = mapNotificationToActivity(payload);
-
-      setNotifications((prev) => {
-        const withoutDuplicate = prev.filter((item) => item.id !== mapped.id);
-        return filterByTab([mapped, ...withoutDuplicate]);
-      });
-    },
-    [filterByTab, mapNotificationToActivity],
-  );
-
-  const { markOneAsRead, setUnreadCount } = useNotifications({
-    showToast: false,
-    enabled: isActive,
-    autoSyncOnConnected: false,
-    onReceive: handleRealtimeReceive,
-  });
 
   const fetchNotifications = useCallback(
     async (nextCursor: string | null) => {
+      setIsLoading(true);
       try {
-        setIsLoading(true);
-
-        const response = await dispatch(
+        await dispatch(
           getNotificationsAction({
-            cursor: nextCursor || undefined,
-            limit: 20,
+            cursor: nextCursor ?? undefined,
+            limit: FETCH_LIMIT,
+            isRead: tabKey === "unread" ? false : undefined,
           }),
         ).unwrap();
-
-        const mapped = filterByTab(response.items.map(mapNotificationToActivity));
-
-        setNotifications((prev) => (nextCursor ? [...prev, ...mapped] : mapped));
-        setCursor(response.cursor);
-        setHasNext(response.hasNext);
       } catch (error) {
-        console.error(error);
+        console.error(`[ActivityList][${tabKey}] fetch error:`, error);
       } finally {
         setIsLoading(false);
       }
     },
-    [dispatch, filterByTab, mapNotificationToActivity],
+    [dispatch, tabKey],
   );
 
+  // Restore scroll position when tab becomes active
   useEffect(() => {
-    if ((!isActive && !prefetch) || hasFetchedRef.current) {
+    if (isActive && scrollParent) {
+      const savedPos = getActivityScrollPosition(tabKey);
+      writeActivityScrollTop(savedPos);
+    }
+  }, [isActive, scrollParent, tabKey]);
+
+  // Initial fetch logic
+  useEffect(() => {
+    if (!isActive || hasAttemptedFetch.current) return;
+
+    if (tabData.items.length > 0 && tabData.cursor !== null) {
+      hasAttemptedFetch.current = true;
       return;
     }
 
-    hasFetchedRef.current = true;
+    hasAttemptedFetch.current = true;
     fetchNotifications(null);
-  }, [fetchNotifications, isActive, prefetch]);
+  }, [isActive, tabData.items.length, tabData.cursor, fetchNotifications]);
+
+  // Scroll position sync
+  useEffect(() => {
+    const parent = document.getElementById(SCROLL_PARENT_ID);
+    if (!parent) return;
+    setScrollParent(parent);
+
+    const handleScroll = () => {
+      if (isActive) {
+        setActivityScrollPosition(tabKey, parent.scrollTop);
+      }
+    };
+
+    if (isActive) {
+      parent.addEventListener("scroll", handleScroll);
+    }
+    return () => {
+      parent.removeEventListener("scroll", handleScroll);
+    };
+  }, [isActive, tabKey]);
+
+  // Sockets
+  const handleRealtimeReceive = useCallback(
+    (payload: NotificationSocketPayload) => {
+      dispatch(upsertNotificationItem(payload as INotificationItem));
+    },
+    [dispatch],
+  );
+
+  const handleAggregatedReceive = useCallback(
+    (payload: AggregatedNotificationPayload) => {
+      const item: INotificationItem = {
+        id: payload.id,
+        type: payload.type,
+        actor: payload.actor,
+        actors: [payload.actor],
+        totalActorCount: payload.totalActorCount,
+        targetId: payload.targetId,
+        isRead: payload.isRead,
+        createdAt: payload.createdAt,
+      };
+      dispatch(upsertNotificationItem(item));
+    },
+    [dispatch],
+  );
+
+  const { markOneAsRead, setUnreadCount } = useNotifications({
+    showToast: false,
+    enabled: false,
+    listenSocket: false,
+    autoSyncOnConnected: false,
+    syncMissedOnConnected: false,
+    syncUnreadCountOnConnected: false,
+  });
 
   useEffect(() => {
-    setScrollParent(document.getElementById("mainLayoutChildren"));
-  }, []);
+    if (!isActive) return;
+    const socket = getSocket();
+    socket.off("notification:new", handleRealtimeReceive);
+    socket.on("notification:new", handleRealtimeReceive);
+    socket.off("notification:updated", handleAggregatedReceive);
+    socket.on("notification:updated", handleAggregatedReceive);
+    return () => {
+      socket.off("notification:new", handleRealtimeReceive);
+      socket.off("notification:updated", handleAggregatedReceive);
+    };
+  }, [handleRealtimeReceive, handleAggregatedReceive, isActive]);
 
-  const isInitialLoading = isLoading && notifications.length === 0;
+  const addPendingRead = (id: string) => {
+    return setPendingReadIds((prev) => new Set(prev).add(id));
+  };
 
-  const getEmptyStateDescription = () => {
-    if (tabKey === "following") {
-      return "Hiện chưa có lượt theo dõi mới";
-    }
-
-    if (tabKey === "mentions") {
-      return "Hiện chưa có lượt nhắc mới";
-    }
-
-    return "Hoạt động của bạn sẽ xuất hiện ở đây";
+  const removePendingRead = (id: string) => {
+    return setPendingReadIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
   };
 
   const handleMarkAsRead = useCallback(
     async (notificationId: string) => {
-      const targetItem = notifications.find((item) => item.id === notificationId);
+      const target = notifications.find((item) => item.id === notificationId);
+      if (!target || target.isRead || pendingReadIds.has(notificationId)) return;
 
-      if (!targetItem || targetItem.isRead || pendingReadIds.has(notificationId)) {
-        return;
-      }
-
-      setPendingReadIds((prev) => {
-        const next = new Set(prev);
-        next.add(notificationId);
-        return next;
-      });
-
-      setNotifications((prev) =>
-        prev.map((item) =>
-          item.id === notificationId
-            ? {
-                ...item,
-                isRead: true,
-              }
-            : item,
-        ),
-      );
+      addPendingRead(notificationId);
       setUnreadCount((prev) => Math.max(0, prev - 1));
 
       try {
         await markOneAsRead(notificationId);
       } catch {
-        setNotifications((prev) =>
-          prev.map((item) =>
-            item.id === notificationId
-              ? {
-                  ...item,
-                  isRead: false,
-                }
-              : item,
-          ),
-        );
         setUnreadCount((prev) => prev + 1);
       } finally {
-        setPendingReadIds((prev) => {
-          const next = new Set(prev);
-          next.delete(notificationId);
-          return next;
-        });
+        removePendingRead(notificationId);
       }
     },
     [markOneAsRead, notifications, pendingReadIds, setUnreadCount],
   );
 
-  const resolveNavigatePath = useCallback((item: ActivityNotification) => {
-    if (item.sourceType === "follow") {
-      return ROUTE_PATHS.PROFILE(item.actorId);
-    }
-
-    return ROUTE_PATHS.POST_DETAIL(item.targetId);
-  }, []);
-
   const handleNotificationClick = useCallback(
     (item: ActivityNotification) => {
-      const destination = resolveNavigatePath(item);
-
-      if (!item.isRead) {
-        void handleMarkAsRead(item.id);
-      }
-
-      navigate(destination);
+      if (!item.isRead) void handleMarkAsRead(item.id);
+      navigate(resolveNavigatePath(item));
     },
-    [handleMarkAsRead, navigate, resolveNavigatePath],
+    [handleMarkAsRead, navigate],
   );
 
-  return (
-    <Flex className="activity-page__list-wrapper">
-      {isInitialLoading ? (
-        <ActivityNotificationSkeleton className="activity-page__skeleton" count={5} />
-      ) : notifications.length > 0 ? (
-        <Virtuoso
-          customScrollParent={scrollParent ?? undefined}
-          data={notifications}
-          className="activity-page__list"
-          style={{ height: "100%" }}
-          overscan={320}
-          computeItemKey={(_, item) => item.id}
-          endReached={() => {
-            if (!isActive || !hasNext || isLoading) {
-              return;
-            }
+  const isInitialLoading = isLoading && notifications.length === 0;
 
-            fetchNotifications(cursor);
-          }}
-          itemContent={(_, item) => (
-            <div className="activity-page__list-item">
-              <ActivityNotificationItem
-                notification={item}
-                isPendingRead={pendingReadIds.has(item.id)}
-                onClick={() => {
-                  handleNotificationClick(item);
-                }}
-              />
-            </div>
-          )}
-          components={{
-            Footer: () => (
-              <div>
-                {isLoading ? <ActivityNotificationSkeleton count={2} /> : null}
-                <div className="list-bottom-spacer" />
-              </div>
-            ),
-          }}
-        />
-      ) : (
+  if (isInitialLoading) {
+    return (
+      <Flex className="activity-page__list-wrapper">
+        <ActivityNotificationSkeleton className="activity-page__skeleton" count={5} />
+      </Flex>
+    );
+  }
+
+  if (notifications.length === 0) {
+    return (
+      <Flex className="activity-page__list-wrapper">
         <EmptyState
           variant="gray"
           icon={<Icon name="NotificationIcon" size={28} />}
-          title="Chưa có hoạt động"
-          description={getEmptyStateDescription()}
+          title={EMPTY_STATE_TITLE[tabKey]}
+          description={EMPTY_STATE_DESCRIPTION[tabKey]}
           ctaLabel="Làm mới"
           onCtaClick={() => fetchNotifications(null)}
         />
-      )}
+      </Flex>
+    );
+  }
+
+  return (
+    <Flex className="activity-page__list-wrapper">
+      <Virtuoso
+        ref={virtuosoRef}
+        customScrollParent={isActive ? (scrollParent ?? undefined) : undefined}
+        data={notifications}
+        className="activity-page__list"
+        style={{ height: "100%" }}
+        overscan={320}
+        computeItemKey={(_, item) => item.id}
+        endReached={() => {
+          if (isActive && tabData.hasNext && !isLoading) fetchNotifications(tabData.cursor);
+        }}
+        itemContent={(_, item) => (
+          <div className="activity-page__list-item">
+            <ActivityNotificationItem
+              notification={item}
+              isPendingRead={pendingReadIds.has(item.id)}
+              onClick={() => handleNotificationClick(item)}
+            />
+          </div>
+        )}
+        components={{
+          Footer: () => (
+            <div>
+              {isLoading && <ActivityNotificationSkeleton count={2} />}
+              <div className="list-bottom-spacer" />
+            </div>
+          ),
+        }}
+      />
     </Flex>
   );
 };

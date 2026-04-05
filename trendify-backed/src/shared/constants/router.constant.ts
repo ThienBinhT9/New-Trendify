@@ -66,3 +66,19 @@ export const MEDIA_ROUTES = {
   CONFIRM_UPLOAD: "/confirm",
   STATUS: "/:mediaId/status",
 } as const;
+
+export const SEARCH_ROUTES = {
+  BASE: `${API_PREFIX}/search`,
+  FEDERATED: "/",
+  SEARCH_USERS: "/users",
+  SEARCH_POSTS: "/posts",
+  SEARCH_HASHTAGS: "/hashtags",
+  AUTOCOMPLETE: "/autocomplete",
+  TRENDING: "/trending",
+  HISTORY: "/history",
+  DELETE_HISTORY_ENTRY: "/history/:id",
+  DELETE_ALL_HISTORY: "/history",
+  SAVE_RECENTLY_VIEWED: "/recently-viewed",
+  GET_RECENTLY_VIEWED: "/recently-viewed",
+} as const;
+

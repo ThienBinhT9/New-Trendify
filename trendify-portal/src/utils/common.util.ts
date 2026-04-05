@@ -3,6 +3,9 @@ import { message, Upload } from "antd";
 import moment from "moment";
 import { Area } from "react-easy-crop";
 
+export const DEFAULT_AVATAR_URL =
+  "https://i.pinimg.com/736x/2c/bb/0e/2cbb0ee6c1c55b1041642128c902dadd.jpg";
+
 const toCamelCase = (str: string): string => {
   return str.replace(/([-_][a-z])/g, (group) =>
     group.toUpperCase().replace("-", "").replace("_", ""),
@@ -112,7 +115,7 @@ export function formatTimeFromNow(dateInput: string | number | Date): string {
   }
 
   const isSameYear = now.year() === date.year();
-  const formatString = isSameYear ? "MMMM D [at] HH:mm" : "MMMM D, YYYY [at] HH:mm";
+  const formatString = isSameYear ? "D [tháng] M [lúc] HH:mm" : "D [tháng] M YYYY [lúc] HH:mm";
 
   return date.format(formatString);
 }
@@ -173,3 +176,33 @@ export const formatNumberCount = (count: number): string => {
 
   return count.toString();
 };
+
+export function resolveInitialAvatar(name: string, actorId?: string): string {
+  const words = name
+    .split(" ")
+    .map((w) => w.trim())
+    .filter(Boolean);
+  if (words.length > 0) {
+    return words
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase();
+  }
+  return actorId ? actorId.slice(-2).toUpperCase() : "";
+}
+
+/**
+ * Resolve avatar URL from profilePicture object with fallback to DEFAULT_AVATAR_URL.
+ * Tries: small → medium → original → fallback.
+ */
+export function getAvatarUrl(
+  profilePicture?: { small?: string; medium?: string; original?: string } | null,
+): string {
+  return (
+    profilePicture?.small ||
+    profilePicture?.medium ||
+    profilePicture?.original ||
+    DEFAULT_AVATAR_URL
+  );
+}

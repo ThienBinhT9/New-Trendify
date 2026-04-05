@@ -1,4 +1,5 @@
 import {
+  AGGREGATED_NOTIFICATION_TYPES,
   ENotificationType,
   INotificationCreateInput,
   INotificationProps,
@@ -29,8 +30,13 @@ export class NotificationEntity {
     return this.props.recipientId;
   }
 
+  /**
+   * Primary actor ID.
+   * - Non-aggregated: returns actorId
+   * - Aggregated: returns the first (newest) actor in latestActors
+   */
   get actorId(): string {
-    return this.props.actorId;
+    return this.props.actorId ?? this.props.latestActors[0] ?? "";
   }
 
   get type(): ENotificationType {
@@ -53,6 +59,18 @@ export class NotificationEntity {
     return this.props.createdAt;
   }
 
+  get latestActors(): string[] {
+    return this.props.latestActors;
+  }
+
+  get totalActorCount(): number {
+    return this.props.totalActorCount;
+  }
+
+  get isAggregated(): boolean {
+    return AGGREGATED_NOTIFICATION_TYPES.includes(this.props.type);
+  }
+
   // --------------------------------------------------------------------------
   // Domain Logic
   // --------------------------------------------------------------------------
@@ -61,7 +79,7 @@ export class NotificationEntity {
    * Self-notification check: không gửi notification cho chính mình
    */
   isSelfNotification(): boolean {
-    return this.props.recipientId === this.props.actorId;
+    return this.props.recipientId === this.actorId;
   }
 
   markAsRead(): void {
@@ -70,7 +88,7 @@ export class NotificationEntity {
   }
 
   // --------------------------------------------------------------------------
-  // Static Factory
+  // Static Factory — for NON-AGGREGATED types only
   // --------------------------------------------------------------------------
 
   static create(input: INotificationCreateInput): NotificationEntity {
@@ -83,6 +101,8 @@ export class NotificationEntity {
       targetId: input.targetId,
       referenceId: input.referenceId,
       isRead: false,
+      latestActors: [],
+      totalActorCount: 1,
       createdAt: now,
       updatedAt: now,
     };

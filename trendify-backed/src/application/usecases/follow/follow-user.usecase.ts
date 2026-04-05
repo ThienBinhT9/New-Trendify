@@ -44,6 +44,16 @@ export class FollowUserUseCase {
         await uow.follows.create(followRequest);
         await uow.commit();
 
+        try {
+          await this.producer.publish(ROUTING_KEYS.COUNTER_FOLLOW_NOTIFICATION, {
+            actorId: fromUserId,
+            recipientId: toUserId,
+            notificationType: "follow_request",
+          });
+        } catch (error) {
+          console.error("[FollowUser] Failed to publish follow-request notification event:", error);
+        }
+
         return new Response.SuccessResponse({
           message: "Follow request sent",
           data: {
@@ -80,6 +90,16 @@ export class FollowUserUseCase {
         });
       } catch (error) {
         console.error("[FollowUser] Failed to publish count update event:", error);
+      }
+
+      try {
+        await this.producer.publish(ROUTING_KEYS.COUNTER_FOLLOW_NOTIFICATION, {
+          actorId: fromUserId,
+          recipientId: toUserId,
+          notificationType: "follow",
+        });
+      } catch (error) {
+        console.error("[FollowUser] Failed to publish follow notification event:", error);
       }
 
       return new Response.SuccessResponse({

@@ -25,18 +25,23 @@ export interface INotificationActor {
 
 export interface INotificationItem {
   id: string;
-  type: "post_like" | "post_comment" | "post_mention" | "follow";
-  actor: INotificationActor;
+  type: "post_like" | "post_comment" | "post_mention" | "follow" | "follow_request";
+  actor: INotificationActor | null;
   targetId: string;
   referenceId?: string;
   isRead: boolean;
   createdAt: string;
+
+  // Aggregated fields (post_like)
+  actors?: INotificationActor[];
+  totalActorCount?: number;
 }
 
 export interface IGetNotificationsParams {
   since?: string;
   cursor?: string;
   limit?: number;
+  isRead?: boolean;
 }
 
 export interface INotificationListResponse extends IApiResponse {
@@ -61,9 +66,14 @@ export interface IMarkAsReadResponse extends IApiResponse {
   };
 }
 
-export interface INotificationState {
+export interface INotificationTabData {
   items: INotificationItem[];
-  unreadCount: number;
   cursor: string | null;
   hasNext: boolean;
+}
+
+export interface INotificationState {
+  all: INotificationTabData;
+  unread: INotificationTabData;
+  unreadCount: number;
 }

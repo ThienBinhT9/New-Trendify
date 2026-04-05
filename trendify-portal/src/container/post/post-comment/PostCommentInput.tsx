@@ -12,7 +12,7 @@ import { Plugin } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 
 import "./PostComment.scss";
-import { handleBeforeUpload } from "@/utils/common.util";
+import { handleBeforeUpload, getAvatarUrl } from "@/utils/common.util";
 import { listFollowing } from "@/stores/profile/api";
 import { useAppDispatch, useAppSelector } from "@/stores";
 import { IUserSuggestion } from "@/interfaces/user.interface";
@@ -555,7 +555,7 @@ const PostCommentInput = forwardRef<IPostCommentInputRef, PostCommentInputProps>
     <Flex className="post-comment-input">
       <Avatar
         className={`comment-box__avatar ${parentId ? "comment-box__avatar--reply" : ""}`}
-        src="https://i.pinimg.com/1200x/ec/ba/f0/ecbaf03acbe4c5556bbe1756ff482b42.jpg"
+        src={getAvatarUrl(authUser?.profilePicture)}
       />
 
       <Flex className={`comment-box__input-wrapper ${isFocus && "focus"}`} flex={1}>

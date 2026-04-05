@@ -4,6 +4,7 @@ import {
   INotificationRepository,
   NotificationEntity,
   INotificationProps,
+  ENotificationType,
 } from "@/domain/notification";
 import { NotificationModel } from "../models/notification.model";
 import { BaseRepository } from "./base.repository";
@@ -13,9 +14,8 @@ export class MongooseNotificationRepository
   implements INotificationRepository
 {
   /**
-   * Upsert notification: tạo mới nếu chưa có, update timestamp nếu đã tồn tại.
-   * Sử dụng unique index { recipientId, type, actorId, targetId } để tránh duplicate.
-   * Ví dụ: user A like post X → chỉ có 1 notification dù API gọi nhiều lần.
+   * Upsert NON-AGGREGATED notification (follow, comment, mention).
+   * Uses unique index { recipientId, type, actorId, targetId }.
    */
   async upsert(notification: NotificationEntity): Promise<NotificationEntity> {
     const data = notification.data;
@@ -24,19 +24,21 @@ export class MongooseNotificationRepository
       {
         recipientId: new Types.ObjectId(data.recipientId),
         type: data.type,
-        actorId: new Types.ObjectId(data.actorId),
+        actorId: new Types.ObjectId(data.actorId!),
         targetId: new Types.ObjectId(data.targetId),
       },
       {
         $set: {
           referenceId: data.referenceId ? new Types.ObjectId(data.referenceId) : null,
-          isRead: false, // Reset read status khi notification được trigger lại
+          isRead: false,
         },
         $setOnInsert: {
           recipientId: new Types.ObjectId(data.recipientId),
           type: data.type,
-          actorId: new Types.ObjectId(data.actorId),
+          actorId: new Types.ObjectId(data.actorId!),
           targetId: new Types.ObjectId(data.targetId),
+          latestActors: [],
+          totalActorCount: 1,
         },
       },
       {
@@ -50,6 +52,122 @@ export class MongooseNotificationRepository
   }
 
   /**
+   * Atomic upsert for AGGREGATED notification (POST_LIKE).
+   *
+   * Strategy:
+   * 1. $pull actor if already in latestActors (handles re-like, prevents duplicate)
+   * 2. $push actor to position 0 + $slice 2 + $inc totalActorCount + upsert
+   *
+   * The $pull in step 1 is a no-op if the actor isn't there (new like).
+   * Two operations are needed because MongoDB doesn't allow $pull + $push
+   * on the same array in one update.
+   */
+  async upsertAggregated(input: {
+    recipientId: string;
+    type: ENotificationType;
+    targetId: string;
+    actorId: string;
+  }): Promise<NotificationEntity> {
+    const { recipientId, type, targetId, actorId } = input;
+
+    const filter = {
+      recipientId: new Types.ObjectId(recipientId),
+      type,
+      targetId: new Types.ObjectId(targetId),
+    };
+
+    const actorOid = new Types.ObjectId(actorId);
+
+    // Step 1: Remove actor if already present (prevent duplicate on re-like)
+    await NotificationModel.updateOne(filter, {
+      $pull: { latestActors: actorOid },
+    });
+
+    // Step 2: Push actor to front, increment count, upsert if not exists
+    const doc = await NotificationModel.findOneAndUpdate(
+      filter,
+      {
+        $push: {
+          latestActors: {
+            $each: [actorOid],
+            $position: 0,
+            $slice: 2,
+          },
+        },
+        $inc: { totalActorCount: 1 },
+        $set: { isRead: false },
+        $setOnInsert: {
+          recipientId: new Types.ObjectId(recipientId),
+          type,
+          targetId: new Types.ObjectId(targetId),
+          actorId: null,
+        },
+      },
+      { upsert: true, new: true, lean: true },
+    );
+
+    return this.mapToEntity(doc, NotificationEntity);
+  }
+
+  /**
+   * Remove actor from aggregated notification (unlike).
+   *
+   * - Pulls actor from latestActors + decrements totalActorCount
+   * - If count reaches 0 → delete the notification entirely
+   * - If latestActors < 2 and replacements provided → fill with replacements
+   */
+  async removeActorFromAggregated(input: {
+    recipientId: string;
+    type: ENotificationType;
+    targetId: string;
+    actorId: string;
+    replacementActorIds?: string[];
+  }): Promise<void> {
+    const { recipientId, type, targetId, actorId, replacementActorIds } = input;
+
+    const filter = {
+      recipientId: new Types.ObjectId(recipientId),
+      type,
+      targetId: new Types.ObjectId(targetId),
+    };
+
+    const result = await NotificationModel.findOneAndUpdate(
+      filter,
+      {
+        $pull: { latestActors: new Types.ObjectId(actorId) },
+        $inc: { totalActorCount: -1 },
+      },
+      { new: true, lean: true },
+    );
+
+    if (!result) return;
+
+    // If count reached 0, delete the notification entirely
+    if (result.totalActorCount <= 0) {
+      await NotificationModel.deleteOne({ _id: result._id });
+      return;
+    }
+
+    // If latestActors needs refilling and we have replacements
+    if (result.latestActors.length < 2 && replacementActorIds?.length) {
+      const existingSet = new Set(
+        result.latestActors.map((id: Types.ObjectId) => id.toString()),
+      );
+      const newActors = replacementActorIds
+        .filter((id) => !existingSet.has(id) && id !== actorId)
+        .slice(0, 2 - result.latestActors.length)
+        .map((id) => new Types.ObjectId(id));
+
+      if (newActors.length > 0) {
+        await NotificationModel.updateOne(
+          { _id: result._id },
+          { $push: { latestActors: { $each: newActors } } },
+        );
+      }
+    }
+  }
+
+  /**
    * Cursor-based pagination cho notification list.
    * Sắp xếp newest first (_id descending).
    */
@@ -57,10 +175,15 @@ export class MongooseNotificationRepository
     recipientId: string,
     limit: number,
     cursor?: string,
+    isRead?: boolean,
   ): Promise<{ notifications: NotificationEntity[]; nextCursor?: string }> {
     const query: any = {
       recipientId: new Types.ObjectId(recipientId),
     };
+
+    if (typeof isRead === "boolean") {
+      query.isRead = isRead;
+    }
 
     if (cursor) {
       query._id = { $lt: new Types.ObjectId(cursor) };
@@ -84,11 +207,18 @@ export class MongooseNotificationRepository
     recipientId: string,
     since: Date,
     limit: number,
+    isRead?: boolean,
   ): Promise<NotificationEntity[]> {
-    const docs = await NotificationModel.find({
+    const filter: any = {
       recipientId: new Types.ObjectId(recipientId),
       createdAt: { $gt: since },
-    })
+    };
+
+    if (typeof isRead === "boolean") {
+      filter.isRead = isRead;
+    }
+
+    const docs = await NotificationModel.find(filter)
       .sort({ _id: -1 })
       .limit(limit)
       .lean();
@@ -127,6 +257,24 @@ export class MongooseNotificationRepository
     });
   }
 
+  async deleteFollowNotification(
+    actorId: string,
+    recipientId: string,
+    type: "follow" | "follow_request",
+  ): Promise<boolean> {
+    const notificationType =
+      type === "follow" ? ENotificationType.FOLLOW : ENotificationType.FOLLOW_REQUEST;
+
+    const result = await NotificationModel.deleteOne({
+      recipientId: new Types.ObjectId(recipientId),
+      actorId: new Types.ObjectId(actorId),
+      type: notificationType,
+      targetId: new Types.ObjectId(actorId),
+    });
+
+    return result.deletedCount > 0;
+  }
+
   // ====================== MAPPING ======================
 
   protected override mapToEntity(
@@ -135,15 +283,30 @@ export class MongooseNotificationRepository
   ): NotificationEntity {
     if (!doc) throw new Error("Document not found");
 
-    const { _id, __v, recipientId, actorId, targetId, referenceId, createdAt, updatedAt, ...rest } =
-      doc;
+    const {
+      _id,
+      __v,
+      recipientId,
+      actorId,
+      targetId,
+      referenceId,
+      latestActors,
+      totalActorCount,
+      createdAt,
+      updatedAt,
+      ...rest
+    } = doc;
 
     const props: INotificationProps = {
       ...rest,
       recipientId: recipientId.toString(),
-      actorId: actorId.toString(),
+      actorId: actorId?.toString() ?? undefined,
       targetId: targetId.toString(),
       referenceId: referenceId?.toString() ?? undefined,
+      latestActors: Array.isArray(latestActors)
+        ? latestActors.map((id: Types.ObjectId) => id.toString())
+        : [],
+      totalActorCount: totalActorCount ?? (actorId ? 1 : 0),
       createdAt: createdAt ? new Date(createdAt) : new Date(),
       updatedAt: updatedAt ? new Date(updatedAt) : new Date(),
     };

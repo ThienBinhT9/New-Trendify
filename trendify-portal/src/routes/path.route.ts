@@ -10,6 +10,12 @@ export const SUB_PATH_PROFILE = {
   SAVED: "saved",
 };
 
+export const SUB_PATH_SEARCH = {
+  PEOPLE: "people",
+  POSTS: "posts",
+  HASHTAGS: "hashtags",
+};
+
 export const SUB_PATH_SETTINGS = {
   PRIVACY: "privacy",
   ACCOUNT: "account",
@@ -18,6 +24,10 @@ export const SUB_PATH_SETTINGS = {
   ONLINE_STATUS: "online-status",
   BLOCKED: "blocked",
   HIDE_COUNTS: "hide-counts",
+};
+
+export const SUB_PATH_ACTIVITY = {
+  UNREAD: "unread",
 };
 
 const ROUTE_PATHS = {
@@ -30,6 +40,7 @@ const ROUTE_PATHS = {
   WELCOME: "/welcome",
   HOME: "/",
   ACTIVITY: "/activity",
+  ACTIVITY_UNREAD: "/activity/unread",
 
   FOLLOWING: "/following",
   MESSAGE: "/message",
@@ -37,6 +48,9 @@ const ROUTE_PATHS = {
 
   //SEARCH
   SEARCH: "/search",
+  SEARCH_PEOPLE: "/search/people",
+  SEARCH_POSTS: "/search/posts",
+  SEARCH_HASHTAGS: "/search/hashtags",
 
   //NOTIFICATIONS
   NOTIFICATIONS: "/notifications",

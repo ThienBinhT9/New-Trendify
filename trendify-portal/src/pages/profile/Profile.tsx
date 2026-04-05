@@ -19,7 +19,7 @@ import { EllipsisIcon } from "@/assets/icons/Icon";
 import ROUTE_PATHS, { SUB_PATH_PROFILE } from "@/routes/path.route";
 import { blockAction } from "@/stores/follow/actions";
 import { EMediaPurpose } from "@/interfaces/common.interface";
-import { getProfileTab } from "@/utils/common.util";
+import { getAvatarUrl, getProfileTab } from "@/utils/common.util";
 import { EProfileActions, IUserProfile } from "@/stores/profile/constants";
 import { useImageUploadCrop } from "@/hooks";
 import { useAppDispatch, useAppSelector } from "@/stores";
@@ -346,12 +346,12 @@ const Profile = () => {
                 >
                   <Avatar
                     className="avatar"
-                    src={avatarUpload.localPreview || profile?.profilePicture?.medium}
+                    src={avatarUpload.localPreview || getAvatarUrl(profile?.profilePicture)}
                   />
                 </Dropdown>
                 <Image
                   style={{ display: "none" }}
-                  src={avatarUpload.localPreview || profile?.profilePicture?.original}
+                  src={avatarUpload.localPreview || profile?.profilePicture?.original || getAvatarUrl(profile?.profilePicture)}
                   preview={{
                     visible: isPreviewOpen,
                     onVisibleChange: (vis) => setIsPreviewOpen(vis),
@@ -477,7 +477,7 @@ const Profile = () => {
           <div className="profile-introduce-modal__avatar">
             <Avatar
               size={72}
-              src={profile?.profilePicture?.large || profile?.profilePicture?.original}
+              src={profile?.profilePicture?.large || getAvatarUrl(profile?.profilePicture)}
             >
               <Text textType="M32">{`${profile?.username?.[0]?.toUpperCase()}`}</Text>
             </Avatar>

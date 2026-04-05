@@ -5,6 +5,7 @@ import Input from "@/components/input/Input";
 
 import PostCreate from "../post/post-editor/PostCreate";
 import { useAppSelector } from "@/stores";
+import { getAvatarUrl } from "@/utils/common.util";
 
 const QuickPost = () => {
   const profile = useAppSelector((state) => state.profile.profile);
@@ -23,7 +24,7 @@ const QuickPost = () => {
     <>
       <Flex vertical className="quick-post-container" onClick={onOpenModal}>
         <Flex className="quick-post-header">
-          <Avatar className="quick-post-avatar" src={profile?.profilePicture?.small} />
+          <Avatar className="quick-post-avatar" src={getAvatarUrl(profile?.profilePicture)} />
           <Input className="quick-post-input" placeholder="Bạn đang nghĩ gì?" readOnly />
         </Flex>
       </Flex>

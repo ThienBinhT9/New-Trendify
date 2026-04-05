@@ -15,7 +15,7 @@
 
     .main-layout-children {
       padding: 12px;
-      overflow-y: auto;
+      overflow-y: overlay;
       min-height: 80dvh;
 
       @include mobile-medium {

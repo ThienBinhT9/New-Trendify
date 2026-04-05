@@ -10,6 +10,8 @@ import { MongooseBlockRepository } from "./block.repository.impl";
 import { MongooseMediaRepository } from "./media.repository.impl";
 import { MongooseCommentRepository } from "./comment.repository.impl";
 import { MongooseNotificationRepository } from "./notification.repository.impl";
+import { MongooseSearchHistoryRepository } from "./search-history.repository.impl";
+import { MongooseRecentlyViewedRepository } from "./recently-viewed.repository.impl";
 
 export {
   MongooseFollowRepository,
@@ -24,4 +26,6 @@ export {
   MongooseMediaRepository,
   MongooseCommentRepository,
   MongooseNotificationRepository,
+  MongooseSearchHistoryRepository,
+  MongooseRecentlyViewedRepository,
 };

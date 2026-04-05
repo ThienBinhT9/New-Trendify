@@ -19,6 +19,10 @@ import HomeHeader from "@/pages/home/HomeHeader";
 import HomeSidebar from "@/pages/home/HomeSidebar";
 
 import Search from "@/pages/search/Search";
+import SearchHeader from "@/pages/search/SearchHeader";
+import SearchTop from "@/pages/search/tabs/search-top/SearchTop";
+import SearchPeople from "@/pages/search/tabs/search-people/SearchPeople";
+import SearchHashtags from "@/pages/search/tabs/search-hashtags/SearchHashtags";
 
 import Messenger from "@/pages/messenger/Messenger";
 
@@ -37,6 +41,8 @@ import SettingsPrivacy from "@/pages/settings/sections/settings-privacy/Settings
 import SettingsAccount from "@/pages/settings/sections/settings-account/SettingsAccount";
 import SettingsDetailPanel from "@/pages/settings/components/SettingDetailPanel";
 import Activity from "@/pages/activity/Activity";
+import ActivityAll from "@/pages/activity/tabs/ActivityAll";
+import ActivityUnread from "@/pages/activity/tabs/ActivityUnread";
 import Home from "@/pages/home/Home";
 import PostDetailPage from "@/pages/post/PostDetailPage";
 import PostDetailHeader from "@/pages/post/PostDetailHeader";
@@ -99,6 +105,10 @@ export const privateRoutes: IRoute[] = [
     element: Activity,
     sidebar: HomeSidebar,
     header: ActivityHeader,
+    children: [
+      { path: ROUTE_PATHS.ACTIVITY, element: ActivityAll },
+      { path: ROUTE_PATHS.ACTIVITY_UNREAD, element: ActivityUnread },
+    ],
   },
   {
     path: ROUTE_PATHS.POST_DETAIL(),
@@ -118,6 +128,12 @@ export const privateRoutes: IRoute[] = [
     layout: MainLayout,
     element: Search,
     sidebar: HomeSidebar,
+    header: SearchHeader,
+    children: [
+      { path: ROUTE_PATHS.SEARCH, element: SearchTop },
+      { path: ROUTE_PATHS.SEARCH_PEOPLE, element: SearchPeople },
+      { path: ROUTE_PATHS.SEARCH_HASHTAGS, element: SearchHashtags },
+    ],
   },
   {
     path: ROUTE_PATHS.SETTINGS,

@@ -43,14 +43,14 @@ const FollowRequestCard = ({ relationship }: Props) => {
     <Flex align="center" justify="end" gap={8} className="mb-12">
       <Flex align="center" gap={4}>
         <Text textType="SB14">{`${relationship.firstName} ${relationship.lastName}`}</Text>
-        <Text>wants to follow you</Text>
+        <Text>muốn theo dõi bạn</Text>
       </Flex>
       <Flex gap={8}>
         <Button type="primary" onClick={handleAccept} loading={isLoading}>
-          <Text textType="SB14">Confirm</Text>
+          <Text textType="SB14">Xác nhận</Text>
         </Button>
         <Button type="default" onClick={handleReject} loading={isLoading}>
-          <Text textType="SB14">Delete</Text>
+          <Text textType="SB14">Xoá</Text>
         </Button>
       </Flex>
     </Flex>

@@ -4,11 +4,14 @@ import { Outlet, useNavigate } from "react-router-dom";
 import ROUTE_PATHS from "@/routes/path.route";
 import { useAppSelector } from "@/stores";
 import { LogoIcon } from "@/assets/images";
+import useFaviconBadge from "@/hooks/useFaviconBadge";
 
 import SplashScreen from "../splash/Splash";
 
 const Private = () => {
   const { isAuthenticated } = useAppSelector((state) => state.auth);
+
+  useFaviconBadge();
 
   const navigate = useNavigate();
 

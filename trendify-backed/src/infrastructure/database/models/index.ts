@@ -8,6 +8,8 @@ import { SaveModel } from "./save.model";
 import { BlockModel } from "./block.model";
 import { MediaModel } from "./media.model";
 import { NotificationModel } from "./notification.model";
+import { SearchHistoryModel } from "./search-history.model";
+import { RecentlyViewedModel } from "./recently-viewed.model";
 
 export {
   FollowModel,
@@ -20,4 +22,6 @@ export {
   BlockModel,
   MediaModel,
   NotificationModel,
+  SearchHistoryModel,
+  RecentlyViewedModel,
 };

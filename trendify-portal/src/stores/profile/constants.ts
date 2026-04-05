@@ -49,6 +49,7 @@ export interface IUserRelationship {
   username?: string;
   firstName: string;
   lastName?: string;
+  displayName?: string;
   profilePicture?: IPictureUrl;
   viewerContext: IUserViewContext;
 }

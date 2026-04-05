@@ -6,6 +6,7 @@ export const getNotificationsQuerySchema = z.object({
   cursor: z.string().trim().optional(),
   since: z.string().datetime().optional(),
   limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+  isRead: z.enum(["true", "false"]).optional(),
 });
 
 export const notificationIdParamSchema = z.object({

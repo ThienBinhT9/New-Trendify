@@ -1,0 +1,484 @@
+// ============================================================================
+// SEARCH HEADER
+// ============================================================================
+
+.header-container.header-search-container {
+  justify-content: center;
+  gap: 12px;
+
+  .search-header-title {
+    display: none;
+
+    @include mobile-medium {
+      display: none;
+    }
+  }
+
+  .search-header-back {
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+    flex-shrink: 0;
+
+    &:hover {
+      background-color: var(--hover-bg);
+    }
+  }
+
+  .search-header-submitted-query {
+    flex: 1;
+    text-align: center;
+  }
+
+  .search-header-input-wrapper {
+    width: 100%;
+    max-width: 620px;
+    display: flex;
+    justify-content: center;
+
+    .search-header-input {
+      width: 100%;
+      height: 40px;
+      border-radius: 8px;
+      background-color: var(--hover-bg);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid var(--border-color);
+
+      &:hover {
+        background-color: var(--hover-bg);
+        border-color: var(--gray-300);
+      }
+
+      &:focus-within {
+        background-color: var(--switch-bg);
+        border-color: var(--gray-400);
+        box-shadow: 0 0 0 3px rgba(144, 160, 132, 0.12);
+      }
+
+      .ant-input {
+        background-color: transparent;
+        font-size: 14px;
+      }
+
+      .ant-input-prefix {
+        color: var(--gray-400);
+        margin-right: 8px;
+      }
+
+      .search-header-clear {
+        cursor: pointer;
+        color: var(--gray-400);
+        transition: color 0.2s;
+
+        &:hover {
+          color: var(--text-color);
+        }
+      }
+    }
+  }
+
+  @include mobile-medium {
+    .search-header-input-wrapper {
+      max-width: 100%;
+      flex: 1;
+    }
+  }
+}
+
+// ============================================================================
+// SEARCH CONTAINER
+// ============================================================================
+
+.search-container {
+  width: 100%;
+  justify-content: center;
+  gap: 24px;
+
+  @include mobile-medium {
+    margin-top: var(--header-height-pc);
+  }
+
+  .search-content {
+    flex: 1;
+    flex-direction: column;
+    max-width: 620px;
+    width: 100%;
+    background-color: var(--switch-bg);
+    border-radius: 8px;
+    height: fit-content;
+  }
+}
+
+// ============================================================================
+// SEARCH HISTORY
+// ============================================================================
+
+.search-history-section {
+  width: 100%;
+  padding: 0 12px;
+
+  .search-history-header {
+    padding: 8px 0 12px;
+
+    .search-history-clear-all {
+      color: var(--primary-color);
+      cursor: pointer;
+      transition: opacity 0.2s;
+
+      &:hover {
+        opacity: 0.7;
+      }
+    }
+  }
+
+  .search-history-item {
+    padding: 10px 8px 10px 4px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.15s;
+
+    &:hover {
+      background-color: var(--hover-bg);
+    }
+
+    .search-history-icon-wrapper {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-color: var(--hover-bg);
+      flex-shrink: 0;
+    }
+
+    .search-history-avatar {
+      flex-shrink: 0;
+    }
+
+    .search-history-delete {
+      color: var(--gray-400);
+      cursor: pointer;
+      transition: color 0.2s;
+      flex-shrink: 0;
+
+      &:hover {
+        color: var(--text-color);
+      }
+    }
+  }
+}
+
+// ============================================================================
+// AUTOCOMPLETE
+// ============================================================================
+
+.autocomplete-section {
+  width: 100%;
+
+  .autocomplete-item {
+    padding: 10px 4px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.15s;
+
+    &:hover {
+      background-color: var(--hover-bg);
+    }
+
+    .autocomplete-icon-wrapper {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .autocomplete-text {
+      flex: 1;
+    }
+
+    .autocomplete-arrow {
+      color: var(--gray-400);
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+
+    &:hover .autocomplete-arrow {
+      transform: translateX(3px);
+    }
+  }
+}
+
+// ============================================================================
+// SEARCH RESULTS (TABS + CONTENT)
+// ============================================================================
+
+.search-results-section {
+  width: 100%;
+
+  .search-results-tabs {
+    .ant-tabs-nav {
+      margin-bottom: 0;
+
+      &::before {
+        border-bottom-color: var(--border-color);
+      }
+    }
+
+    .ant-tabs-tab {
+      padding: 16px;
+      font-weight: 500;
+
+      .ant-tabs-tab-btn {
+        height: 100%;
+        width: 100%;
+        color: var(--gray-400);
+      }
+    }
+
+    .ant-tabs-tab-active {
+      .ant-tabs-tab-btn {
+        color: var(--text-color);
+        font-weight: 600;
+      }
+    }
+
+    .ant-tabs-ink-bar {
+      background-color: var(--text-color);
+    }
+  }
+
+  .search-results-content {
+    padding-top: 4px;
+
+    .search-post {
+      border: none;
+    }
+  }
+}
+
+.search-friend-card.friend-card {
+  width: 100%;
+  border-radius: 0;
+  border: none;
+
+  &:hover {
+    border: none;
+    box-shadow: 0px 0px 10px var(--box-shadow-color);
+    z-index: 99;
+  }
+
+  .ant-avatar {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+// ============================================================================
+// SEARCH HASHTAG CARD
+// ============================================================================
+
+.search-hashtag-card {
+  padding: 12px 4px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--box-shadow-color);
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: var(--hover-bg);
+  }
+
+  .hashtag-icon-wrapper {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--hover-bg);
+    flex-shrink: 0;
+    border: 1px solid var(--border-color);
+  }
+}
+
+// ============================================================================
+// EMPTY STATE
+// ============================================================================
+
+.search-empty {
+  padding: 48px 0;
+  width: 100%;
+}
+
+// ============================================================================
+// TRENDING SECTION
+// ============================================================================
+
+.search-trending-section {
+  flex-direction: column;
+  width: 100%;
+  padding: 12px;
+
+  .trending-header {
+    margin-bottom: 2px;
+
+    .trending-title {
+      color: var(--primary-color);
+      position: relative;
+      margin-bottom: 6px;
+
+      &::after {
+        content: "";
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, var(--primary-color), transparent);
+        border-radius: 1px;
+      }
+    }
+  }
+
+  .trending-subtitle {
+    margin-bottom: 24px;
+  }
+}
+
+// ============================================================================
+// TRENDING ITEM
+// ============================================================================
+
+.trending-item {
+  padding: 14px 0px;
+  cursor: pointer;
+  transition: 0.2s;
+  position: relative;
+  border-bottom: 1px solid var(--box-shadow-color);
+
+  &:hover {
+    transition: 0.2s;
+    border-bottom: 1.5px solid var(--primary-color);
+  }
+
+  .trending-item-content {
+    gap: 3px;
+
+    .trending-item-keyword {
+      color: var(--text-color);
+      transition: color 0.2s;
+    }
+
+    .trending-item-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background-color: var(--primary-color);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 600;
+      line-height: 16px;
+      letter-spacing: 0.3px;
+    }
+
+    .trending-item-description {
+      line-height: 1.4;
+    }
+  }
+
+  .trending-item-thumb {
+    width: 68px;
+    height: 68px;
+    border-radius: 10px;
+    overflow: hidden;
+    flex-shrink: 0;
+
+    .trending-item-thumb-gradient {
+      width: 100%;
+      height: 100%;
+      opacity: 0.9;
+      transition:
+        opacity 0.2s,
+        transform 0.3s;
+    }
+  }
+
+  &:hover .trending-item-thumb .trending-item-thumb-gradient {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+// ============================================================================
+// DARK MODE
+// ============================================================================
+
+[data-theme="dark"] {
+  .trending-item {
+    border-bottom-color: var(--border-color);
+  }
+
+  .trending-item-badge {
+    background-color: var(--primary-color) !important;
+  }
+
+  .search-history-section .search-history-item .search-history-icon-wrapper {
+    background-color: var(--hover-bg);
+  }
+
+  .search-hashtag-card {
+    border-bottom-color: var(--border-color);
+
+    .hashtag-icon-wrapper {
+      background-color: var(--hover-bg);
+      border-color: var(--border-color);
+    }
+  }
+
+  .search-results-section .search-results-tabs {
+    @include mobile-medium {
+      width: calc(100dvw - 32px);
+    }
+
+    .ant-tabs-tab {
+      color: var(--gray-400);
+    }
+
+    .ant-tabs-ink-bar {
+      background-color: var(--text-color);
+    }
+  }
+}
+
+// ============================================================================
+// RESPONSIVE
+// ============================================================================
+
+@include mobile-medium {
+  .search-container {
+    .search-content {
+      max-width: 100%;
+      padding: 0 4px;
+    }
+  }
+
+  .trending-item {
+    padding: 12px 4px;
+  }
+
+  .search-hashtag-card {
+    padding: 10px 4px;
+  }
+
+  .search-history-section .search-history-item {
+    padding: 8px 4px;
+  }
+
+  .autocomplete-section .autocomplete-item {
+    padding: 8px 4px;
+  }
+
+  .search-results-section .search-results-tabs .ant-tabs-tab {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}

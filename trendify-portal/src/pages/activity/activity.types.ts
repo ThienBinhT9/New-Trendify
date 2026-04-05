@@ -1,28 +1,21 @@
-import type { ActivityTabKey } from "./activityTabs";
+import { INotificationActor } from "@/stores/notification/constants";
 
 export type ActivityEventType = "like" | "follow" | "reply" | "repost" | "mention";
-export type ActivityCategory = Exclude<ActivityTabKey, "all">;
+export type ActivityCategory = ActivityTabKey;
 export type ActivityActionType = "none" | "follow" | "media";
-
-export interface ActivityActor {
-  id: string;
-  displayName: string;
-  initials: string;
-  avatarUrl?: string;
-  avatarBg: string;
-  avatarColor: string;
-}
+export type ActivityTabKey = "all" | "unread";
 
 export interface ActivityNotification {
   id: string;
-  sourceType: "post_like" | "post_comment" | "post_mention" | "follow";
+  sourceType: "post_like" | "post_comment" | "post_mention" | "follow" | "follow_request";
   actorId: string;
   targetId: string;
   referenceId?: string;
   category: ActivityCategory;
   type: ActivityEventType;
   isRead: boolean;
-  actors: ActivityActor[];
+  actors: INotificationActor[];
+  totalActorCount: number;
   actorSummary: string;
   actionText: string;
   previewText?: string;
@@ -31,16 +24,4 @@ export interface ActivityNotification {
   mediaUrl?: string;
   createdAt: string;
   timeLabel: string;
-}
-
-export interface GetActivityFeedParams {
-  tab: ActivityTabKey;
-  cursor?: number;
-  limit?: number;
-}
-
-export interface ActivityFeedResult {
-  data: ActivityNotification[];
-  cursor: number;
-  hasNext: boolean;
 }

@@ -1,11 +1,12 @@
 import Button from "@/components/button/Button";
 import "./Card.scss";
 import Text from "@/components/text/Text";
-import { IUserRelationship } from "@/stores/profile/constants";
+import { IUserRelationship, IUserViewContext } from "@/stores/profile/constants";
 import { memo, useState } from "react";
 import Modal from "@/components/modal/Modal";
 import { Avatar, Flex } from "antd";
 import { useAppDispatch } from "@/stores";
+import { getAvatarUrl } from "@/utils/common.util";
 import {
   cancelFollowRequestAction,
   followAction,
@@ -18,6 +19,7 @@ type TFollowStatusVariant = "profile" | "follower-list" | "following-list";
 interface Props {
   relationship: IUserRelationship;
   variant?: TFollowStatusVariant;
+  onUpdate?: (newViewContext: Partial<IUserViewContext>) => void;
 }
 
 const FollowStatusCard = (props: Props) => {
@@ -34,7 +36,14 @@ const FollowStatusCard = (props: Props) => {
   const handleFollow = async () => {
     try {
       setIsLoading(true);
-      await dispatch(followAction(relationship.id)).unwrap();
+      const [response] = await Promise.all([
+        dispatch(followAction(relationship.id)).unwrap(),
+        new Promise((resolve) => setTimeout(resolve, 500)),
+      ]);
+
+      if (response?.data?.data?.viewContext) {
+        props.onUpdate?.(response.data.data.viewContext);
+      }
     } catch (error) {
       console.log(error);
     } finally {
@@ -45,8 +54,15 @@ const FollowStatusCard = (props: Props) => {
   const handleUnfollow = async () => {
     try {
       setIsLoading(true);
-      await dispatch(unfollowAction(relationship.id)).unwrap();
       setShowOptionFollowing(false);
+      const [response] = await Promise.all([
+        dispatch(unfollowAction(relationship.id)).unwrap(),
+        new Promise((resolve) => setTimeout(resolve, 1000)),
+      ]);
+
+      if (response?.data?.data?.viewContext) {
+        props.onUpdate?.(response.data.data.viewContext);
+      }
     } catch (error) {
       console.log(error);
     } finally {
@@ -57,8 +73,15 @@ const FollowStatusCard = (props: Props) => {
   const handleRemoveFollower = async () => {
     try {
       setIsLoading(true);
-      await dispatch(removeFollowerAction(relationship.id)).unwrap();
       setShowOptionRemove(false);
+      const [response] = await Promise.all([
+        dispatch(removeFollowerAction(relationship.id)).unwrap(),
+        new Promise((resolve) => setTimeout(resolve, 1000)),
+      ]);
+
+      if (response?.data?.data?.viewContext) {
+        props.onUpdate?.(response.data.data.viewContext);
+      }
     } catch (error) {
       console.log(error);
     } finally {
@@ -69,8 +92,15 @@ const FollowStatusCard = (props: Props) => {
   const handleCancelRequest = async () => {
     try {
       setIsLoading(true);
-      await dispatch(cancelFollowRequestAction(relationship.id)).unwrap();
+      const [response] = await Promise.all([
+        dispatch(cancelFollowRequestAction(relationship.id)).unwrap(),
+        new Promise((resolve) => setTimeout(resolve, 1000)),
+      ]);
       setShowOptionRequested(false);
+
+      if (response?.data?.data?.viewContext) {
+        props.onUpdate?.(response.data.data.viewContext);
+      }
     } catch (error) {
       console.log(error);
     } finally {
@@ -90,7 +120,10 @@ const FollowStatusCard = (props: Props) => {
           className="follow-status-modal"
         >
           <Flex className="follows-status-modal-body">
-            <Avatar style={{ width: 84, height: 84 }} src={relationship?.profilePicture?.small} />
+            <Avatar
+              style={{ width: 84, height: 84 }}
+              src={getAvatarUrl(relationship?.profilePicture)}
+            />
             <Flex align="center" gap={4}>
               <Text>Xoá</Text>
               <Text textType="M14">{`${relationship?.firstName} ${relationship?.lastName}?`}</Text>
@@ -128,7 +161,10 @@ const FollowStatusCard = (props: Props) => {
           className="follow-status-modal"
         >
           <Flex className="follows-status-modal-body">
-            <Avatar style={{ width: 84, height: 84 }} src={relationship?.profilePicture?.small} />
+            <Avatar
+              style={{ width: 84, height: 84 }}
+              src={getAvatarUrl(relationship?.profilePicture)}
+            />
             <Flex align="center" gap={4}>
               <Text>Bỏ theo dõi</Text>
               <Text textType="M14">{`${relationship?.firstName} ${relationship?.lastName}?`}</Text>
@@ -165,7 +201,10 @@ const FollowStatusCard = (props: Props) => {
           className="follow-status-modal"
         >
           <Flex className="follows-status-modal-body">
-            <Avatar style={{ width: 84, height: 84 }} src={relationship?.profilePicture?.small} />
+            <Avatar
+              style={{ width: 84, height: 84 }}
+              src={getAvatarUrl(relationship?.profilePicture)}
+            />
             <Flex align="center" gap={4}>
               <Text>Huỷ yêu cầu theo dõi</Text>
               <Text textType="M14">{`${relationship?.firstName} ${relationship?.lastName}?`}</Text>
@@ -190,7 +229,7 @@ const FollowStatusCard = (props: Props) => {
           </Flex>
         </Modal>
         <Button type="default" onClick={() => setShowOptionRequested(true)} loading={isLoading}>
-          <Text textType="SB14">Requested</Text>
+          <Text textType="SB14">Đã yêu cầu</Text>
         </Button>
       </>
     );

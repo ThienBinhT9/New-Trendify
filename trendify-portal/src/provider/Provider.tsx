@@ -6,6 +6,7 @@ import { SocketProvider } from "./SocketContext.tsx";
 
 import App from "../App.tsx";
 import ThemeProvider from "./ThemeProvider.tsx";
+import NotificationBootstrap from "./NotificationBootstrap.tsx";
 
 const Providers = () => {
   return (
@@ -13,6 +14,7 @@ const Providers = () => {
       <PersistGate loading={null} persistor={persistor}>
         <ThemeProvider>
           <SocketProvider>
+            <NotificationBootstrap />
             <App />
           </SocketProvider>
         </ThemeProvider>

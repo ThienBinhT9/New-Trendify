@@ -6,6 +6,20 @@ import { EPostStatus, EPostType } from "./post.type";
 // QUERY OPTIONS
 // ============================================================================
 
+export interface SearchPostsOptions {
+  query: string;
+  limit: number;
+  cursor?: string;
+  type?: EPostType;
+  dateFrom?: Date;
+  dateTo?: Date;
+}
+
+export interface SearchPostsResult {
+  posts: PostEntity[];
+  nextCursor?: string;
+}
+
 export interface FindUserPostsOptions {
   authorId: string;
   statuses: EPostStatus[];
@@ -77,6 +91,9 @@ export interface IPostRepository {
   // Sync counters from external source (e.g., Redis)
   setLikeCount(postId: string, count: number): Promise<void>;
   setViewCount(postId: string, count: number): Promise<void>;
+
+  // Search
+  searchPosts(options: SearchPostsOptions): Promise<SearchPostsResult>;
 }
 
 // Legacy interface - can be removed later

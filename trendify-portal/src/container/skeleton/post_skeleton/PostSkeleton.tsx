@@ -1,7 +1,7 @@
 import { Flex, Skeleton } from "antd";
 
 const PostSkeleton = () => (
-  <Flex vertical gap={12} className="post-skeleton">
+  <Flex vertical gap={12} className="post-skeleton p-16">
     <Skeleton
       avatar
       title={{ width: "40%", style: { height: 16 } }}

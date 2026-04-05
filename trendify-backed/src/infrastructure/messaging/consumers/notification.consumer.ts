@@ -1,8 +1,14 @@
 import { BaseConsumer, ConsumerConfig } from "../consumer.base";
-import { PostLikeMessage, PostCommentMessage, ROUTING_KEYS } from "@/domain/events";
+import {
+  FollowNotificationMessage,
+  PostCommentMessage,
+  PostLikeMessage,
+  ROUTING_KEYS,
+} from "@/domain/events";
 import { ENotificationType, NotificationEntity } from "@/domain/notification";
 import { MongooseNotificationRepository } from "@/infrastructure/database/repositories/notification.repository.impl";
 import {
+  MongooseLikeRepository,
   MongooseMediaRepository,
   MongooseUserRepository,
 } from "@/infrastructure/database/repositories";
@@ -49,47 +55,79 @@ export class NotificationConsumer extends BaseConsumer {
       ROUTING_KEYS.COUNTER_POST_COMMENT,
       this.handlePostComment.bind(this),
     );
+
+    this.register<FollowNotificationMessage["data"]>(
+      ROUTING_KEYS.COUNTER_FOLLOW_NOTIFICATION,
+      this.handleFollowNotification.bind(this),
+    );
   }
 
+  // ===========================================================================
+  // POST LIKE — AGGREGATED notification
+  // ===========================================================================
+
   /**
-   * Like notification: Ai đó like bài viết của tôi
+   * Like notification:
+   * - delta > 0 (like):  Upsert aggregate, push actor to front
+   * - delta < 0 (unlike): Remove actor, decrement count, fill replacement
+   * - Skip self-like (likerId === postAuthorId)
    *
-   * - recipientId = post author (người nhận notification)
-   * - actorId = liker (người thực hiện action)
-   * - targetId = postId (bài viết được like)
-   * - Skip nếu unlike (delta < 0) hoặc self-like
+   * Result: 200 người like cùng 1 post = 1 notification document
+   * "X, Y và 198 người khác đã thích bài viết của bạn."
    */
   private async handlePostLike(data: PostLikeMessage["data"]): Promise<void> {
     const { postId, postAuthorId, likerId, delta } = data;
-
-    // Chỉ tạo notification khi like (delta > 0), không tạo khi unlike
-    if (delta <= 0) return;
 
     // Không tự gửi notification cho chính mình
     if (likerId === postAuthorId) return;
 
     const notificationRepo = new MongooseNotificationRepository();
 
-    const notification = NotificationEntity.create({
-      recipientId: postAuthorId,
-      actorId: likerId,
-      type: ENotificationType.POST_LIKE,
-      targetId: postId,
-    });
+    // ===== LIKE =====
+    if (delta > 0) {
+      const saved = await notificationRepo.upsertAggregated({
+        recipientId: postAuthorId,
+        type: ENotificationType.POST_LIKE,
+        targetId: postId,
+        actorId: likerId,
+      });
 
-    const saved = await notificationRepo.upsert(notification);
-    const actor = await this.buildActorDTOSafe(likerId);
+      const actor = await this.buildActorDTOSafe(likerId);
 
-    // Emit real-time tới đúng user qua Socket.IO room
-    this.emitToUser(postAuthorId, saved, actor);
-    await this.emitUnreadCount(postAuthorId, notificationRepo);
+      // Emit "notification:updated" — FE upserts by notification ID
+      this.emitAggregatedUpdate(postAuthorId, saved, actor);
+      await this.emitUnreadCount(postAuthorId, notificationRepo);
+      return;
+    }
+
+    // ===== UNLIKE =====
+    if (delta < 0) {
+      // Find 2 most recent likers (excluding the un-liker) as potential replacements
+      const likeRepo = new MongooseLikeRepository();
+      const { likes } = await likeRepo.findByPost(postId, 3);
+      const replacementActorIds = likes
+        .map((l) => l.userId)
+        .filter((id) => id !== likerId && id !== postAuthorId);
+
+      await notificationRepo.removeActorFromAggregated({
+        recipientId: postAuthorId,
+        type: ENotificationType.POST_LIKE,
+        targetId: postId,
+        actorId: likerId,
+        replacementActorIds,
+      });
+
+      await this.emitUnreadCount(postAuthorId, notificationRepo);
+    }
   }
+
+  // ===========================================================================
+  // POST COMMENT — NON-AGGREGATED
+  // ===========================================================================
 
   /**
    * Comment notification: Ai đó comment vào bài viết của tôi
    * + Mention notification: Ai đó @mention tôi trong comment
-   *
-   * Xử lý 2 loại notification trong cùng 1 handler vì data đã có sẵn.
    */
   private async handlePostComment(data: PostCommentMessage["data"]): Promise<void> {
     const { postId, postAuthorId, commentId, commenterId, mentions } = data;
@@ -116,10 +154,7 @@ export class NotificationConsumer extends BaseConsumer {
     // 2. Notification cho mỗi user được @mention
     if (mentions && mentions.length > 0) {
       for (const mention of mentions) {
-        // Skip nếu mention chính mình
         if (mention.userId === commenterId) continue;
-
-        // Skip nếu mention post author (đã nhận POST_COMMENT notification ở trên)
         if (mention.userId === postAuthorId) continue;
 
         const notification = NotificationEntity.create({
@@ -137,9 +172,47 @@ export class NotificationConsumer extends BaseConsumer {
     }
   }
 
+  // ===========================================================================
+  // FOLLOW — NON-AGGREGATED
+  // ===========================================================================
+
   /**
-   * Emit notification tới Socket.IO room của user.
-   * Room format: `user:{userId}`
+   * Follow notification:
+   * - FOLLOW: "xxx đã bắt đầu theo dõi bạn."
+   * - FOLLOW_REQUEST: "xxx muốn theo dõi bạn."
+   */
+  private async handleFollowNotification(data: FollowNotificationMessage["data"]): Promise<void> {
+    const { actorId, recipientId, notificationType } = data;
+
+    if (!actorId || !recipientId) return;
+    if (actorId === recipientId) return;
+
+    const notificationRepo = new MongooseNotificationRepository();
+
+    const notification = NotificationEntity.create({
+      recipientId,
+      actorId,
+      type:
+        notificationType === "follow_request"
+          ? ENotificationType.FOLLOW_REQUEST
+          : ENotificationType.FOLLOW,
+      targetId: actorId,
+    });
+
+    const saved = await notificationRepo.upsert(notification);
+    const actor = await this.buildActorDTOSafe(actorId);
+
+    this.emitToUser(recipientId, saved, actor);
+    await this.emitUnreadCount(recipientId, notificationRepo);
+  }
+
+  // ===========================================================================
+  // SOCKET EMITTERS
+  // ===========================================================================
+
+  /**
+   * Emit NON-AGGREGATED notification (follow, comment, mention).
+   * Uses "notification:new" event — FE creates a new item.
    */
   private emitToUser(
     userId: string,
@@ -169,11 +242,52 @@ export class NotificationConsumer extends BaseConsumer {
         createdAt: notification.createdAt.toISOString(),
       });
     } catch (error) {
-      // Socket.IO failure không nên break notification flow
-      // User vẫn nhận notification qua REST API khi refresh
       console.error("[NotificationConsumer] Failed to emit socket event:", error);
     }
   }
+
+  /**
+   * Emit AGGREGATED notification update (post_like).
+   * Uses "notification:updated" event — FE upserts by notification ID.
+   *
+   * Payload includes the latest actor who triggered the event + total count.
+   * FE merges this into its local state.
+   */
+  private emitAggregatedUpdate(
+    userId: string,
+    notification: NotificationEntity,
+    actor: ReturnType<typeof UserMapper.toAuthorDTO> | null,
+  ): void {
+    const fallbackActor = {
+      id: notification.actorId,
+      username: "unknown",
+      displayName: "Unknown user",
+      isVerified: false,
+      profilePicture: null,
+    };
+
+    try {
+      const io = getIO();
+      io.to(`user:${userId}`).emit("notification:updated", {
+        id: notification.id,
+        type: notification.type,
+        actor: {
+          ...(actor || fallbackActor),
+          profilePicture: actor?.profilePicture ?? null,
+        },
+        totalActorCount: notification.totalActorCount,
+        targetId: notification.targetId,
+        isRead: notification.isRead,
+        createdAt: notification.createdAt.toISOString(),
+      });
+    } catch (error) {
+      console.error("[NotificationConsumer] Failed to emit aggregated event:", error);
+    }
+  }
+
+  // ===========================================================================
+  // HELPERS
+  // ===========================================================================
 
   private async buildActorDTO(actorId: string) {
     const actor = await this.userRepo.findById(actorId, {

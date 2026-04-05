@@ -80,6 +80,16 @@ export interface PostSaveMessage extends BaseMessage {
   };
 }
 
+// Follow notification message (async notification)
+export interface FollowNotificationMessage extends BaseMessage {
+  type: "counter.follow-notification";
+  data: {
+    actorId: string; // user who performed follow action
+    recipientId: string; // user who receives notification
+    notificationType: "follow" | "follow_request";
+  };
+}
+
 // Union type của tất cả messages
 export type AppMessage =
   | PasswordResetEmailMessage
@@ -87,7 +97,8 @@ export type AppMessage =
   | MediaProcessMessage
   | PostLikeMessage
   | PostCommentMessage
-  | PostSaveMessage;
+  | PostSaveMessage
+  | FollowNotificationMessage;
 
 // Mapping từ routing key -> message type
 export const ROUTING_KEYS = {
@@ -97,6 +108,7 @@ export const ROUTING_KEYS = {
   COUNTER_POST_LIKE: "counter.post-like",
   COUNTER_POST_COMMENT: "counter.post-comment",
   COUNTER_POST_SAVE: "counter.post-save",
+  COUNTER_FOLLOW_NOTIFICATION: "counter.follow-notification",
 } as const;
 
 // Extract routing key từ message type

@@ -6,6 +6,7 @@ import {
   MongooseFollowRepository,
   MongooseMediaRepository,
   MongooseUserRepository,
+  MongooseNotificationRepository,
 } from "../database/repositories";
 import RedisService from "../services/redis.service";
 import { MongooseUnitOfWorkFactory } from "../database/mongoose.unit-of-work";
@@ -30,14 +31,15 @@ const uowFactory = new MongooseUnitOfWorkFactory(mongoose.connection);
 const cacheSvc = RedisService.getInstance();
 const producer = new Producer();
 const storageSvc = new S3Service();
+const notificationRepo = new MongooseNotificationRepository();
 
 const followUsecase = new FollowUserUseCase(uowFactory, cacheSvc, producer);
 
-const unfollowUsecase = new UnfollowUserUseCase(uowFactory, cacheSvc, producer);
+const unfollowUsecase = new UnfollowUserUseCase(uowFactory, cacheSvc, producer, notificationRepo);
 
 const removefollowUsecase = new RemovefollowUserUseCase(uowFactory, cacheSvc, producer);
 
-const cancelFollowRequestUseCase = new CancelFollowRequestUseCase(followRepo);
+const cancelFollowRequestUseCase = new CancelFollowRequestUseCase(followRepo, notificationRepo);
 
 const acceptFollowRequestUseCase = new AcceptFollowRequestUseCase(uowFactory, cacheSvc, producer);
 

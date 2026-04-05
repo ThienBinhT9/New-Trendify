@@ -24,7 +24,7 @@
   }
 
   &__list-item {
-    margin-bottom: 2px;
+    margin-bottom: 4px;
   }
 
   &__skeleton {
@@ -48,11 +48,11 @@
 
 .activity-notification-item {
   width: 100%;
-  min-height: 104px;
+  min-height: 80px;
   align-items: flex-start;
   gap: 12px;
   border-radius: 20px;
-  border: 1px solid var(--gray-200);
+  border: 1.5px solid var(--gray-200);
   background-color: var(--switch-bg);
   padding: 16px;
   cursor: pointer;
@@ -64,8 +64,8 @@
   }
 
   &--unread {
-    border-color: #b7d0ff;
-    box-shadow: 0 0 0 1px rgba(36, 104, 214, 0.08);
+    border-color: var(--primary-color);
+    box-shadow: 0 1px 0 4px rgba(var(--primary-color), 1);
   }
 
   &--pending {
@@ -83,6 +83,10 @@
     flex: 1;
     min-width: 0;
     gap: 6px;
+  }
+
+  &__time {
+    opacity: 0.6;
   }
 
   &__actors {
@@ -175,22 +179,6 @@
     min-width: 0;
     gap: 4px;
     padding-top: 2px;
-  }
-
-  &__unread-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: var(--text-color-blue);
-    position: absolute;
-    top: 8px;
-    left: -2px;
-    z-index: 10;
-
-    @include mobile-medium {
-      top: 7px;
-      left: -10px;
-    }
   }
 
   &__title,

@@ -1,11 +1,11 @@
 import { Badge, Flex } from "antd";
 
 import Icon from "@/components/icon/Icon";
-import { useNotifications } from "@/hooks/useNotifications";
 import { useSocket } from "@/hooks/useSocket";
+import { useAppSelector } from "@/stores";
 
 const Navbar = () => {
-  const { unreadCount } = useNotifications();
+  const unreadCount = useAppSelector((state) => state.notification.unreadCount);
   const { status } = useSocket();
 
   return (

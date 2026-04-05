@@ -3,9 +3,13 @@ import * as Response from "@/shared/responses";
 import { CancelFollowRequestDTO } from "@/application/dtos/follow.dto";
 import { IFollowRepository } from "@/domain/follow";
 import { IUserViewerContext } from "@/application/policies/viewer-context.builder";
+import { INotificationRepository } from "@/domain/notification";
 
 export class CancelFollowRequestUseCase {
-  constructor(private readonly followRepo: IFollowRepository) {}
+  constructor(
+    private readonly followRepo: IFollowRepository,
+    private readonly notificationRepo: INotificationRepository,
+  ) {}
 
   async execute(dto: CancelFollowRequestDTO) {
     const { fromUserId, toUserId } = dto;
@@ -23,6 +27,13 @@ export class CancelFollowRequestUseCase {
         data: { viewContext: response },
       });
     }
+
+    // Xóa follow_request notification: fire-and-forget
+    this.notificationRepo
+      .deleteFollowNotification(fromUserId, toUserId, "follow_request")
+      .catch((error) =>
+        console.error("[CancelFollowRequest] Failed to delete follow_request notification:", error),
+      );
 
     return new Response.SuccessResponse({
       message: "Follow request cancelled",

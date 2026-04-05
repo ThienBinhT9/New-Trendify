@@ -8,13 +8,16 @@ import {
   ICacheService,
   IPasswordService,
   ITokenService,
+  IFileStorageService,
 } from "@/application/services";
 
 import { UserEntity } from "@/domain/user";
 import { SessionEntity } from "@/domain/session";
 import { IUnitOfWorkFactory } from "@/domain/unit-of-work";
+import { IMediaRepository } from "@/domain/media";
 import { JwtPayloadBase } from "@/application/services/jwt.service";
 import { UserSettingsEntity } from "@/domain/user-setting";
+import { MediaMapper, toMediaRecord } from "@/application/mappers/media.mapper";
 
 export class CompleteSignUpUsecase {
   constructor(
@@ -23,6 +26,8 @@ export class CompleteSignUpUsecase {
     private readonly cacheSvc: ICacheService,
     private readonly tokenSvc: ITokenService,
     private readonly passwordSvc: IPasswordService,
+    private readonly mediaRepo: IMediaRepository,
+    private readonly storageSvc: IFileStorageService,
   ) {}
 
   private generateRefreshToken(): { refreshTokenRaw: string; refreshTokenHash: string } {
@@ -118,9 +123,31 @@ export class CompleteSignUpUsecase {
 
       await this.cacheSvc.del(CacheContextBuilder.signUp().sessionKey(signupSession));
 
+      // Resolve profilePicture & coverPicture from mediaId to variant URLs
+      const snapshot = savedUser.toSnapshot();
+      const mediaIds = [snapshot.profilePicture, snapshot.coverPicture].filter(
+        (id): id is string => typeof id === "string",
+      );
+      const mediaEntities = mediaIds.length > 0 ? await this.mediaRepo.findByIds(mediaIds) : [];
+      const mediaRecord = toMediaRecord(mediaEntities);
+
+      const resolvedUser = {
+        ...snapshot,
+        profilePicture: MediaMapper.resolveVariantMap(
+          snapshot.profilePicture,
+          mediaRecord,
+          this.storageSvc,
+        ),
+        coverPicture: MediaMapper.resolveVariantMap(
+          snapshot.coverPicture,
+          mediaRecord,
+          this.storageSvc,
+        ),
+      };
+
       return {
         publicData: {
-          user: savedUser.toSnapshot(),
+          user: resolvedUser,
           settings: newSettings.toSnapshot(),
           tokens: { accessToken },
         },

@@ -2,6 +2,7 @@ import { run as runIndexUsers } from "./migrations/001_user_indexes";
 import { run as runIndexSessions } from "./migrations/002_session_indexes";
 import { run as runIndexFollows } from "./migrations/003_follow_indexes";
 import { run as runIndexSettings } from "./migrations/004_setting_indexes";
+import { run as runNotificationIndexes } from "./migrations/005_notification_indexes";
 
 import mongoose from "mongoose";
 
@@ -17,8 +18,9 @@ async function migrate() {
 
   // await runIndexUsers(db);
   // await runIndexSessions(db);
-  await runIndexFollows(db);
-  await runIndexSettings(db);
+  // await runIndexFollows(db);
+  // await runIndexSettings(db);
+  await runNotificationIndexes(db);
 
   console.log("🎉 All migrations done");
   await mongoose.disconnect();

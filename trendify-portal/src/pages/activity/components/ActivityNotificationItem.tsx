@@ -1,12 +1,11 @@
 import { Avatar, Flex } from "antd";
 import { memo } from "react";
 
-import Button from "@/components/button/Button";
-import Icon from "@/components/icon/Icon";
-
 import type { ActivityNotification } from "../activity.types";
+import { formatTimeFromNow, getAvatarUrl } from "@/utils/common.util";
+
 import Text from "@/components/text/Text";
-import { formatTimeFromNow } from "@/utils/common.util";
+import Icon from "@/components/icon/Icon";
 
 interface ActivityNotificationItemProps {
   notification: ActivityNotification;
@@ -14,11 +13,9 @@ interface ActivityNotificationItemProps {
   onClick?: () => void;
 }
 
-const ActivityNotificationItem = ({
-  notification,
-  isPendingRead = false,
-  onClick,
-}: ActivityNotificationItemProps) => {
+const ActivityNotificationItem = (props: ActivityNotificationItemProps) => {
+  const { notification, isPendingRead = false, onClick } = props;
+
   const visibleActors = notification.actors.slice(0, 2);
   const relativeTimeLabel = formatTimeFromNow(notification.createdAt);
 
@@ -41,16 +38,11 @@ const ActivityNotificationItem = ({
             <Avatar
               key={`${notification.id}-${actor.id}`}
               className={`activity-notification-item__avatar activity-notification-item__avatar--${index}`}
-              style={{ backgroundColor: actor.avatarBg, color: actor.avatarColor }}
-              src={actor.avatarUrl}
-            >
-              {actor.initials}
-            </Avatar>
+              src={getAvatarUrl(actor.profilePicture)}
+            />
           ))}
         </Flex>
-
         <Flex vertical className="activity-notification-item__content">
-          {!notification.isRead && <span className="activity-notification-item__unread-dot" />}
           <p
             className="activity-notification-item__title"
             title={`${notification.actorSummary} ${notification.actionText}`}
@@ -68,13 +60,9 @@ const ActivityNotificationItem = ({
       </Flex>
 
       <Flex vertical align="flex-end" className="activity-notification-item__meta">
-        <Text textType="M10">{relativeTimeLabel}</Text>
-
-        {notification.actionType === "follow" ? (
-          <Button className="activity-notification-item__follow-btn">
-            {notification.followLabel}
-          </Button>
-        ) : null}
+        <Text textType="R12" className="activity-notification-item__time">
+          {relativeTimeLabel}
+        </Text>
 
         {notification.actionType === "media" ? (
           <Flex className="activity-notification-item__thumb">

@@ -5,12 +5,14 @@ import { ICacheService, IMessageProducer } from "@/application/services";
 import { IUnitOfWorkFactory } from "@/domain/unit-of-work";
 import { ROUTING_KEYS } from "@/domain/events";
 import { IUserViewerContext } from "@/application/policies/viewer-context.builder";
+import { INotificationRepository } from "@/domain/notification";
 
 export class UnfollowUserUseCase {
   constructor(
     private readonly uowFactory: IUnitOfWorkFactory,
     private readonly cacheService: ICacheService,
     private readonly producer: IMessageProducer,
+    private readonly notificationRepo: INotificationRepository,
   ) {}
 
   async execute(dto: UnfollowUserDTO) {
@@ -37,6 +39,13 @@ export class UnfollowUserUseCase {
 
       // Update Redis counters atomically
       this.updateCountersAndCache(fromUserId, toUserId);
+
+      // Xóa follow notification: fire-and-forget, không block response
+      this.notificationRepo
+        .deleteFollowNotification(fromUserId, toUserId, "follow")
+        .catch((error) =>
+          console.error("[UnfollowUser] Failed to delete follow notification:", error),
+        );
 
       // Publish to RabbitMQ for MongoDB sync
       try {

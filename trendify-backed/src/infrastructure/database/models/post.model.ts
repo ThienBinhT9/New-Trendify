@@ -229,6 +229,12 @@ postSchema.index(
 // Single post lookup
 postSchema.index({ _id: 1, status: 1 });
 
+// Full-text search on post content
+postSchema.index(
+  { content: "text" },
+  { name: "content_search", weights: { content: 1 } },
+);
+
 // ============================================================================
 // VIRTUALS
 // ============================================================================

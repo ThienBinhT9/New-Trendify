@@ -10,6 +10,8 @@ import {
   FindRepliesOptions,
   FindByHashtagOptions,
   FindFeedOptions,
+  SearchPostsOptions,
+  SearchPostsResult,
 } from "@/domain/post";
 import { PostModel } from "../models/post.model";
 import { BaseRepository } from "./base.repository";
@@ -319,5 +321,48 @@ export class MongoosePostRepository
       { $set: { "counters.viewCount": count } },
       { session: this.session },
     );
+  }
+
+  // ====================== SEARCH ======================
+
+  async searchPosts(options: SearchPostsOptions): Promise<SearchPostsResult> {
+    const { query, limit, cursor, type, dateFrom, dateTo } = options;
+
+    const searchQuery: Record<string, unknown> = {
+      $text: { $search: query },
+      status: EPostStatus.ACTIVE,
+      "settings.visibility": "public",
+      replyToId: { $exists: false }, // Exclude replies
+    };
+
+    if (type) {
+      searchQuery.type = type;
+    }
+
+    // Date range filter
+    if (dateFrom || dateTo) {
+      const dateFilter: Record<string, Date> = {};
+      if (dateFrom) dateFilter.$gte = dateFrom;
+      if (dateTo) dateFilter.$lte = dateTo;
+      searchQuery.createdAt = dateFilter;
+    }
+
+    if (cursor) {
+      searchQuery._id = { $lt: new Types.ObjectId(cursor) };
+    }
+
+    const docs = await PostModel.find(searchQuery)
+      .select({ score: { $meta: "textScore" } })
+      .sort({ score: { $meta: "textScore" }, _id: -1 })
+      .limit(limit + 1)
+      .lean();
+
+    const hasNext = docs.length > limit;
+    const sliced = hasNext ? docs.slice(0, limit) : docs;
+
+    const posts = sliced.map((doc) => this.mapToEntity(doc, PostEntity));
+    const nextCursor = hasNext ? sliced[sliced.length - 1]._id.toString() : undefined;
+
+    return { posts, nextCursor };
   }
 }

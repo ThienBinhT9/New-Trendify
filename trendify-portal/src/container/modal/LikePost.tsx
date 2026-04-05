@@ -10,6 +10,7 @@ import { IUserRelationship } from "@/stores/profile/constants";
 import Text from "@/components/text/Text";
 import Modal from "@/components/modal/Modal";
 import FriendCard from "@/pages/profile/tabs/profile-friends/FriendCard";
+import { IUserViewContext } from "@/stores/profile/constants";
 
 const LIKE_LIMIT = 20;
 
@@ -84,6 +85,23 @@ const ModalLikePost = (props: Props) => {
     [usersLiked, mapLikeToRelationship],
   );
 
+  const onFollowStatusChange = useCallback((userId: string, newViewContext: Partial<IUserViewContext>) => {
+    setUsersLiked((prev) =>
+      prev.map((user) => {
+        if (user.id === userId && user.viewerContext) {
+          return {
+            ...user,
+            viewerContext: {
+              ...user.viewerContext,
+              ...newViewContext,
+            },
+          };
+        }
+        return user;
+      }),
+    );
+  }, []);
+
   useEffect(() => {
     if (!open || !postId) return;
     setUsersLiked([]);
@@ -121,7 +139,11 @@ const ModalLikePost = (props: Props) => {
                     {index > 0 && (
                       <Divider style={{ margin: "12px 0", borderColor: "#e8e8e8ff" }} />
                     )}
-                    <FriendCard relationship={relationship} className="item-user-liked" />
+                    <FriendCard
+                      relationship={relationship}
+                      className="item-user-liked"
+                      onFollowChange={(newViewContext) => onFollowStatusChange(relationship.id, newViewContext)}
+                    />
                   </Flex>
                 )}
                 components={{

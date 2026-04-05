@@ -6,6 +6,7 @@ import Button from "@/components/button/Button";
 import { IUserRelationship } from "@/stores/profile/constants";
 import { useAppDispatch } from "@/stores";
 import { unblockAction } from "@/stores/follow/actions";
+import { getAvatarUrl } from "@/utils/common.util";
 import "./Card.scss";
 
 interface Props {
@@ -29,7 +30,7 @@ const BlockedCard = ({ relationship }: Props) => {
 
   return (
     <Flex className="blocked-card" align="center" gap={12}>
-      <Avatar size={44} src={relationship.profilePicture?.small} className="blocked-card__avatar">
+      <Avatar size={44} src={getAvatarUrl(relationship.profilePicture)} className="blocked-card__avatar">
         {relationship.firstName?.[0]}
       </Avatar>
 

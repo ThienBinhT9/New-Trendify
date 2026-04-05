@@ -15,10 +15,24 @@ export type SocketConnectionStatus =
 
 export interface NotificationSocketPayload {
   id: string;
-  type: "follow" | "post_like" | "post_comment" | "post_mention";
+  type: "follow" | "follow_request" | "post_like" | "post_comment" | "post_mention";
   actor: INotificationActor;
   targetId: string;
   referenceId?: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+/**
+ * Payload for aggregated notification updates (post_like).
+ * Emitted when someone likes a post — FE upserts by notification ID.
+ */
+export interface AggregatedNotificationPayload {
+  id: string;
+  type: "post_like";
+  actor: INotificationActor;
+  totalActorCount: number;
+  targetId: string;
   isRead: boolean;
   createdAt: string;
 }
@@ -33,6 +47,7 @@ export interface NotificationReadPayload {
 
 interface ServerToClientEvents {
   "notification:new": (payload: NotificationSocketPayload) => void;
+  "notification:updated": (payload: AggregatedNotificationPayload) => void;
   "notification:unread-count": (payload: NotificationUnreadCountPayload) => void;
   "notification:read": (payload: NotificationReadPayload) => void;
   "notification:read-all": (payload: NotificationUnreadCountPayload) => void;
