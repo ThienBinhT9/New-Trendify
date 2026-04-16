@@ -8,6 +8,7 @@ import {
 } from "@/domain/events";
 import { MongoosePostRepository } from "@/infrastructure/database/repositories/post.repository.impl";
 import { MongooseUserRepository } from "@/infrastructure/database/repositories/user.repository.impl";
+import { PostCounterBroadcastAccumulator } from "@/infrastructure/services/post-counter-broadcast.accumulator";
 
 export class CounterConsumer extends BaseConsumer {
   constructor() {
@@ -92,6 +93,7 @@ export class CounterConsumer extends BaseConsumer {
 
     try {
       await postRepository.incrementLikeCount(postId, delta);
+      PostCounterBroadcastAccumulator.getInstance().mark(postId);
       console.log(`   Post ${postId}: likeCount ${delta > 0 ? "+" : ""}${delta}`);
     } catch (error) {
       console.error(`❌ Failed to update likeCount for post ${postId}:`, error);
@@ -107,6 +109,7 @@ export class CounterConsumer extends BaseConsumer {
 
     try {
       await postRepository.incrementCommentCount(postId, delta);
+      PostCounterBroadcastAccumulator.getInstance().mark(postId);
       console.log(`   Post ${postId}: commentCount ${delta > 0 ? "+" : ""}${delta}`);
     } catch (error) {
       console.error(`❌ Failed to update commentCount for post ${postId}:`, error);

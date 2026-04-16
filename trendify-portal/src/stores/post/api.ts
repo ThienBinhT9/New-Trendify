@@ -3,6 +3,8 @@ import {
   ICreatePostRequest,
   ICreatePostResponse,
   IDeletePostResponse,
+  IUpdatePostRequest,
+  IUpdatePostResponse,
   IPostDetailResponse,
   IUserPostsResponse,
   IFollowingPostsResponse,
@@ -16,6 +18,8 @@ import {
   IPostCommentsResponse,
   IDeleteCommentResponse,
   ICommentRepliesResponse,
+  ILikeCommentResponse,
+  IHashtagPostsResponse,
 } from "./constants";
 import { IListParams } from "@/interfaces/common.interface";
 
@@ -27,6 +31,10 @@ export const createPost = async (body: ICreatePostRequest) => {
 
 export const deletePost = async (postId: string) => {
   return apiClient.delete<IDeletePostResponse>(POST_ENDPOINT.DELETE_POST(postId));
+};
+
+export const updatePost = async ({ postId, ...body }: IUpdatePostRequest) => {
+  return apiClient.patch<IUpdatePostResponse>(POST_ENDPOINT.UPDATE_POST(postId), body);
 };
 
 export const getPost = async (postId: string) => {
@@ -105,4 +113,18 @@ export const listCommentReplies = async (
       params,
     },
   );
+};
+
+export const likeComment = async (postId: string, commentId: string) => {
+  return apiClient.post<ILikeCommentResponse>(POST_ENDPOINT.LIKE_COMMENT(postId, commentId));
+};
+
+export const unlikeComment = async (postId: string, commentId: string) => {
+  return apiClient.delete<ILikeCommentResponse>(POST_ENDPOINT.UNLIKE_COMMENT(postId, commentId));
+};
+
+export const listHashtagPosts = async (tag: string, params?: IListParams) => {
+  return apiClient.get<IHashtagPostsResponse>(POST_ENDPOINT.GET_HASHTAG_POSTS(tag), {
+    params,
+  });
 };

@@ -11,10 +11,12 @@ import GuestLayout from "@/layouts/guest-layout/GuestLayout";
 import SignIn from "@/pages/guest/SignIn";
 import SignUp from "@/pages/guest/SignUp";
 import ResetPassword from "@/pages/guest/ResetPassword";
+import VerifyEmailCallback from "@/pages/guest/VerifyEmailCallback";
 import RequestEmailVerification from "@/pages/guest/RequestEmailVerification";
 
 import Welcome from "@/pages/welcome/Welcome";
 
+import Home from "@/pages/home/Home";
 import HomeHeader from "@/pages/home/HomeHeader";
 import HomeSidebar from "@/pages/home/HomeSidebar";
 
@@ -25,6 +27,7 @@ import SearchPeople from "@/pages/search/tabs/search-people/SearchPeople";
 import SearchHashtags from "@/pages/search/tabs/search-hashtags/SearchHashtags";
 
 import Messenger from "@/pages/messenger/Messenger";
+import MessengerHeader from "@/pages/messenger/MesengerHeader";
 
 import Profile from "@/pages/profile/Profile";
 import ProfilePosts from "@/pages/profile/tabs/profile-posts/ProfilePosts";
@@ -34,19 +37,22 @@ import ProfileFriends from "@/pages/profile/tabs/profile-friends/ProfileFriends"
 import ProfileIntroduce from "@/pages/profile/tabs/profile-introduce/ProfileIntroduce";
 import ProfileSavedPosts from "@/pages/profile/tabs/profile-saved-posts/ProfileSavedPosts";
 import ProfileDraftPosts from "@/pages/profile/tabs/profile-draft-posts/ProfileDraftPosts";
-import VerifyEmailCallback from "@/pages/guest/VerifyEmailCallback";
 
 import Settings from "@/pages/settings/Settings";
 import SettingsPrivacy from "@/pages/settings/sections/settings-privacy/SettingsPrivacy";
 import SettingsAccount from "@/pages/settings/sections/settings-account/SettingsAccount";
 import SettingsDetailPanel from "@/pages/settings/components/SettingDetailPanel";
+
 import Activity from "@/pages/activity/Activity";
 import ActivityAll from "@/pages/activity/tabs/ActivityAll";
 import ActivityUnread from "@/pages/activity/tabs/ActivityUnread";
-import Home from "@/pages/home/Home";
+import ActivityHeader from "@/pages/activity/ActivityHeader";
+
 import PostDetailPage from "@/pages/post/PostDetailPage";
 import PostDetailHeader from "@/pages/post/PostDetailHeader";
-import ActivityHeader from "@/pages/activity/ActivityHeader";
+
+import HashtagPage from "@/pages/hashtag/HashtagPage";
+import HashtagHeader from "@/pages/hashtag/HashtagHeader";
 
 const EmptyRoute: React.FC = () => null;
 
@@ -118,10 +124,18 @@ export const privateRoutes: IRoute[] = [
     header: PostDetailHeader,
   },
   {
+    path: ROUTE_PATHS.HASHTAG(),
+    layout: MainLayout,
+    element: HashtagPage,
+    sidebar: HomeSidebar,
+    header: HashtagHeader,
+  },
+  {
     path: ROUTE_PATHS.MESSAGE,
     layout: MainLayout,
     element: Messenger,
     sidebar: HomeSidebar,
+    header: MessengerHeader,
   },
   {
     path: ROUTE_PATHS.SEARCH,

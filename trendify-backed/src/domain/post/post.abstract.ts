@@ -1,6 +1,6 @@
 import { ECommonVisibility } from "../user-setting";
 import { PostEntity } from "./post.entity";
-import { EPostStatus, EPostType } from "./post.type";
+import { EPostStatus, EPostType, IPostCounters } from "./post.type";
 
 // ============================================================================
 // QUERY OPTIONS
@@ -53,6 +53,11 @@ export interface FindFeedOptions {
   cursor?: string;
 }
 
+export interface PostCountersResult {
+  postId: string;
+  counters: Pick<IPostCounters, "likeCount" | "commentCount">;
+}
+
 // ============================================================================
 // REPOSITORY INTERFACE
 // ============================================================================
@@ -91,6 +96,9 @@ export interface IPostRepository {
   // Sync counters from external source (e.g., Redis)
   setLikeCount(postId: string, count: number): Promise<void>;
   setViewCount(postId: string, count: number): Promise<void>;
+
+  // Batch counter queries
+  getCountersByIds(postIds: string[]): Promise<PostCountersResult[]>;
 
   // Search
   searchPosts(options: SearchPostsOptions): Promise<SearchPostsResult>;

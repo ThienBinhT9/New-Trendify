@@ -6,6 +6,7 @@ import { IUserViewContext } from "@/stores/profile/constants";
 
 export enum EPostActions {
   CREATE_POST = "CREATE_POST",
+  UPDATE_POST = "UPDATE_POST",
   DELETE_POST = "DELETE_POST",
   GET_POST_DETAIL = "GET_POST_DETAIL",
   GET_POST_COMMENTS = "GET_POST_COMMENTS",
@@ -21,14 +22,19 @@ export enum EPostActions {
   DELETE_COMMENT = "DELETE_COMMENT",
   GET_COMMENT_REPLIES = "GET_COMMENT_REPLIES",
 
+  LIKE_COMMENT = "LIKE_COMMENT",
+  UNLIKE_COMMENT = "UNLIKE_COMMENT",
+
   GET_USER_POSTS = "GET_USER_POSTS",
   GET_FOLLOWING_POSTS = "GET_FOLLOWING_POSTS",
   GET_SAVED_POSTS = "GET_SAVED_POSTS",
   GET_DRAFT_POSTS = "GET_DRAFT_POSTS",
+  GET_HASHTAG_POSTS = "GET_HASHTAG_POSTS",
 }
 
 export const POST_ENDPOINT = {
   CREATE_POST: "/posts",
+  UPDATE_POST: (postId: string) => `/posts/${postId}`,
   DELETE_POST: (postId: string) => `/posts/${postId}`,
   GET_POST_DETAIL: (postId: string) => `/posts/${postId}`,
   GET_POST_LIKES: (postId: string) => `/posts/${postId}/likes`,
@@ -44,11 +50,16 @@ export const POST_ENDPOINT = {
   GET_COMMENT_REPLIES: (postId: string, commentId: string) =>
     `/posts/${postId}/comments/${commentId}/replies`,
   DELETE_COMMENT: (postId: string, commentId: string) => `/posts/${postId}/comments/${commentId}`,
+  LIKE_COMMENT: (postId: string, commentId: string) =>
+    `/posts/${postId}/comments/${commentId}/like`,
+  UNLIKE_COMMENT: (postId: string, commentId: string) =>
+    `/posts/${postId}/comments/${commentId}/like`,
 
   GET_USER_POSTS: (userId: string) => `/users/${userId}/posts`,
   GET_FOLLOWING_POSTS: "/posts/following",
   GET_SAVED_POSTS: "/posts/saved",
   GET_DRAFT_POSTS: "/posts/drafts",
+  GET_HASHTAG_POSTS: (tag: string) => `/posts/hashtag/${encodeURIComponent(tag)}`,
 };
 
 export interface IPostState {
@@ -90,9 +101,10 @@ export interface ICreatePostRequest {
 
 export interface ICreateCommentRequest {
   postId: string;
-  content: string;
+  content?: string;
   parentId?: string;
   mentions?: ICommentMention[];
+  mediaIds?: string[];
 }
 
 //============= RESPONSE =============
@@ -102,6 +114,29 @@ export interface ICreatePostResponse extends IApiResponse {
 
 export interface IDeletePostResponse extends IApiResponse {
   message: string;
+}
+
+export interface IUpdatePostRequest {
+  postId: string;
+  visibility?: EVisibility;
+  allowLike?: boolean;
+  allowSave?: boolean;
+  allowComment?: boolean;
+  allowShare?: boolean;
+}
+
+export interface IUpdatePostResponse extends IApiResponse {
+  data: {
+    id: string;
+    settings: {
+      visibility: EVisibility;
+      allowLike: boolean;
+      allowSave: boolean;
+      allowShare: boolean;
+      allowComment: boolean;
+      allowDownload: boolean;
+    };
+  };
 }
 
 export interface IPostDetailResponse extends IApiResponse {
@@ -140,6 +175,14 @@ export interface IDraftPostsResponse extends IApiResponse {
   data: {
     posts: IPost[];
     nextCursor: string;
+  };
+}
+
+export interface IHashtagPostsResponse extends IApiResponse {
+  data: {
+    posts: IPost[];
+    hashtag: string;
+    nextCursor?: string;
   };
 }
 
@@ -194,5 +237,11 @@ export interface ICommentRepliesResponse extends IApiResponse {
   data: {
     replies: IComment[];
     nextCursor: string | null;
+  };
+}
+
+export interface ILikeCommentResponse extends IApiResponse {
+  data: {
+    isLiked: boolean;
   };
 }

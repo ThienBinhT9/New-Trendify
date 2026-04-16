@@ -35,10 +35,15 @@ const PostHeader = ({ post, viewerContext }: PostHeaderProps) => {
   const [showOptions, setShowOptions] = useState<boolean>(false);
   const [visibleModalPrivacy, setVisibleModalPrivacy] = useState<boolean>(false);
   const [isSaved, setIsSaved] = useState<boolean>(viewerContext.isSaved);
+  const [currentVisibility, setCurrentVisibility] = useState<EVisibility>(settings.visibility);
 
   useEffect(() => {
     setIsSaved(viewerContext.isSaved);
   }, [post.id, viewerContext.isSaved]);
+
+  useEffect(() => {
+    setCurrentVisibility(settings.visibility);
+  }, [post.id, settings.visibility]);
 
   const handleOpenPrivacyModal = () => {
     if (!isAuthor) return;
@@ -186,7 +191,7 @@ const PostHeader = ({ post, viewerContext }: PostHeaderProps) => {
     navigate(ROUTE_PATHS.PROFILE(author.id));
   };
 
-  const isPublic = settings.visibility === EVisibility.public;
+  const isPublic = currentVisibility === EVisibility.public;
 
   return (
     <Flex className="post-header">
@@ -197,9 +202,17 @@ const PostHeader = ({ post, viewerContext }: PostHeaderProps) => {
           onClick={navigateToProfile}
         />
         <Flex vertical>
-          <Text textType="M14" className="post-author" onClick={navigateToProfile}>
-            {`${author.displayName}`}
-          </Text>
+          <Flex align="center" gap={4}>
+            <Text textType="M14" className="post-author" onClick={navigateToProfile}>
+              {`${author.displayName}`}
+            </Text>
+            {post.location && (
+              <Flex align="center" gap={4} className="post-location">
+                <Text textType="R14">đang ở</Text>
+                <Text textType="M14">{post.location.name}</Text>
+              </Flex>
+            )}
+          </Flex>
           <Flex align="center" gap={6}>
             <Tooltip
               title={formatDate(new Date(createdAt).toISOString(), "dddd, MMMM D, YYYY [at] HH:mm")}
@@ -231,9 +244,11 @@ const PostHeader = ({ post, viewerContext }: PostHeaderProps) => {
       </Dropdown>
 
       <ModalSettingPrivacyPost
-        visibility={settings.visibility}
+        postId={post.id}
+        visibility={currentVisibility}
         open={isAuthor && visibleModalPrivacy}
         onCancel={() => setVisibleModalPrivacy(false)}
+        onSaved={(newVisibility) => setCurrentVisibility(newVisibility)}
       />
     </Flex>
   );

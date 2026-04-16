@@ -1,4 +1,5 @@
 import { IPictureUrl } from "./user.interface";
+import { IPostMedia } from "./post.interface";
 
 export interface ICommentAuthor {
   id: string;
@@ -49,4 +50,5 @@ export interface IComment {
   createdAt: string;
   updatedAt: string;
   counters: ICommentCounters;
+  media?: IPostMedia[];
 }

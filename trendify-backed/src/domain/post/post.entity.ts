@@ -114,6 +114,30 @@ export class PostEntity {
     this.props.updatedAt = new Date();
   }
 
+  updateSettings(updates: Partial<IPostProps["settings"]>): void {
+    this.ensureCanModify();
+    Object.assign(this.props.settings, updates);
+    this.props.updatedAt = new Date();
+  }
+
+  updateContent(content?: string, mentions?: IPostProps["mentions"]): void {
+    this.ensureCanModify();
+    if (content !== undefined) {
+      this.props.content = content;
+      this.props.hashtags = content ? PostEntity.extractHashtags(content) : [];
+    }
+    if (mentions !== undefined) {
+      this.props.mentions = mentions;
+    }
+    this.props.updatedAt = new Date();
+  }
+
+  updateLocation(location?: IPostProps["location"] | null): void {
+    this.ensureCanModify();
+    this.props.location = location ?? undefined;
+    this.props.updatedAt = new Date();
+  }
+
   // --------------------------------------------------------------------------
   // Static Factory Methods
   // --------------------------------------------------------------------------

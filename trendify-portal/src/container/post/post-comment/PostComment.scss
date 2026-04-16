@@ -32,6 +32,11 @@
     .comment-box__input {
       flex: 1;
 
+      &--disabled {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
       .post-comment-editor {
         width: 100%;
       }
@@ -228,6 +233,59 @@
           text-decoration: underline;
         }
       }
+
+      .comment-item-media {
+        margin-top: 4px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+
+        .ant-image {
+          max-width: 240px;
+
+          img {
+            max-width: 240px;
+            max-height: 200px;
+            border-radius: 8px;
+            object-fit: cover;
+            cursor: pointer;
+            display: block;
+          }
+        }
+
+        &__video-wrap {
+          position: relative;
+          max-width: 280px;
+          cursor: pointer;
+          border-radius: 8px;
+          overflow: hidden;
+        }
+
+        &__video {
+          max-width: 280px;
+          max-height: 220px;
+          border-radius: 8px;
+          outline: none;
+          display: block;
+          pointer-events: none;
+        }
+
+        &__play-icon {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          background: rgba(0, 0, 0, 0.55);
+          backdrop-filter: blur(4px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
+        }
+      }
     }
   }
 
@@ -332,5 +390,35 @@
     left: -26px;
     top: 44px;
     bottom: 12px;
+  }
+}
+
+.comment-video-preview-modal {
+  .ant-modal-content {
+    background: #000;
+    padding: 0;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .ant-modal-body {
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ant-modal-close {
+    color: white;
+    top: 8px;
+    right: 8px;
+  }
+
+  .comment-video-preview-player {
+    max-width: 80vw;
+    max-height: 80vh;
+    border-radius: 0;
+    outline: none;
+    display: block;
   }
 }

@@ -96,6 +96,20 @@ export const rabbitMQConfig: RabbitMQConfig = {
         durable: true,
       },
     },
+    {
+      name: "chat.queue",
+      options: {
+        durable: true,
+        deadLetterExchange: "app.dlx",
+        messageTtl: 3600000,
+      },
+    },
+    {
+      name: "chat.queue.dlx",
+      options: {
+        durable: true,
+      },
+    },
   ],
   bindings: [
     {
@@ -137,6 +151,16 @@ export const rabbitMQConfig: RabbitMQConfig = {
       exchange: "app.dlx",
       queue: "notification.queue.dlx",
       routingKey: "notification.queue",
+    },
+    {
+      exchange: "app.events",
+      queue: "chat.queue",
+      routingKey: "chat.*",
+    },
+    {
+      exchange: "app.dlx",
+      queue: "chat.queue.dlx",
+      routingKey: "chat.queue",
     },
   ],
 };

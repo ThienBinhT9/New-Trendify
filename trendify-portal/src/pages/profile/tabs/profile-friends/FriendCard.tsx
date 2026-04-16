@@ -26,6 +26,12 @@ const FriendCard = (props: Props) => {
   const isOwnProfile = useAppSelector((state) => state.profile.isOwnProfile);
   const currentTab = getProfileTab(location.pathname);
 
+  const getDisplayName = () => {
+    if (relationship.displayName) return relationship.displayName;
+    const fullName = [relationship.lastName, relationship.firstName].filter(Boolean).join(" ");
+    return fullName || relationship.username || "Unknown";
+  };
+
   const getVariant = () => {
     if (currentTab === SUB_PATH_PROFILE.FOLLOWING) return "following-list";
     if (currentTab === SUB_PATH_PROFILE.FOLLOWERS && isOwnProfile) return "follower-list";
@@ -43,7 +49,7 @@ const FriendCard = (props: Props) => {
         <Text
           textType="SB16"
           className="friend-card-displayname"
-        >{`${relationship?.displayName}`}</Text>
+        >{getDisplayName()}</Text>
         <Text textType="R14" className="friend-card-mutial">
           {`${relationship?.username}`}
         </Text>

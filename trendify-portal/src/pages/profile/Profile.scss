@@ -108,6 +108,21 @@
           height: 100px;
         }
       }
+
+      .profile-presence-dot {
+        position: absolute;
+        bottom: 12px;
+        right: 12px;
+
+        @include mobile-medium {
+          bottom: 8px;
+          right: 8px;
+        }
+
+        span:first-child {
+          border-width: 3px !important;
+        }
+      }
     }
 
     .header-info-folow {

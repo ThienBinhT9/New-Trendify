@@ -419,6 +419,17 @@ export class MongooseFollowRepository
     return docs.map((d) => d.followingId.toString());
   }
 
+  async findAllFollowerIds(userId: string): Promise<string[]> {
+    const docs = await FollowModel.find({
+      followingId: new Types.ObjectId(userId),
+      status: EFollowStatus.ACCEPTED,
+    })
+      .select({ followerId: 1 })
+      .lean();
+
+    return docs.map((d) => d.followerId.toString());
+  }
+
   async findFollowedIds(viewerId: string, targetUserIds: string[]): Promise<Set<string>> {
     if (targetUserIds.length === 0) return new Set();
 

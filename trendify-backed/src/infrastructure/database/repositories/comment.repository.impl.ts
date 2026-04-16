@@ -124,6 +124,14 @@ export class MongooseCommentRepository
     );
   }
 
+  async incrementLikeCount(commentId: string, by: number = 1): Promise<void> {
+    await CommentModel.updateOne(
+      { _id: new Types.ObjectId(commentId) },
+      { $inc: { "counters.likeCount": by } },
+      { session: this.session },
+    );
+  }
+
   async hardDeleteSubtree(commentId: string): Promise<number> {
     const commentObjectId = new Types.ObjectId(commentId);
 
@@ -218,6 +226,7 @@ export class MongooseCommentRepository
       parentId: parentId?.toString() ?? undefined,
       rootCommentId: rootCommentId?.toString() ?? undefined,
       hashtags: rest.hashtags ?? [],
+      mediaIds: (rest.mediaIds ?? []).map((id: any) => id.toString()),
       counters: rest.counters ?? {
         replyCount: rest.replyCount ?? 0,
         likeCount: rest.likeCount ?? 0,

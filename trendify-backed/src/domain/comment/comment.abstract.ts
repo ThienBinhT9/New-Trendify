@@ -62,6 +62,11 @@ export interface ICommentRepository {
   incrementReplyCount(commentId: string, by?: number): Promise<void>;
 
   /**
+   * Increment like count on a comment (atomic).
+   */
+  incrementLikeCount(commentId: string, by?: number): Promise<void>;
+
+  /**
    * Hard delete a comment and all descendants.
    * Returns number of ACTIVE comments removed (used to update counters).
    */

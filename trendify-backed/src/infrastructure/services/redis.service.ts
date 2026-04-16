@@ -131,6 +131,18 @@ class RedisService implements ICacheService {
     return result;
   }
 
+  async srem(key: string, ...members: string[]): Promise<number> {
+    return await this.client.srem(key, ...members);
+  }
+
+  async scard(key: string): Promise<number> {
+    return await this.client.scard(key);
+  }
+
+  async smembers(key: string): Promise<string[]> {
+    return await this.client.smembers(key);
+  }
+
   async sismember(key: string, member: string): Promise<boolean> {
     return (await this.client.sismember(key, member)) === 1;
   }
@@ -190,6 +202,10 @@ class RedisService implements ICacheService {
       return 0;
     }
     return result;
+  }
+
+  async hdel(key: string, ...fields: string[]): Promise<number> {
+    return await this.client.hdel(key, ...fields);
   }
 
   async hSetNX(key: string, field: string, value: string | number): Promise<boolean> {

@@ -5,12 +5,14 @@ import followController from "@/infrastructure/injection/follow.injection";
 import blockController from "@/infrastructure/injection/block.injection";
 import postController from "@/infrastructure/injection/post.injection";
 import notificationController from "@/infrastructure/injection/notification.injection";
+import presenceController from "@/infrastructure/injection/presence.injection";
 
 import { authMiddleware } from "@/interfaces/middlewares/auth.middleware";
 import { validate, validateParams, validateQuery } from "../middlewares/validate.middleware";
 
 import * as schema from "../validators/user.validator";
 import * as notificationSchema from "../validators/notification.validator";
+import * as presenceSchema from "../validators/presence.validator";
 import { USER_ROUTES } from "@/shared/constants/router.constant";
 
 const route = Router();
@@ -56,6 +58,25 @@ route.get(USER_ROUTES.FOLLOWING, followController.getFollowing);
 
 route.get(USER_ROUTES.BLOCKED, blockController.getBlockedList);
 
+route.post("/:userId/block", blockController.block);
+
+route.delete("/:userId/block", blockController.unblock);
+
+route.get("/:userId/block/status", blockController.checkBlockStatus);
+
 route.get(USER_ROUTES.POSTS, postController.getUserPosts);
+
+// ── Presence ──
+route.get(
+  USER_ROUTES.PRESENCE,
+  validateParams(presenceSchema.getUserPresenceSchema),
+  presenceController.getUserPresence,
+);
+
+route.post(
+  USER_ROUTES.PRESENCE_BATCH,
+  validate(presenceSchema.batchPresenceSchema),
+  presenceController.getBatchPresence,
+);
 
 export default route;

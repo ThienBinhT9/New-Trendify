@@ -180,8 +180,14 @@ export function toMediaDisplay(
   order: number,
 ): MediaDisplay {
   const type = getMediaDisplayType(media.mimeType);
-  const thumbnail =
-    type === "video" ? storageSvc.getPublicUrl(media.variants[0]?.key ?? media.key) : undefined;
+
+  // For video, look for the SMALL variant which is the generated thumbnail image.
+  // Fall back to undefined if no thumbnail was generated (e.g. processing failed).
+  let thumbnail: string | undefined;
+  if (type === "video") {
+    const thumbVariant = media.variants.find((v) => v.type === EVariantType.SMALL);
+    thumbnail = thumbVariant ? storageSvc.getPublicUrl(thumbVariant.key) : undefined;
+  }
 
   return {
     mediaId: media.id!,
@@ -291,7 +297,18 @@ export function resolveMediaDisplayList(
 ): MediaDisplay[] {
   return mediaIds.flatMap((id, order) => {
     const media = mediaRecord[id];
-    if (!media?.isReady()) return [];
+    if (!media) return [];
+
+    // For videos: show them even if processing failed — the original file
+    // was uploaded to S3, so we can still serve it. Only skip if the media
+    // is still in PENDING_UPLOAD (file never arrived).
+    if (media.isVideo()) {
+      if (media.isPendingUpload()) return [];
+      return [toMediaDisplay(media, storageSvc, order)];
+    }
+
+    // For images/gifs: only show when processing finished successfully
+    if (!media.isReady()) return [];
     return [toMediaDisplay(media, storageSvc, order)];
   });
 }
@@ -352,14 +369,25 @@ export async function validateAndFetchMedia(
       throw new Response.ForbiddenError("You do not own one or more of the media files");
     }
 
-    if (media.status === EMediaStatus.FAILED) {
-      throw new Response.BadRequestError(`Media ${id} failed to process`);
-    }
+    if (media.isVideo()) {
+      // For videos: gracefully allow them even if processing fails or is still pending.
+      // But reject if the file itself never arrived (PENDING_UPLOAD).
+      if (media.isPendingUpload()) {
+        throw new Response.BadRequestError(
+          `Media ${id} is still pending upload. Please upload the file first.`,
+        );
+      }
+    } else {
+      // For images: enforce successful processing since we need the thumbnails/variants.
+      if (media.status === EMediaStatus.FAILED) {
+        throw new Response.BadRequestError(`Media ${id} failed to process`);
+      }
 
-    if (!media.isReady()) {
-      throw new Response.BadRequestError(
-        `Media ${id} is not ready yet (status: ${media.status}). Please wait for processing to complete.`,
-      );
+      if (!media.isReady()) {
+        throw new Response.BadRequestError(
+          `Media ${id} is not ready yet (status: ${media.status}). Please wait for processing to complete.`,
+        );
+      }
     }
 
     return media;

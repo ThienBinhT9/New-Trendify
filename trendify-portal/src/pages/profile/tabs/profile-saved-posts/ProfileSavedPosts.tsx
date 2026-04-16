@@ -74,7 +74,9 @@ const ProfileSavedPosts = () => {
           }}
         >
           {posts.length ? (
-            posts.map((post) => <Post key={post.id} post={post} viewerContext={post.viewerContext} />)
+            posts.map((post) => (
+              <Post key={post.id} post={post} viewerContext={post.viewerContext} />
+            ))
           ) : (
             <Flex className="box-wrapper profile-saved-posts-container__empty" justify="center">
               <Empty description="Bạn chưa lưu bài viết nào" />

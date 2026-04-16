@@ -128,16 +128,16 @@ export const followSlice = createSlice({
     });
 
     builder.addCase(listBlockedAction.fulfilled, (state, action) => {
-      console.log({ state, action });
+      const { users, nextCursor, hasNext } = action.payload;
+      const argCursor = action.meta.arg?.cursor;
 
-      // const { users, cursor, hasNext } = action.payload;
-      // if (argCursor) {
-      //   state.blocked.users = [...state.blocked.users, ...users];
-      // } else {
-      //   state.blocked.users = users;
-      // }
-      // state.blocked.cursor = cursor;
-      // state.blocked.hasNext = hasNext;
+      if (argCursor) {
+        state.blocked.users = [...state.blocked.users, ...users];
+      } else {
+        state.blocked.users = users;
+      }
+      state.blocked.cursor = nextCursor || null;
+      state.blocked.hasNext = hasNext;
     });
 
     builder.addCase(unblockAction.fulfilled, (state, action) => {

@@ -18,6 +18,8 @@ import { useAppDispatch, useAppSelector } from "@/stores";
 import { IUserSuggestion } from "@/interfaces/user.interface";
 import { IComment, ICommentMention } from "@/interfaces/comment.interface";
 import { commentPostAction } from "@/stores/post/actions";
+import { confirmUploadAction, presignedAction } from "@/stores/upload/action";
+import { EMediaPurpose } from "@/interfaces/common.interface";
 
 import Icon from "@/components/icon/Icon";
 import LoaderSpin from "@/components/loader/LoaderPuff";
@@ -520,16 +522,49 @@ const PostCommentInput = forwardRef<IPostCommentInputRef, PostCommentInputProps>
     if (!postId || loading) return;
 
     const normalizedContent = plainText.trim();
-    if (!normalizedContent) return;
+    const hasFile = !!file?.originFileObj;
+    if (!normalizedContent && !hasFile) return;
 
     try {
       setLoading(true);
+
+      // Upload media if file is selected
+      let mediaIds: string[] | undefined;
+      if (hasFile && file.originFileObj) {
+        const blob = file.originFileObj;
+        const contentType = blob.type || "image/jpeg";
+        const filename = blob.name || "comment-media.jpg";
+
+        const presigned = await dispatch(
+          presignedAction({
+            purpose: EMediaPurpose.POST_MEDIA,
+            filename,
+            contentType,
+            size: blob.size,
+          }),
+        ).unwrap();
+
+        if (!presigned) throw new Error("Get presigned url failed");
+
+        const uploadRes = await fetch(presigned.uploadUrl, {
+          method: "PUT",
+          body: blob,
+          headers: { "Content-Type": contentType },
+        });
+
+        if (!uploadRes.ok) throw new Error("S3 Upload failed");
+
+        await dispatch(confirmUploadAction({ mediaId: presigned.mediaId })).unwrap();
+        mediaIds = [presigned.mediaId];
+      }
+
       const response = await dispatch(
         commentPostAction({
-          content: normalizedContent,
+          content: normalizedContent || undefined,
           parentId: parentId || undefined,
           mentions,
           postId,
+          mediaIds,
         }),
       ).unwrap();
 
@@ -559,37 +594,47 @@ const PostCommentInput = forwardRef<IPostCommentInputRef, PostCommentInputProps>
       />
 
       <Flex className={`comment-box__input-wrapper ${isFocus && "focus"}`} flex={1}>
-        <div className="comment-box__input" onClick={focus}>
+        <div className={`comment-box__input ${loading ? "comment-box__input--disabled" : ""}`} onClick={focus}>
           <EditorContent editor={editor} className="post-comment-editor" />
         </div>
         {filePreview && (
           <Flex className="comment-box__preview">
-            <Image preview={{ mask: null }} src={filePreview?.url} />
-            <Flex className="comment-box__preview-close" onClick={handleRemoveImage}>
-              <Icon name="CloseIcon" />
-            </Flex>
+            {file?.originFileObj?.type?.startsWith("video/") ? (
+              <video src={filePreview.url} controls style={{ width: "100%", borderRadius: 8 }} />
+            ) : (
+              <Image preview={{ mask: null }} src={filePreview.url} />
+            )}
+            {!loading && (
+              <Flex className="comment-box__preview-close" onClick={handleRemoveImage}>
+                <Icon name="CloseIcon" />
+              </Flex>
+            )}
           </Flex>
         )}
         <Flex className={`comment-box__actions`}>
           <Flex align="center" gap={8}>
-            <Popover
-              content={<EmojiPicker height={260} width={320} onEmojiClick={handleEmojiClick} />}
-              placement="bottom"
-              trigger={["click"]}
-              className="custom-popover"
-            >
-              <Icon name="EmojiSmileIcon" />
-            </Popover>
-            <Upload
-              maxCount={1}
-              accept="image/*"
-              showUploadList={false}
-              onChange={handleChangeFile}
-              beforeUpload={handleBeforeUpload}
-              fileList={file ? [file] : []}
-            >
-              {!filePreview && <Icon name="CameraIcon" />}
-            </Upload>
+            {!loading && (
+              <>
+                <Popover
+                  content={<EmojiPicker height={260} width={320} onEmojiClick={handleEmojiClick} />}
+                  placement="bottom"
+                  trigger={["click"]}
+                  className="custom-popover"
+                >
+                  <Icon name="EmojiSmileIcon" />
+                </Popover>
+                <Upload
+                  maxCount={1}
+                  accept="image/*,video/*"
+                  showUploadList={false}
+                  onChange={handleChangeFile}
+                  beforeUpload={handleBeforeUpload}
+                  fileList={file ? [file] : []}
+                >
+                  {!filePreview && <Icon name="CameraIcon" />}
+                </Upload>
+              </>
+            )}
           </Flex>
           {isFocus &&
             (loading ? <LoaderSpin /> : <Icon name="SendBlackIcon" onClick={handleSubmit} />)}

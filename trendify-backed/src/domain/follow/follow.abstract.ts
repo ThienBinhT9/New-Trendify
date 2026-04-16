@@ -125,6 +125,12 @@ export interface IFollowRepository {
   findAllFollowingIds(userId: string): Promise<string[]>;
 
   /**
+   * Get ALL user IDs that follow this user (ACCEPTED) — no pagination.
+   * Used by presence broadcast to notify followers of status changes.
+   */
+  findAllFollowerIds(userId: string): Promise<string[]>;
+
+  /**
    * Batch: Find which target users are following the viewer (ACCEPTED)
    */
   findFollowedIds(viewerId: string, targetUserIds: string[]): Promise<Set<string>>;

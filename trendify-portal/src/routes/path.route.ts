@@ -45,6 +45,7 @@ const ROUTE_PATHS = {
   FOLLOWING: "/following",
   MESSAGE: "/message",
   POST_DETAIL: (id = ":id") => `/posts/${id}`,
+  HASHTAG: (tag = ":tag") => `/hashtag/${tag}`,
 
   //SEARCH
   SEARCH: "/search",

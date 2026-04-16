@@ -53,6 +53,9 @@ export interface ICommentProps {
   // Counters
   counters: ICommentCounters;
 
+  // Media attachments
+  mediaIds: string[];
+
   // Status
   status: ECommentStatus;
 
@@ -68,8 +71,9 @@ export interface ICommentProps {
 export interface ICommentCreateInput {
   postId: string;
   authorId: string;
-  content: string;
+  content?: string;
   parentId?: string;
   rootCommentId?: string;
   mentions?: ICommentMention[];
+  mediaIds?: string[];
 }

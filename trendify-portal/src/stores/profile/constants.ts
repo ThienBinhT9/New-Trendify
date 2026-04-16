@@ -91,6 +91,7 @@ export interface IUserRelationshipListResponse extends IApiResponse {
   data: {
     users: IUserRelationship[];
     cursor?: string | null;
+    nextCursor?: string | null;
     page?: number;
     hasNext: boolean;
   };

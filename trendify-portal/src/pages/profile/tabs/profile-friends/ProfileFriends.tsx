@@ -99,6 +99,8 @@ const ProfileFriends = () => {
     }
   }, [handleGetListFriends, debouncedQuery, isSearching]);
 
+  console.log({ searchUsers, users });
+
   useEffect(() => {
     return () => {
       debouncedSetQuery.cancel();
@@ -167,7 +169,11 @@ const ProfileFriends = () => {
         >
           {users.length || searchUsers.length ? (
             (debouncedQuery.trim() ? searchUsers : users).map((relationship) => (
-              <FriendCard key={relationship.id} relationship={relationship} />
+              <FriendCard
+                key={relationship.id}
+                relationship={relationship}
+                className="profile-friend-card"
+              />
             ))
           ) : (
             <Empty style={{ margin: "auto" }} />

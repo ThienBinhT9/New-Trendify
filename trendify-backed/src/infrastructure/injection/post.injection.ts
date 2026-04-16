@@ -7,6 +7,7 @@ import {
   MongooseLikeRepository,
   MongooseSaveRepository,
   MongooseCommentRepository,
+  MongooseCommentLikeRepository,
   MongooseUserRepository,
   MongooseFollowRepository,
   MongooseBlockRepository,
@@ -20,6 +21,7 @@ import S3Service from "@/infrastructure/services/s3.service";
 import {
   CreatePostUseCase,
   GetPostUseCase,
+  UpdatePostUseCase,
   DeletePostUseCase,
   GetUserPostsUseCase,
   GetFollowingFeedUseCase,
@@ -30,10 +32,13 @@ import {
   GetCommentsUseCase,
   GetCommentRepliesUseCase,
   DeleteCommentUseCase,
+  LikeCommentUseCase,
+  UnlikeCommentUseCase,
   SavePostUseCase,
   UnsavePostUseCase,
   GetSavedPostsUseCase,
   GetDraftPostsUseCase,
+  GetPostsByHashtagUseCase,
 } from "@/application/usecases/post";
 
 // Infrastructure
@@ -41,6 +46,7 @@ const postRepo = new MongoosePostRepository();
 const likeRepo = new MongooseLikeRepository();
 const saveRepo = new MongooseSaveRepository();
 const commentRepo = new MongooseCommentRepository();
+const commentLikeRepo = new MongooseCommentLikeRepository();
 const userRepo = new MongooseUserRepository();
 const followRepo = new MongooseFollowRepository();
 const blockRepo = new MongooseBlockRepository();
@@ -53,6 +59,7 @@ const producer = new Producer();
 
 // Post CRUD Use Cases
 const createPostUseCase = new CreatePostUseCase(uowFactory, mediaRepo, storageSvc);
+const updatePostUseCase = new UpdatePostUseCase(postRepo);
 
 const getPostUseCase = new GetPostUseCase(
   postRepo,
@@ -124,6 +131,7 @@ const createCommentUseCase = new CreateCommentUseCase(
 const getCommentsUseCase = new GetCommentsUseCase(
   postRepo,
   commentRepo,
+  commentLikeRepo,
   userRepo,
   mediaRepo,
   storageSvc,
@@ -131,11 +139,16 @@ const getCommentsUseCase = new GetCommentsUseCase(
 const getCommentRepliesUseCase = new GetCommentRepliesUseCase(
   postRepo,
   commentRepo,
+  commentLikeRepo,
   userRepo,
   mediaRepo,
   storageSvc,
 );
 const deleteCommentUseCase = new DeleteCommentUseCase(postRepo, commentRepo, producer);
+
+// Comment Like Use Cases
+const likeCommentUseCase = new LikeCommentUseCase(commentRepo, commentLikeRepo);
+const unlikeCommentUseCase = new UnlikeCommentUseCase(commentRepo, commentLikeRepo);
 
 // Save Use Cases
 const savePostUseCase = new SavePostUseCase(postRepo, saveRepo, blockRepo, producer);
@@ -160,10 +173,22 @@ const getDraftPostsUseCase = new GetDraftPostsUseCase(
   storageSvc,
 );
 
+const getPostsByHashtagUseCase = new GetPostsByHashtagUseCase(
+  postRepo,
+  userRepo,
+  blockRepo,
+  likeRepo,
+  saveRepo,
+  followRepo,
+  mediaRepo,
+  storageSvc,
+);
+
 // Controller
 const postController = new PostController(
   createPostUseCase,
   getPostUseCase,
+  updatePostUseCase,
   deletePostUseCase,
   getUserPostsUseCase,
   getFollowingFeedUseCase,
@@ -174,10 +199,13 @@ const postController = new PostController(
   getCommentsUseCase,
   getCommentRepliesUseCase,
   deleteCommentUseCase,
+  likeCommentUseCase,
+  unlikeCommentUseCase,
   savePostUseCase,
   unsavePostUseCase,
   getSavedPostsUseCase,
   getDraftPostsUseCase,
+  getPostsByHashtagUseCase,
 );
 
 export default postController;

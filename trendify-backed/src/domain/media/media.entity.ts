@@ -89,7 +89,7 @@ export class MediaEntity {
   }
 
   isReady(): boolean {
-    return this.isUploaded() || this.isProcessed();
+    return this.isUploaded() || this.isProcessing() || this.isProcessed();
   }
 
   isExpired(): boolean {

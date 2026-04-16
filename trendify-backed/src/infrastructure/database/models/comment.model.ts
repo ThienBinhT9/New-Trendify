@@ -43,9 +43,10 @@ const commentSchema = new Schema<ICommentDocument>(
     parentId: { type: Schema.Types.ObjectId, ref: "Comment", default: null },
     rootCommentId: { type: Schema.Types.ObjectId, ref: "Comment", default: null },
 
-    content: { type: String, required: true, maxlength: 2200 },
+    content: { type: String, default: "", maxlength: 2200 },
     mentions: { type: [mentionSchema], default: [] },
     hashtags: { type: [hashtagSchema], default: [] },
+    mediaIds: [{ type: Schema.Types.ObjectId, ref: "Media" }],
     counters: { type: countersSchema, default: () => ({ replyCount: 0, likeCount: 0 }) },
 
     status: {

@@ -16,9 +16,11 @@ import PostCommentInput, {
   IPostCommentInputRef,
 } from "@/container/post/post-comment/PostCommentInput";
 import PostSkeleton from "@/container/skeleton/post_skeleton/PostSkeleton";
+import { usePostCounterSocket } from "@/hooks/usePostCounterSocket";
 
 const PostDetailPage = () => {
   const { id: postId } = useParams<{ id: string }>();
+  const realtimeCounters = usePostCounterSocket(postId);
   const commentInputRef = useRef<HTMLDivElement | null>(null);
   const commentInputControlRef = useRef<IPostCommentInputRef | null>(null);
   const pinStartScrollTopRef = useRef<number>(0);
@@ -269,6 +271,7 @@ const PostDetailPage = () => {
     (_: number, comment: IComment) => (
       <div className="post-detail-page__comments-item">
         <PostCommentItem
+          key={comment.id}
           comment={comment}
           onDeleted={handleCommentDeleted}
           onCreated={handleNestedCommentCreated}
@@ -306,7 +309,7 @@ const PostDetailPage = () => {
           </Flex>
         ) : postDetail ? (
           <>
-            <Post expandedTitle post={postDetail} viewerContext={postDetail.viewerContext} />
+            <Post expandedTitle post={postDetail} viewerContext={postDetail.viewerContext} realtimeCounters={realtimeCounters} />
 
             <div
               ref={commentInputRef}
@@ -328,6 +331,7 @@ const PostDetailPage = () => {
                 <Virtuoso
                   className="post-detail-page__comments-list"
                   data={comments}
+                  computeItemKey={(_, comment) => comment.id}
                   customScrollParent={scrollParent || undefined}
                   endReached={loadMoreComments}
                   increaseViewportBy={240}
@@ -335,7 +339,7 @@ const PostDetailPage = () => {
                   components={commentListComponents}
                 />
               ) : (
-                <Empty description="Chua co binh luan nao" />
+                <Empty description="Chưa có bình luận nào" />
               )}
             </Flex>
           </>

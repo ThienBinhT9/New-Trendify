@@ -47,12 +47,27 @@ route.get(
   postController.getFollowingFeed,
 );
 
+// Hashtag posts — MUST come before /:postId
+route.get(
+  POST_ROUTES.GET_POSTS_BY_HASHTAG,
+  validateParams(schema.hashtagTagParamSchema),
+  validateQuery(schema.paginationQuerySchema),
+  postController.getPostsByHashtag,
+);
+
 route.get(POST_ROUTES.GET_POST, validateParams(schema.postIdParamSchema), postController.getPost);
 
 route.delete(
   POST_ROUTES.DELETE_POST,
   validateParams(schema.postIdParamSchema),
   postController.deletePost,
+);
+
+route.patch(
+  POST_ROUTES.UPDATE_POST,
+  validateParams(schema.postIdParamSchema),
+  validate(schema.updatePostSchema),
+  postController.updatePost,
 );
 
 // ====================== LIKES ======================
@@ -97,6 +112,18 @@ route.get(
   validateParams(schema.commentIdParamSchema),
   validateQuery(schema.paginationQuerySchema),
   postController.getCommentReplies,
+);
+
+route.post(
+  POST_ROUTES.LIKE_COMMENT,
+  validateParams(schema.commentIdParamSchema),
+  postController.likeComment,
+);
+
+route.delete(
+  POST_ROUTES.UNLIKE_COMMENT,
+  validateParams(schema.commentIdParamSchema),
+  postController.unlikeComment,
 );
 
 route.delete(

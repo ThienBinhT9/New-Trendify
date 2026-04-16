@@ -1,10 +1,15 @@
 import { memo, ReactNode, useCallback, useMemo, useState } from "react";
-import { App, Avatar, Flex, Skeleton } from "antd";
+import { App, Avatar, Flex, Image, Modal, Skeleton } from "antd";
 
 import "./PostComment.scss";
 import "../Post.scss";
 import ROUTE_PATHS from "@/routes/path.route";
-import { formatDate, formatNumberCount, formatTimeFromNow, getAvatarUrl } from "@/utils/common.util";
+import {
+  formatDate,
+  formatNumberCount,
+  formatTimeFromNow,
+  getAvatarUrl,
+} from "@/utils/common.util";
 import { useNavigate } from "react-router-dom";
 
 import Icon from "@/components/icon/Icon";
@@ -13,7 +18,12 @@ import Tooltip from "@/components/tooltip/Tooltip";
 import PostCommentInput from "./PostCommentInput";
 import { IComment } from "@/interfaces/comment.interface";
 import { useAppDispatch } from "@/stores";
-import { deleteCommentAction, getCommentRepliesAction } from "@/stores/post/actions";
+import {
+  deleteCommentAction,
+  getCommentRepliesAction,
+  likeCommentAction,
+  unlikeCommentAction,
+} from "@/stores/post/actions";
 
 type PostCommentItemProps = {
   isParent?: boolean;
@@ -38,6 +48,7 @@ const PostCommentItem = (props: PostCommentItemProps) => {
   const [likeCount, setLikeCount] = useState<number>(comment.counters.likeCount);
   const [likeLoading, setLikeLoading] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
   const [replyNextCursor, setReplyNextCursor] = useState<string | null>(null);
   const [isLoadingReplies, setIsLoadingReplies] = useState<boolean>(false);
   const [isLoadingMoreReplies, setIsLoadingMoreReplies] = useState<boolean>(false);
@@ -136,7 +147,11 @@ const PostCommentItem = (props: PostCommentItemProps) => {
 
     try {
       setLikeLoading(true);
-      await new Promise((resolve) => setTimeout(() => resolve([]), 500));
+      if (newIsLiked) {
+        await dispatch(likeCommentAction({ postId: comment.postId, commentId: comment.id })).unwrap();
+      } else {
+        await dispatch(unlikeCommentAction({ postId: comment.postId, commentId: comment.id })).unwrap();
+      }
     } catch (error) {
       setIsLiked(!newIsLiked);
       setLikeCount((prev) => (newIsLiked ? prev - 1 : prev + 1));
@@ -290,6 +305,7 @@ const PostCommentItem = (props: PostCommentItemProps) => {
   }
 
   return (
+    <>
     <Flex className="comment-item" gap={8}>
       {/* Line */}
       {isChild && <div className="comment-item-line-child" />}
@@ -311,7 +327,39 @@ const PostCommentItem = (props: PostCommentItemProps) => {
             <Text textType="SB12" className="comment-item-username" onClick={naviagateToProfile}>
               {authorName}
             </Text>
-            <p className="post-content">{commentContent}</p>
+            {comment.content && <p className="post-content">{commentContent}</p>}
+            {comment.media && comment.media.length > 0 && (
+              <div className="comment-item-media">
+                <Image.PreviewGroup>
+                  {comment.media.map((m) =>
+                    m.type === "video" ? (
+                      <div
+                        key={m.mediaId}
+                        className="comment-item-media__video-wrap"
+                        onClick={() => setPreviewVideoUrl(m.url)}
+                      >
+                        <video src={m.url} className="comment-item-media__video" />
+                        <div className="comment-item-media__play-icon">
+                          <svg viewBox="0 0 24 24" fill="white" width="28" height="28">
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </div>
+                      </div>
+                    ) : (
+                      <Image
+                        key={m.mediaId}
+                        src={m.url}
+                        alt={m.altText || ""}
+                        className="comment-item-media__image"
+                        preview={{
+                          mask: null,
+                        }}
+                      />
+                    ),
+                  )}
+                </Image.PreviewGroup>
+              </div>
+            )}
           </Flex>
           <Flex className="comment-item-actions">
             <Flex align="center" gap={12}>
@@ -332,7 +380,11 @@ const PostCommentItem = (props: PostCommentItemProps) => {
                 className="comment-item-actions__like"
                 onClick={handleLike}
               >
-                <Icon name={isLiked ? "HeartFillIcon" : "HeartAltIcon"} size={12} />
+                <Icon
+                  name={isLiked ? "HeartComIcon" : "HeartAltIcon"}
+                  stroke={isLiked ? undefined : "currentColor"}
+                  size={12}
+                />
                 <Text textType="R10">{`${formatNumberCount(likeCount)}`}</Text>
               </Flex>
               <Flex align="center" gap={8}>
@@ -406,6 +458,28 @@ const PostCommentItem = (props: PostCommentItemProps) => {
         )}
       </Flex>
     </Flex>
+
+      {/* Video Preview Modal */}
+      <Modal
+        open={!!previewVideoUrl}
+        onCancel={() => setPreviewVideoUrl(null)}
+        footer={null}
+        centered
+        width="auto"
+        closable
+        destroyOnClose
+        className="comment-video-preview-modal"
+      >
+        {previewVideoUrl && (
+          <video
+            src={previewVideoUrl}
+            controls
+            autoPlay
+            className="comment-video-preview-player"
+          />
+        )}
+      </Modal>
+    </>
   );
 };
 

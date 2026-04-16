@@ -26,6 +26,13 @@
     .infinite-scroll-component__outerdiv {
       width: 100%;
     }
+
+    .profile-friend-card {
+      width: 100%;
+      border-radius: 16px;
+      box-shadow: 1px 1px 6px var(--gray-200);
+      margin: 0 4px;
+    }
   }
 
   .friend-card-skeleton {

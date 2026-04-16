@@ -53,6 +53,9 @@ export class RequestPresignedUrlUseCase {
       "image/jpeg": ".jpg",
       "image/png": ".png",
       "image/webp": ".webp",
+      "image/gif": ".gif",
+      "video/mp4": ".mp4",
+      "video/quicktime": ".mov",
     };
     return map[mimeType] || ".bin";
   }

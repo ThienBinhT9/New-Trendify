@@ -97,7 +97,9 @@ const ProfilePosts = () => {
           title="Chưa có bài viết nào"
           description="Chia sẻ khoảnh khắc đầu tiên của bạn với mọi người"
           ctaLabel="Đăng bài ngay"
-          onCtaClick={() => {}}
+          onCtaClick={() => {
+            document.getElementById("mainLayoutChildren")?.scrollTo({ top: 0, behavior: "smooth" });
+          }}
         />
       ) : null}
     </Flex>

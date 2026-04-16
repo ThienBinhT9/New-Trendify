@@ -26,6 +26,8 @@ export const USER_ROUTES = {
   FOLLOWING: "/:userId/following",
   POSTS: "/:userId/posts",
   BLOCKED: "/me/blocked",
+  PRESENCE: "/:userId/presence",
+  PRESENCE_BATCH: "/presence/batch",
 } as const;
 
 export const FOLLOW_ROUTES = {
@@ -57,7 +59,10 @@ export const POST_ROUTES = {
   GET_DRAFT_POSTS: "/drafts",
   GET_COMMENT_REPLIES: "/:postId/comments/:commentId/replies",
   DELETE_COMMENT: "/:postId/comments/:commentId",
+  LIKE_COMMENT: "/:postId/comments/:commentId/like",
+  UNLIKE_COMMENT: "/:postId/comments/:commentId/like",
   GET_FOLLOWING_POSTS: "/following",
+  GET_POSTS_BY_HASHTAG: "/hashtag/:tag",
 } as const;
 
 export const MEDIA_ROUTES = {
@@ -65,6 +70,10 @@ export const MEDIA_ROUTES = {
   PRESIGNED_URL: "/presigned",
   CONFIRM_UPLOAD: "/confirm",
   STATUS: "/:mediaId/status",
+} as const;
+
+export const CHAT_ROUTES = {
+  BASE: `${API_PREFIX}/chat`,
 } as const;
 
 export const SEARCH_ROUTES = {
@@ -80,5 +89,9 @@ export const SEARCH_ROUTES = {
   DELETE_ALL_HISTORY: "/history",
   SAVE_RECENTLY_VIEWED: "/recently-viewed",
   GET_RECENTLY_VIEWED: "/recently-viewed",
+} as const;
+
+export const AI_ROUTES = {
+  BASE: `${API_PREFIX}/ai`,
 } as const;
 

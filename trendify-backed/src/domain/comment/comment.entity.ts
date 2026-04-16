@@ -105,16 +105,19 @@ export class CommentEntity {
   // --------------------------------------------------------------------------
 
   static create(input: ICommentCreateInput): CommentEntity {
-    if (!input.content?.trim()) {
-      throw new Error("Comment must have content");
+    const hasContent = !!input.content?.trim();
+    const hasMedia = !!input.mediaIds?.length;
+
+    if (!hasContent && !hasMedia) {
+      throw new Error("Comment must have content or media");
     }
 
-    if (input.content.length > 2200) {
+    if (input.content && input.content.length > 2200) {
       throw new Error("Comment content must be at most 2200 characters");
     }
 
     const now = new Date();
-    const normalizedContent = input.content.trim();
+    const normalizedContent = input.content?.trim() ?? "";
     const hashtags = this.extractHashtags(normalizedContent);
 
     const props: ICommentProps = {
@@ -125,6 +128,7 @@ export class CommentEntity {
       content: normalizedContent,
       mentions: input.mentions ?? [],
       hashtags,
+      mediaIds: input.mediaIds ?? [],
       counters: {
         replyCount: 0,
         likeCount: 0,

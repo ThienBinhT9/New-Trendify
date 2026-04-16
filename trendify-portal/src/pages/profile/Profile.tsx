@@ -35,6 +35,7 @@ import NotFound from "../not-found/NotFound";
 import CropImageModal from "@/container/modal/CropImage";
 import FollowStatusCard from "@/container/card/FollowStatusCard";
 import FollowRequestCard from "@/container/card/FollowRequestCard";
+import PresenceIndicator from "@/components/PresenceIndicator";
 
 const baseProfileTabs: NonNullable<TabsProps["items"]> = [
   { key: "", label: "Bài viết" },
@@ -110,8 +111,12 @@ const Profile = () => {
 
       await dispatch(confirmUploadAction({ mediaId })).unwrap();
       await dispatch(updateProfileAction({ profilePicture: mediaId })).unwrap();
+      // Re-fetch profile to get resolved picture URLs
+      if (userId) await dispatch(userProfileAction(userId)).unwrap();
     },
-    reloadAction: async () => {},
+    reloadAction: async () => {
+      if (userId) dispatch(userProfileAction(userId));
+    },
   });
 
   const coverUpload = useImageUploadCrop({
@@ -138,8 +143,12 @@ const Profile = () => {
 
       await dispatch(confirmUploadAction({ mediaId })).unwrap();
       await dispatch(updateProfileAction({ coverPicture: mediaId })).unwrap();
+      // Re-fetch profile to get resolved picture URLs
+      if (userId) await dispatch(userProfileAction(userId)).unwrap();
     },
-    reloadAction: async () => {},
+    reloadAction: async () => {
+      if (userId) dispatch(userProfileAction(userId));
+    },
   });
 
   const handleCopyLink = async () => {
@@ -344,10 +353,19 @@ const Profile = () => {
                   placement="bottom"
                   disabled={loadingGetProfile}
                 >
-                  <Avatar
-                    className="avatar"
-                    src={avatarUpload.localPreview || getAvatarUrl(profile?.profilePicture)}
-                  />
+                  <div style={{ position: "relative", display: "inline-block" }}>
+                    <Avatar
+                      className="avatar"
+                      src={avatarUpload.localPreview || getAvatarUrl(profile?.profilePicture)}
+                    />
+                    {!isOwnProfile && userId && (
+                      <PresenceIndicator
+                        userId={userId}
+                        size="lg"
+                        className="profile-presence-dot"
+                      />
+                    )}
+                  </div>
                 </Dropdown>
                 <Image
                   style={{ display: "none" }}

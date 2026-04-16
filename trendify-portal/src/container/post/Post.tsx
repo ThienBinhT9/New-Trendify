@@ -8,8 +8,10 @@ import ROUTE_PATHS from "@/routes/path.route";
 import PostTitle from "./PostTitle";
 import PostHeader from "./PostHeader";
 import PostAction from "./PostAction";
+import PostMedia from "./PostMedia";
 import { EPostStatus, IPost, IPostViewerContext } from "@/interfaces/post.interface";
 import { EVisibility } from "@/interfaces/common.interface";
+import type { PostRealtimeCounters } from "@/hooks/usePostCounterSocket";
 
 const postDummy: { post: IPost; viewerContext: IPostViewerContext } = {
   post: {
@@ -84,9 +86,16 @@ interface IProps {
   post?: IPost;
   viewerContext?: IPostViewerContext;
   className?: string;
+  realtimeCounters?: PostRealtimeCounters | null;
 }
 
-const Post = ({ expandedTitle, post = postDummy.post, viewerContext, className }: IProps) => {
+const Post = ({
+  expandedTitle,
+  post = postDummy.post,
+  viewerContext,
+  className,
+  realtimeCounters,
+}: IProps) => {
   const navigate = useNavigate();
   const resolvedViewerContext = viewerContext ?? post.viewerContext ?? postDummy.viewerContext;
 
@@ -109,10 +118,18 @@ const Post = ({ expandedTitle, post = postDummy.post, viewerContext, className }
         onSeeMore={handleNavigateToDetail}
       />
 
+      {post.media && post.media.length > 0 && (
+        <div className="post-media-wrap" onClick={(e) => e.stopPropagation()}>
+          <PostMedia media={post.media} />
+        </div>
+      )}
+
       <PostAction
         post={post}
         viewerContext={resolvedViewerContext}
         onNavigateToDetail={handleNavigateToDetail}
+        realtimeLikeCount={realtimeCounters?.likeCount}
+        realtimeCommentCount={realtimeCounters?.commentCount}
       />
     </Flex>
   );

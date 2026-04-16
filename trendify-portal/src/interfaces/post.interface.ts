@@ -64,6 +64,7 @@ export interface IPostLocation {
 export interface IPostCreateInput {
   authorId: string;
   content?: string;
+  mediaIds?: string[];
   mentions?: IPostMention[];
   location?: IPostLocation;
   replyToId?: string;
@@ -75,10 +76,24 @@ export interface IPostCreateInput {
   isDraft?: boolean;
 }
 
+export interface IPostMedia {
+  mediaId: string;
+  url: string;
+  type: "image" | "video" | "gif";
+  thumbnail?: string;
+  width?: number;
+  height?: number;
+  duration?: number;
+  altText?: string;
+  order: number;
+  variants: Record<string, string>;
+}
+
 export interface IPost {
   id: string;
   type: PostType;
   content: string;
+  media?: IPostMedia[];
   mentions?: IPostMention[];
   hashtags?: IPostHashtag[];
   status: EPostStatus;

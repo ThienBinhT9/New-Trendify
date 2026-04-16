@@ -32,6 +32,13 @@ export const commentIdParamSchema = z.object({
     }),
 });
 
+export const hashtagTagParamSchema = z.object({
+  tag: z
+    .string()
+    .nonempty({ message: "Hashtag tag is required" })
+    .max(100, { message: "Hashtag too long" }),
+});
+
 // ============================================================================
 // QUERY SCHEMAS
 // ============================================================================
@@ -135,14 +142,22 @@ export const updatePostSchema = z
     message: "At least one field must be updated",
   });
 
-export const createCommentSchema = z.object({
-  content: z
-    .string()
-    .min(1, { message: "Comment cannot be empty" })
-    .max(2200, { message: "Comment must be at most 2200 characters" }),
-  parentId: z
-    .string()
-    .refine((v) => MONGODB_OBJECTID_REGEX.test(v), { message: "Invalid parent comment ID" })
-    .optional(),
-  mentions: z.array(mentionSchema).max(10).optional(),
-});
+export const createCommentSchema = z
+  .object({
+    content: z
+      .string()
+      .max(2200, { message: "Comment must be at most 2200 characters" })
+      .optional(),
+    parentId: z
+      .string()
+      .refine((v) => MONGODB_OBJECTID_REGEX.test(v), { message: "Invalid parent comment ID" })
+      .optional(),
+    mentions: z.array(mentionSchema).max(10).optional(),
+    mediaIds: z
+      .array(mediaIdSchema)
+      .max(4, { message: "Maximum 4 media files per comment" })
+      .optional(),
+  })
+  .refine((data) => data.content?.trim() || (data.mediaIds && data.mediaIds.length > 0), {
+    message: "Comment must have content or media",
+  });

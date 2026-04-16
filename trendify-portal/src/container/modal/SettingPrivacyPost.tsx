@@ -1,35 +1,53 @@
 import Modal from "@/components/modal/Modal";
 import FooterModal from "@/components/modal/FooterModal";
-import { Flex, Radio, RadioChangeEvent } from "antd";
+import { App, Flex, Radio, RadioChangeEvent } from "antd";
 import Text from "@/components/text/Text";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Icon from "@/components/icon/Icon";
 import { EVisibility } from "@/interfaces/common.interface";
+import { useAppDispatch } from "@/stores";
+import { updatePostAction } from "@/stores/post/actions";
 
 interface Props {
   open: boolean;
+  postId: string;
   visibility: EVisibility;
   onCancel: () => void;
+  onSaved?: (newVisibility: EVisibility) => void;
 }
 
 const ModalSettingPrivacyPost = (props: Props) => {
-  const { open, visibility, onCancel } = props;
+  const { open, postId, visibility, onCancel, onSaved } = props;
+  const { message } = App.useApp();
+  const dispatch = useAppDispatch();
 
   const [value, setValue] = useState<EVisibility>(visibility);
   const [loading, setLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (open) {
+      setValue(visibility);
+    }
+  }, [open, visibility]);
 
   const onChange = (e: RadioChangeEvent) => {
     setValue(e.target.value);
   };
 
   const handleSubmit = async () => {
+    if (value === visibility) {
+      onCancel();
+      return;
+    }
+
     try {
       setLoading(true);
-      await new Promise((resolve) => setTimeout(() => resolve([]), 2000));
-
+      await dispatch(updatePostAction({ postId, visibility: value })).unwrap();
+      onSaved?.(value);
       onCancel();
     } catch (error) {
       console.log("set post's privacy error: ", error);
+      message.error("Cập nhật quyền riêng tư thất bại, vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -86,3 +104,4 @@ const ModalSettingPrivacyPost = (props: Props) => {
 };
 
 export default ModalSettingPrivacyPost;
+

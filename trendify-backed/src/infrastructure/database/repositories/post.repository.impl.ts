@@ -12,6 +12,7 @@ import {
   FindFeedOptions,
   SearchPostsOptions,
   SearchPostsResult,
+  PostCountersResult,
 } from "@/domain/post";
 import { PostModel } from "../models/post.model";
 import { BaseRepository } from "./base.repository";
@@ -163,7 +164,7 @@ export class MongoosePostRepository
     const normalizedHashtag = hashtag.toLowerCase().replace(/^#/, "");
 
     const query: any = {
-      hashtags: normalizedHashtag,
+      "hashtags.tag": normalizedHashtag,
       status: EPostStatus.ACTIVE,
       "settings.visibility": "public",
     };
@@ -323,20 +324,39 @@ export class MongoosePostRepository
     );
   }
 
+  // ====================== BATCH COUNTER QUERIES ======================
+
+  async getCountersByIds(postIds: string[]): Promise<PostCountersResult[]> {
+    if (postIds.length === 0) return [];
+
+    const objectIds = postIds.map((id) => new Types.ObjectId(id));
+    const docs = await PostModel.find(
+      { _id: { $in: objectIds } },
+      { "counters.likeCount": 1, "counters.commentCount": 1 },
+    ).lean();
+
+    return docs.map((doc) => ({
+      postId: doc._id.toString(),
+      counters: {
+        likeCount: doc.counters?.likeCount ?? 0,
+        commentCount: doc.counters?.commentCount ?? 0,
+      },
+    }));
+  }
+
   // ====================== SEARCH ======================
 
   async searchPosts(options: SearchPostsOptions): Promise<SearchPostsResult> {
     const { query, limit, cursor, type, dateFrom, dateTo } = options;
 
-    const searchQuery: Record<string, unknown> = {
-      $text: { $search: query },
+    const baseQuery: Record<string, unknown> = {
       status: EPostStatus.ACTIVE,
       "settings.visibility": "public",
       replyToId: { $exists: false }, // Exclude replies
     };
 
     if (type) {
-      searchQuery.type = type;
+      baseQuery.type = type;
     }
 
     // Date range filter
@@ -344,25 +364,46 @@ export class MongoosePostRepository
       const dateFilter: Record<string, Date> = {};
       if (dateFrom) dateFilter.$gte = dateFrom;
       if (dateTo) dateFilter.$lte = dateTo;
-      searchQuery.createdAt = dateFilter;
+      baseQuery.createdAt = dateFilter;
     }
 
     if (cursor) {
-      searchQuery._id = { $lt: new Types.ObjectId(cursor) };
+      baseQuery._id = { $lt: new Types.ObjectId(cursor) };
     }
 
-    const docs = await PostModel.find(searchQuery)
-      .select({ score: { $meta: "textScore" } })
-      .sort({ score: { $meta: "textScore" }, _id: -1 })
-      .limit(limit + 1)
-      .lean();
+    try {
+      // Try $text search first (requires text index)
+      const textQuery = { ...baseQuery, $text: { $search: query } };
+      const docs = await PostModel.find(textQuery)
+        .select({ score: { $meta: "textScore" } })
+        .sort({ score: { $meta: "textScore" }, _id: -1 })
+        .limit(limit + 1)
+        .lean();
 
-    const hasNext = docs.length > limit;
-    const sliced = hasNext ? docs.slice(0, limit) : docs;
+      const hasNext = docs.length > limit;
+      const sliced = hasNext ? docs.slice(0, limit) : docs;
 
-    const posts = sliced.map((doc) => this.mapToEntity(doc, PostEntity));
-    const nextCursor = hasNext ? sliced[sliced.length - 1]._id.toString() : undefined;
+      const posts = sliced.map((doc) => this.mapToEntity(doc, PostEntity));
+      const nextCursor = hasNext ? sliced[sliced.length - 1]._id.toString() : undefined;
 
-    return { posts, nextCursor };
+      return { posts, nextCursor };
+    } catch {
+      // Fallback to $regex search if $text fails (e.g., no text index)
+      const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regexQuery = { ...baseQuery, content: { $regex: escapedQuery, $options: "i" } };
+
+      const docs = await PostModel.find(regexQuery)
+        .sort({ _id: -1 })
+        .limit(limit + 1)
+        .lean();
+
+      const hasNext = docs.length > limit;
+      const sliced = hasNext ? docs.slice(0, limit) : docs;
+
+      const posts = sliced.map((doc) => this.mapToEntity(doc, PostEntity));
+      const nextCursor = hasNext ? sliced[sliced.length - 1]._id.toString() : undefined;
+
+      return { posts, nextCursor };
+    }
   }
 }

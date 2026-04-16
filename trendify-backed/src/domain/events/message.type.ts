@@ -1,4 +1,5 @@
 import { EMediaPurpose } from "@/domain/media";
+import { EMessageType } from "@/domain/chat";
 
 export interface BaseMessage {
   id: string;
@@ -90,6 +91,41 @@ export interface FollowNotificationMessage extends BaseMessage {
   };
 }
 
+// ============================================================================
+// CHAT MESSAGES
+// ============================================================================
+
+/**
+ * Chat message sent — triggers push notification for offline users
+ * and updates unread badge for recipients.
+ */
+export interface ChatMessageSentMessage extends BaseMessage {
+  type: "chat.message-sent";
+  data: {
+    conversationId: string;
+    messageId: string;
+    senderId: string;
+    recipientIds: string[];
+    messageType: EMessageType;
+    preview: string;
+  };
+}
+
+/**
+ * Chat media processing — thumbnail generation, compression, etc.
+ */
+export interface ChatMediaProcessMessage extends BaseMessage {
+  type: "chat.media-process";
+  data: {
+    mediaId: string;
+    messageId: string;
+    conversationId: string;
+    key: string;
+    mimeType: string;
+    bucket: string;
+  };
+}
+
 // Union type của tất cả messages
 export type AppMessage =
   | PasswordResetEmailMessage
@@ -98,7 +134,9 @@ export type AppMessage =
   | PostLikeMessage
   | PostCommentMessage
   | PostSaveMessage
-  | FollowNotificationMessage;
+  | FollowNotificationMessage
+  | ChatMessageSentMessage
+  | ChatMediaProcessMessage;
 
 // Mapping từ routing key -> message type
 export const ROUTING_KEYS = {
@@ -109,6 +147,8 @@ export const ROUTING_KEYS = {
   COUNTER_POST_COMMENT: "counter.post-comment",
   COUNTER_POST_SAVE: "counter.post-save",
   COUNTER_FOLLOW_NOTIFICATION: "counter.follow-notification",
+  CHAT_MESSAGE_SENT: "chat.message-sent",
+  CHAT_MEDIA_PROCESS: "chat.media-process",
 } as const;
 
 // Extract routing key từ message type

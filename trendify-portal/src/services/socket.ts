@@ -41,8 +41,31 @@ export interface NotificationUnreadCountPayload {
   unreadCount: number;
 }
 
+export interface PostCountersUpdatedPayload {
+  postId: string;
+  likeCount: number;
+  commentCount: number;
+}
+
 export interface NotificationReadPayload {
   notificationId: string;
+}
+
+export interface PresenceChangedPayload {
+  userId: string;
+  status: "online" | "idle" | "offline";
+  lastSeen: number; // timestamp ms
+}
+
+export interface ChatMessagePayload {
+  conversationId: string;
+  message: any; // IMessage from server
+}
+
+export interface ChatTypingPayload {
+  conversationId: string;
+  userId: string;
+  isTyping: boolean;
 }
 
 interface ServerToClientEvents {
@@ -51,9 +74,24 @@ interface ServerToClientEvents {
   "notification:unread-count": (payload: NotificationUnreadCountPayload) => void;
   "notification:read": (payload: NotificationReadPayload) => void;
   "notification:read-all": (payload: NotificationUnreadCountPayload) => void;
+  "post:counters-updated": (payload: PostCountersUpdatedPayload) => void;
+  "presence:changed": (payload: PresenceChangedPayload) => void;
+  // Chat events
+  "chat:message": (payload: ChatMessagePayload) => void;
+  "chat:typing": (payload: ChatTypingPayload) => void;
 }
 
-type ClientToServerEvents = Record<string, never>;
+interface ClientToServerEvents {
+  "post:join": (postId: string) => void;
+  "post:leave": (postId: string) => void;
+  "presence:heartbeat": () => void;
+  "presence:idle": () => void;
+  "presence:active": () => void;
+  // Chat events
+  "chat:join": (conversationIds: string[]) => void;
+  "chat:typing": (payload: { conversationId: string }) => void;
+  "chat:stop-typing": (payload: { conversationId: string }) => void;
+}
 
 export type AppSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 

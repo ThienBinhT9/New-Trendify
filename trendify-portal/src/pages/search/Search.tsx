@@ -111,7 +111,7 @@ const SearchHistory = ({
     <Flex vertical className="search-history-section">
       <Flex align="center" justify="space-between" className="search-history-header">
         <Text textType="SB14">Gần đây</Text>
-        <Text textType="R14" className="search-history-clear-all" onClick={onClearAll}>
+        <Text textType="R14" className="search-history-clear-all" onMouseDown={(e) => e.preventDefault()} onClick={onClearAll}>
           Xoá tất cả
         </Text>
       </Flex>
@@ -133,7 +133,8 @@ const SearchHistory = ({
             name="CloseIcon"
             size={14}
             className="search-history-delete"
-            onClick={(e) => {
+            onMouseDown={(e: React.MouseEvent) => e.preventDefault()}
+            onClick={(e: React.MouseEvent) => {
               e.stopPropagation();
               onDelete(item.id);
             }}

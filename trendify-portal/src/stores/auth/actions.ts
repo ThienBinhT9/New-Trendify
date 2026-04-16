@@ -12,6 +12,8 @@ import {
 
 import * as api from "./api";
 import { removeStorageTokens, setStorageTokens } from "@/utils/storage.util";
+import { queryClient } from "@/provider/Provider";
+import { clearAllUnread } from "@/pages/messenger/hooks/useUnreadTracker";
 
 export const signinAction = createAsyncThunk(
   EAuthActions.SIGN_IN,
@@ -32,6 +34,11 @@ export const signoutAction = createAsyncThunk(
     try {
       const response = await api.signout(body);
       removeStorageTokens();
+
+      // Clear ALL React Query cache to prevent stale data from previous user
+      queryClient.clear();
+      clearAllUnread();
+
       return response;
     } catch (error) {
       return rejectWithValue(error);

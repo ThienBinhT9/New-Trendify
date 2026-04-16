@@ -167,9 +167,10 @@ export interface PostResponseDTO extends PostCoreResponseDTO {
 export interface CreateCommentDTO {
   userId: string;
   postId: string;
-  content: string;
+  content?: string;
   parentId?: string;
   mentions?: ICommentMention[];
+  mediaIds?: string[];
 }
 
 export interface GetCommentsDTO {
@@ -202,6 +203,7 @@ export interface CommentCoreResponseDTO {
   mentions: ICommentMention[];
   hashtags: ICommentHashtag[];
   counters: ICommentCounters;
+  mediaIds: string[];
   status: ECommentStatus;
   createdAt: string;
   updatedAt: string;
@@ -209,5 +211,6 @@ export interface CommentCoreResponseDTO {
 
 export interface CommentResponseDTO extends CommentCoreResponseDTO {
   author: AuthorDTO;
+  media: MediaDisplay[];
   viewerContext: ICommentViewerContext;
 }

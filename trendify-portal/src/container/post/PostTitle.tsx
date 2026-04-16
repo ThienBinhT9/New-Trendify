@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import "./Post.scss";
 import TruncateMarkup from "react-truncate-markup";
 import { Flex } from "antd";
+import ROUTE_PATHS from "@/routes/path.route";
 
 const parsePostContent = (
   content: string,
@@ -74,7 +75,7 @@ const PostTitle = ({ expandedTitle = false, content, mentions, hashtags, onSeeMo
           className="post-content__hashtag"
           onClick={(e) => {
             e.stopPropagation();
-            navigate(`/hashtag/${part.tag}`);
+            navigate(ROUTE_PATHS.HASHTAG(part.tag));
           }}
         >
           #{part.tag}

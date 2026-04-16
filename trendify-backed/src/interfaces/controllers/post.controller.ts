@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import {
   CreatePostUseCase,
   GetPostUseCase,
+  UpdatePostUseCase,
   DeletePostUseCase,
   GetUserPostsUseCase,
   GetFollowingFeedUseCase,
@@ -13,10 +14,13 @@ import {
   GetCommentsUseCase,
   GetCommentRepliesUseCase,
   DeleteCommentUseCase,
+  LikeCommentUseCase,
+  UnlikeCommentUseCase,
   SavePostUseCase,
   UnsavePostUseCase,
   GetSavedPostsUseCase,
   GetDraftPostsUseCase,
+  GetPostsByHashtagUseCase,
 } from "@/application/usecases/post";
 import { SuccessResponse } from "@/shared/responses";
 
@@ -24,6 +28,7 @@ class PostController {
   constructor(
     private readonly createPostUseCase: CreatePostUseCase,
     private readonly getPostUseCase: GetPostUseCase,
+    private readonly updatePostUseCase: UpdatePostUseCase,
     private readonly deletePostUseCase: DeletePostUseCase,
     private readonly getUserPostsUseCase: GetUserPostsUseCase,
     private readonly getFollowingFeedUseCase: GetFollowingFeedUseCase,
@@ -34,10 +39,13 @@ class PostController {
     private readonly getCommentsUseCase: GetCommentsUseCase,
     private readonly getCommentRepliesUseCase: GetCommentRepliesUseCase,
     private readonly deleteCommentUseCase: DeleteCommentUseCase,
+    private readonly likeCommentUseCase: LikeCommentUseCase,
+    private readonly unlikeCommentUseCase: UnlikeCommentUseCase,
     private readonly savePostUseCase: SavePostUseCase,
     private readonly unsavePostUseCase: UnsavePostUseCase,
     private readonly getSavedPostsUseCase: GetSavedPostsUseCase,
     private readonly getDraftPostsUseCase: GetDraftPostsUseCase,
+    private readonly getPostsByHashtagUseCase: GetPostsByHashtagUseCase,
   ) {}
 
   // ====================== POST CRUD ======================
@@ -73,6 +81,19 @@ class PostController {
     const result = await this.deletePostUseCase.execute({
       authorId: userId,
       postId,
+    });
+
+    return response.status(200).json(result);
+  };
+
+  updatePost = async (request: Request, response: Response) => {
+    const userId = response.locals?.auth?.userId;
+    const { postId } = request.params;
+
+    const result = await this.updatePostUseCase.execute({
+      authorId: userId,
+      postId,
+      ...request.body,
     });
 
     return response.status(200).json(result);
@@ -190,6 +211,24 @@ class PostController {
     return response.status(200).json(result);
   };
 
+  likeComment = async (request: Request, response: Response) => {
+    const userId = response.locals?.auth?.userId;
+    const { postId, commentId } = request.params;
+
+    const result = await this.likeCommentUseCase.execute({ userId, postId, commentId });
+
+    return response.status(200).json(result);
+  };
+
+  unlikeComment = async (request: Request, response: Response) => {
+    const userId = response.locals?.auth?.userId;
+    const { postId, commentId } = request.params;
+
+    const result = await this.unlikeCommentUseCase.execute({ userId, postId, commentId });
+
+    return response.status(200).json(result);
+  };
+
   // ====================== SAVES ======================
 
   savePost = async (request: Request, response: Response) => {
@@ -226,6 +265,19 @@ class PostController {
 
     const result = await this.getDraftPostsUseCase.execute({
       userId,
+      ...request.query,
+    });
+
+    return response.status(200).json(result);
+  };
+
+  getPostsByHashtag = async (request: Request, response: Response) => {
+    const viewerId = response.locals?.auth?.userId;
+    const { tag } = request.params;
+
+    const result = await this.getPostsByHashtagUseCase.execute({
+      viewerId,
+      hashtag: tag,
       ...request.query,
     });
 

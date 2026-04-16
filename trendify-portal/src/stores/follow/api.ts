@@ -42,3 +42,10 @@ export const blockUser = async (userId: string) => {
 export const unblockUser = async (userId: string) => {
   return apiClient.delete<IUnblockResponse>(FOLLOW_ENPOINT.UNBLOCK(userId));
 };
+
+export const checkBlockStatus = async (userId: string) => {
+  return apiClient.get<{ data: { isBlockedByMe: boolean; isBlockedByThem: boolean } }>(
+    `/users/${userId}/block/status`,
+  );
+};
+

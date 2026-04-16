@@ -1,0 +1,440 @@
+.chat-input {
+  padding: 10px 16px;
+  border-top: 1px solid var(--gray-200);
+  margin: 0 -4px 0 -20px;
+
+  [data-theme="dark"] & {
+    border-top-color: #2a2a2a;
+  }
+
+  // ============================================================================
+  // REPLY PREVIEW BAR
+  // ============================================================================
+  &__reply-bar {
+    padding: 8px 12px;
+    margin-bottom: 4px;
+    border-left: 3px solid var(--primary-color);
+    background: var(--gray-50, #fafafa);
+    border-radius: 0 8px 8px 0;
+    animation: replyBarSlideIn 0.2s ease-out;
+
+    [data-theme="dark"] & {
+      background: #1e1e1e;
+    }
+  }
+
+  &__reply-info {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  &__reply-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__reply-content {
+    font-size: 12px;
+    color: var(--gray-500);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__reply-close {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    color: var(--gray-400);
+    transition: all 0.15s;
+
+    &:hover {
+      background: var(--gray-200);
+      color: var(--text-color);
+
+      [data-theme="dark"] & {
+        background: #333;
+      }
+    }
+  }
+
+  // ============================================================================
+  // IMAGE PREVIEW AREA
+  // ============================================================================
+  &__images-area {
+    padding: 0 8px;
+    margin-bottom: 6px;
+    background-color: var(--gray-100);
+    border-radius: 12px;
+    overflow-x: auto;
+
+    [data-theme="dark"] & {
+      background-color: #1e1e1e;
+    }
+
+    // Hide scrollbar but keep functionality
+    &::-webkit-scrollbar {
+      height: 0;
+    }
+  }
+
+  &__images-add {
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    border-radius: 12px;
+    background-color: var(--gray-200);
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    [data-theme="dark"] & {
+      background-color: #333;
+    }
+
+    &:hover {
+      background-color: var(--gray-300);
+
+      [data-theme="dark"] & {
+        background-color: #444;
+      }
+    }
+
+    svg {
+      color: var(--gray-600);
+    }
+  }
+
+  &__images-list {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-right: 6px;
+    height: 66px;
+
+    &::-webkit-scrollbar {
+      height: 0;
+    }
+  }
+
+  &__image-thumb {
+    position: relative;
+    flex-shrink: 0;
+    width: 46px;
+    height: 46px;
+    border-radius: 8px;
+    overflow: visible;
+
+    .ant-image {
+      display: block;
+    }
+
+    &-img {
+      border-radius: 8px;
+      object-fit: cover;
+      width: 46px;
+      height: 46px;
+      cursor: pointer;
+    }
+
+    &-close {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background-color: var(--switch-bg);
+      border: 1px solid var(--gray-300);
+      cursor: pointer;
+      z-index: 99;
+      transition: background-color 0.2s;
+
+      svg {
+        width: 12px;
+        height: 12px;
+      }
+    }
+  }
+
+  // ============================================================================
+  // BOTTOM ROW
+  // ============================================================================
+  &__row {
+    width: 100%;
+  }
+
+  // ============================================================================
+  // LEFT ICONS (Mic, Image)
+  // ============================================================================
+  &__left-icons {
+    flex-shrink: 0;
+  }
+
+  &__icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    color: #0084ff;
+    transition:
+      background-color 0.2s,
+      color 0.2s;
+
+    &:hover {
+      background-color: rgba(0, 132, 255, 0.08);
+    }
+
+    &--circle {
+      background-color: var(--gray-100);
+      color: var(--gray-600);
+
+      [data-theme="dark"] & {
+        background-color: #2a2a2a;
+        color: var(--gray-400);
+      }
+
+      &:hover {
+        background-color: var(--gray-200);
+
+        [data-theme="dark"] & {
+          background-color: #3a3a3a;
+        }
+      }
+    }
+  }
+
+  // ============================================================================
+  // INPUT FIELD
+  // ============================================================================
+  &__field {
+    background-color: var(--gray-100);
+    border-radius: 20px;
+    padding: 2px 4px 2px 14px;
+    align-items: flex-end;
+
+    [data-theme="dark"] & {
+      background-color: #2a2a2a;
+    }
+  }
+
+  &__input {
+    font-size: 14px;
+    padding: 6px 0;
+    resize: none !important;
+    line-height: 1.5;
+
+    &::placeholder {
+      color: var(--gray-400);
+    }
+  }
+
+  &__emoji-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-bottom: 2px;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: rgba(0, 255, 110, 0.08);
+    }
+  }
+}
+
+// Emoji popover override (outside .chat-input because it renders in body)
+.chat-input__emoji-popover {
+  .ant-popover-inner {
+    padding: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16);
+  }
+
+  .EmojiPickerReact {
+    --epr-bg-color: var(--switch-bg) !important;
+    --epr-category-label-bg-color: var(--switch-bg) !important;
+    --epr-text-color: var(--text-color) !important;
+    --epr-hover-bg-color: var(--gray-100) !important;
+    --epr-search-border-color: var(--gray-300) !important;
+    border: none !important;
+  }
+}
+
+.chat-input {
+
+  // ============================================================================
+  // SEND BUTTON
+  // ============================================================================
+  &__send {
+    width: 36px;
+    height: 36px;
+    margin-top: auto;
+    border-radius: 50%;
+    cursor: not-allowed;
+    flex-shrink: 0;
+    color: var(--gray-300);
+    transition: all 0.25s;
+
+    &--active {
+      cursor: pointer;
+      color: #0084ff;
+
+      &:hover {
+        transform: scale(1.1);
+      }
+
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+  }
+
+  // ============================================================================
+  // LIKE BUTTON
+  // ============================================================================
+  &__like {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+
+    &:hover {
+      transform: scale(1.15);
+    }
+
+    &:active {
+      transform: scale(0.9);
+    }
+  }
+
+  // ============================================================================
+  // RECORDING MODE
+  // ============================================================================
+  &--recording {
+    background-color: #f0f7ff;
+
+    [data-theme="dark"] & {
+      background-color: #0d1b2a;
+    }
+  }
+
+  &__recording-cancel {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    color: #0084ff;
+    transition:
+      background-color 0.2s,
+      color 0.2s;
+
+    &:hover {
+      background-color: rgba(0, 132, 255, 0.1);
+    }
+  }
+
+  &__recording-stop {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid #0084ff;
+    cursor: pointer;
+    flex-shrink: 0;
+    color: #0084ff;
+    transition: all 0.2s;
+
+    &:hover {
+      background-color: rgba(0, 132, 255, 0.08);
+    }
+  }
+
+  &__recording-bar {
+    height: 36px;
+    background: linear-gradient(90deg, #0084ff, #00a6ff);
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  &__recording-progress {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  &__recording-wave {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 100%;
+    background: repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.1) 0px,
+      rgba(255, 255, 255, 0.3) 4px,
+      rgba(255, 255, 255, 0.1) 8px
+    );
+    animation: recording-wave-scroll 1s linear infinite;
+  }
+
+  &__recording-timer {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 16px;
+    border: 2px solid #0084ff;
+    flex-shrink: 0;
+
+    span {
+      font-size: 13px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: #0084ff;
+    }
+  }
+}
+
+// ============================================================================
+// ANIMATIONS
+// ============================================================================
+@keyframes recording-wave-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes recording-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes replyBarSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

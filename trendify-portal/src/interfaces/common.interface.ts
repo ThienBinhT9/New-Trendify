@@ -37,4 +37,6 @@ export interface IListParams {
 export enum EMediaPurpose {
   PROFILE_PICTURE = "profile-picture",
   COVER_PICTURE = "cover-picture",
+  POST_MEDIA = "post-media",
+  CHAT_MEDIA = "chat-media",
 }

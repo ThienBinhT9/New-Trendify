@@ -13,6 +13,9 @@ import {
   MongooseSaveRepository,
   MongooseCommentRepository,
 } from "./repositories";
+import { MongooseConversationRepository } from "./repositories/conversation.repository.impl";
+import { MongooseMessageRepository } from "./repositories/message.repository.impl";
+import { MongooseMessageRequestRepository } from "./repositories/message-request.repository.impl";
 
 export class MongooseUnitOfWork implements IUnitOfWork {
   private _userRepo?: MongooseUserRepository;
@@ -25,6 +28,9 @@ export class MongooseUnitOfWork implements IUnitOfWork {
   private _likeRepo?: MongooseLikeRepository;
   private _saveRepo?: MongooseSaveRepository;
   private _commentRepo?: MongooseCommentRepository;
+  private _conversationRepo?: MongooseConversationRepository;
+  private _messageRepo?: MongooseMessageRepository;
+  private _messageRequestRepo?: MongooseMessageRequestRepository;
 
   constructor(private readonly session: ClientSession) {}
 
@@ -66,6 +72,18 @@ export class MongooseUnitOfWork implements IUnitOfWork {
 
   get comments() {
     return (this._commentRepo ??= new MongooseCommentRepository(this.session));
+  }
+
+  get conversations() {
+    return (this._conversationRepo ??= new MongooseConversationRepository(this.session));
+  }
+
+  get messages() {
+    return (this._messageRepo ??= new MongooseMessageRepository(this.session));
+  }
+
+  get messageRequests() {
+    return (this._messageRequestRepo ??= new MongooseMessageRequestRepository(this.session));
   }
 
   async commit(): Promise<void> {

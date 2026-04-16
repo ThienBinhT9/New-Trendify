@@ -6,6 +6,7 @@ export enum EMediaPurpose {
   PROFILE_PICTURE = "profile-picture",
   COVER_PICTURE = "cover-picture",
   POST_MEDIA = "post-media",
+  CHAT_MEDIA = "chat-media",
 }
 
 export enum EMediaStatus {
@@ -72,6 +73,22 @@ export const MEDIA_LIMITS: Record<EMediaPurpose, IMediaLimits> = {
     ],
     variants: [EVariantType.MEDIUM, EVariantType.LARGE],
   },
+  [EMediaPurpose.CHAT_MEDIA]: {
+    maxSize: 25 * 1024 * 1024, // 25MB
+    allowedMimeTypes: [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+      "video/mp4",
+      "video/quicktime",
+      "audio/webm",
+      "audio/mp4",
+      "audio/mpeg",
+      "audio/ogg",
+    ],
+    variants: [EVariantType.MEDIUM],
+  },
 };
 
 /**
@@ -96,6 +113,21 @@ export const VARIANT_DIMENSIONS: Record<
     [EMediaPurpose.POST_MEDIA]: { width: 1080, height: 1080 },
     default: { width: 1080, height: 1080 },
   },
+};
+
+// ============================================================================
+// VIDEO PROCESSING LIMITS
+// ============================================================================
+
+export const VIDEO_LIMITS = {
+  maxDuration: 60, // seconds — reject videos longer than this
+  maxResolutionWidth: 1920,
+  maxResolutionHeight: 1080,
+  thumbnailTimestamp: 1, // capture thumbnail at 1s
+  transcodedWidth: 720, // transcode MEDIUM variant to 720p
+  transcodedHeight: 1280,
+  transcodedBitrate: "1500k", // target video bitrate for MEDIUM
+  audioBitrate: "128k",
 };
 
 // ============================================================================

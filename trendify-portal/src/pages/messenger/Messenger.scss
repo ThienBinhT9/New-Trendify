@@ -1,0 +1,27 @@
+.messenger-container {
+  width: 100%;
+  height: calc(100dvh - var(--header-height-pc) - 24px);
+  gap: 12px;
+  overflow: hidden;
+
+  @include mobile-medium {
+    height: calc(100dvh - var(--bottom-height-pc));
+    gap: 0;
+  }
+
+  // Info panel wrapper — animated slide-in as a separate card
+  &__info-wrapper {
+    width: 0;
+    overflow: hidden;
+    flex-shrink: 0;
+    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &--open {
+      width: 320px;
+
+      @include mobile-medium {
+        width: 280px;
+      }
+    }
+  }
+}

@@ -8,6 +8,7 @@ import { ISessionRepository } from "./session";
 import { IUserSettingsRepository } from "./user-setting";
 import { IUserRepository } from "./user";
 import { IUserIntentRepository } from "./user-intent";
+import { IConversationRepository, IMessageRepository, IMessageRequestRepository } from "./chat";
 
 export interface IUnitOfWork {
   readonly sessions: ISessionRepository;
@@ -25,6 +26,11 @@ export interface IUnitOfWork {
   readonly userSettings: IUserSettingsRepository;
 
   readonly blocks: IBlockRepository;
+
+  // Chat
+  readonly conversations: IConversationRepository;
+  readonly messages: IMessageRepository;
+  readonly messageRequests: IMessageRequestRepository;
 
   commit(): Promise<void>;
   rollback(): Promise<void>;

@@ -3,6 +3,7 @@ import "../Home.scss";
 
 import Post from "@/container/post/Post";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Virtuoso } from "react-virtuoso";
 import PostSkeleton from "@/container/skeleton/post_skeleton/PostSkeleton";
 import { useAppDispatch, useAppSelector } from "@/stores";
@@ -10,6 +11,7 @@ import { getFollowingPostsAction } from "@/stores/post/actions";
 import { EPostActions } from "@/stores/post/constants";
 import EmptyState from "@/container/empty/EmptyState";
 import Icon from "@/components/icon/Icon";
+import ROUTE_PATHS from "@/routes/path.route";
 
 interface FollowingProps {
   isActive?: boolean;
@@ -18,6 +20,7 @@ interface FollowingProps {
 
 const Following = ({ isActive = true, prefetch = false }: FollowingProps) => {
   const loading = useAppSelector((state) => state.loading);
+  const navigate = useNavigate();
   const followingPosts = useAppSelector((state) => state.posts.followingPosts);
 
   const dispatch = useAppDispatch();
@@ -92,7 +95,7 @@ const Following = ({ isActive = true, prefetch = false }: FollowingProps) => {
             title="Feed đang trống"
             description="Theo dõi thêm ai đó để thấy bài viết mới nhất của họ"
             ctaLabel="Tìm người để theo dõi"
-            onCtaClick={() => {}}
+            onCtaClick={() => navigate(ROUTE_PATHS.SEARCH)}
           />
         )}
       </Flex>

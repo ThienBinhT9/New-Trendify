@@ -1,0 +1,37 @@
+.wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+
+.dot {
+  display: inline-block;
+  border-radius: 50%;
+  border: 2px solid var(--bg-primary, #ffffff);
+  box-sizing: content-box;
+  flex-shrink: 0;
+  transition: background-color 0.3s ease;
+}
+
+// Subtle pulse animation for online status
+.pulse {
+  animation: presence-pulse 2s ease-in-out infinite;
+}
+
+@keyframes presence-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0);
+  }
+}
+
+.lastSeen {
+  font-size: 11px;
+  color: var(--text-tertiary, #9ca3af);
+  white-space: nowrap;
+  line-height: 1;
+}

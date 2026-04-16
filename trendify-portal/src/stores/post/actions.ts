@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { EPostActions, ICreateCommentRequest, ICreatePostRequest } from "./constants";
+import { EPostActions, ICreateCommentRequest, ICreatePostRequest, IUpdatePostRequest } from "./constants";
 
 import * as api from "./api";
 import { IListParams } from "@/interfaces/common.interface";
@@ -22,6 +22,18 @@ export const deletePostAction = createAsyncThunk(
     try {
       const response = await api.deletePost(postId);
       return response.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
+export const updatePostAction = createAsyncThunk(
+  EPostActions.UPDATE_POST,
+  async (body: IUpdatePostRequest, { rejectWithValue }) => {
+    try {
+      const response = await api.updatePost(body);
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error);
     }
@@ -98,6 +110,19 @@ export const getDraftPostsAction = createAsyncThunk(
     try {
       const { params } = payload;
       const response = await api.listDraftPosts(params);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
+export const getHashtagPostsAction = createAsyncThunk(
+  EPostActions.GET_HASHTAG_POSTS,
+  async (payload: { tag: string; params?: IListParams }, { rejectWithValue }) => {
+    try {
+      const { tag, params } = payload;
+      const response = await api.listHashtagPosts(tag, params);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error);
@@ -187,6 +212,32 @@ export const getCommentRepliesAction = createAsyncThunk(
     try {
       const { postId, commentId, params } = payload;
       const response = await api.listCommentReplies(postId, commentId, params);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
+export const likeCommentAction = createAsyncThunk(
+  EPostActions.LIKE_COMMENT,
+  async (payload: { postId: string; commentId: string }, { rejectWithValue }) => {
+    try {
+      const { postId, commentId } = payload;
+      const response = await api.likeComment(postId, commentId);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
+export const unlikeCommentAction = createAsyncThunk(
+  EPostActions.UNLIKE_COMMENT,
+  async (payload: { postId: string; commentId: string }, { rejectWithValue }) => {
+    try {
+      const { postId, commentId } = payload;
+      const response = await api.unlikeComment(postId, commentId);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error);

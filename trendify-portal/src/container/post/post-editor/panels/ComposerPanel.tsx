@@ -10,11 +10,12 @@ import { Plugin } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 
 import { useMention } from "@/hooks";
-import { PostPanelKey } from "../PostCreate";
+import { IPostImage, PostPanelKey } from "../PostCreate";
 import { listFollowing } from "@/stores/profile/api";
 import { useAppSelector } from "@/stores";
 import { IUserSuggestion } from "@/interfaces/user.interface";
 import { IPostLocation, IPostMention } from "@/interfaces/post.interface";
+import useEmblaCarousel from "embla-carousel-react";
 
 import Text from "@/components/text/Text";
 import Icon from "@/components/icon/Icon";
@@ -32,6 +33,13 @@ interface IProps {
   onSubmit: () => void;
   onCloseModal: () => void;
   onNavigatePanel: (panel: PostPanelKey) => void;
+  // Image props
+  postImages: IPostImage[];
+  isUploading: boolean;
+  uploadStatusText?: string;
+  onOpenImagePicker: () => void;
+  onRemoveImage: (imageId: string) => void;
+  onRecropImage: (index: number) => void;
 }
 
 interface IMentionSuggestionItem extends MentionNodeAttrs {
@@ -103,6 +111,12 @@ const ComposerPanel = ({
   onSubmit,
   onCloseModal,
   onNavigatePanel,
+  postImages,
+  isUploading,
+  uploadStatusText,
+  onOpenImagePicker,
+  onRemoveImage,
+  onRecropImage,
 }: IProps) => {
   const loading = useAppSelector((state) => state.loading);
   const authUser = useAppSelector((state) => state.auth.user);
@@ -112,6 +126,13 @@ const ComposerPanel = ({
   const mentionRequestSeqRef = useRef<number>(0);
   const mentionRenderItemsRef = useRef<(() => void) | null>(null);
   const mentionDebounceTimerRef = useRef<number | null>(null);
+
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: "start",
+    containScroll: "trimSnaps",
+    dragFree: true,
+  });
+
   const escapeHtml = useCallback((text: string) => {
     return text
       .replace(/&/g, "&amp;")
@@ -470,6 +491,12 @@ const ComposerPanel = ({
   });
 
   useEffect(() => {
+    if (editor) {
+      editor.setEditable(!isUploading);
+    }
+  }, [editor, isUploading]);
+
+  useEffect(() => {
     if (!editor) return;
 
     if (editorDoc) {
@@ -487,14 +514,25 @@ const ComposerPanel = ({
     editor.commands.setContent(html, { emitUpdate: false });
   }, [editor, editorDoc, editorValue, escapeHtml]);
 
+  // Auto-scroll to end when new images added
+  useEffect(() => {
+    if (postImages.length > 0 && emblaApi) {
+      requestAnimationFrame(() => {
+        emblaApi.scrollTo(emblaApi.scrollSnapList().length - 1);
+      });
+    }
+  }, [postImages.length, emblaApi]);
+
+  const canSubmit = editorValue.trim().length > 0 || postImages.length > 0;
+
   return (
     <Flex vertical className="post-modal-panel">
       <Flex className="post-modal-header">
-        <Button type="text" className="post-head-btn" onClick={onCloseModal}>
-          <Text textType="M16">Hủy</Text>
+        <Button type="text" className="post-head-btn" onClick={onCloseModal} disabled={isUploading}>
+          <Text textType="M16" style={{ color: isUploading ? 'var(--gray-400)' : 'inherit' }}>Hủy</Text>
         </Button>
         <Text textType="SB22">Thread mới</Text>
-        <div />
+        <div style={{ width: 42 }} />
       </Flex>
 
       <Flex vertical className="post-modal-body">
@@ -514,14 +552,83 @@ const ComposerPanel = ({
         </Flex>
 
         {selectedLocation && (
-          <Button className="post-location-tag" icon={<Icon name="LocationIcon" size={13} />}>
+          <Button 
+            className="post-location-tag" 
+            icon={<Icon name="LocationIcon" size={13} />}
+            disabled={isUploading}
+          >
             <Text textType="M14">{selectedLocation.name}</Text>
           </Button>
         )}
 
-        <div className="post-editor-wrap">
+        <div className={`post-editor-wrap ${postImages.length > 0 ? "has-images" : ""}`}>
           <EditorContent editor={editor} className="post-editor" />
         </div>
+
+        {/* ========= Media Preview Carousel ========= */}
+        {postImages.length > 0 && (
+          <div className="post-images-carousel-wrap" ref={emblaRef}>
+            <div className="post-images-carousel">
+              {postImages.map((img, index) => (
+                <div
+                  key={img.id}
+                  className={`post-image-item ${img.mediaType === "video" ? "post-image-item--video" : ""} ${isUploading ? "disabled" : ""}`}
+                  onClick={() => {
+                    if (isUploading) return;
+                    if (img.mediaType === "image") onRecropImage(index);
+                  }}
+                  style={{ opacity: isUploading ? 0.7 : 1, cursor: isUploading ? 'not-allowed' : 'pointer' }}
+                >
+                  {img.mediaType === "video" && !img.previewUrl.startsWith("data:") ? (
+                    <video
+                      src={img.previewUrl}
+                      className="post-image-preview"
+                      preload="metadata"
+                    />
+                  ) : (
+                    <img
+                      src={img.croppedPreviewUrl || img.previewUrl}
+                      alt={`post-media-${index}`}
+                      className="post-image-preview"
+                      draggable={false}
+                    />
+                  )}
+                  {img.mediaType === "video" && (
+                    <>
+                      <div className="post-image-video-overlay">
+                        <svg viewBox="0 0 24 24" fill="white" width="24" height="24">
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </div>
+                      {img.videoDuration && (
+                        <div className="post-image-video-duration">
+                          {`${Math.floor(img.videoDuration / 60)}:${(img.videoDuration % 60).toString().padStart(2, "0")}`}
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {!isUploading && (
+                    <button
+                      className="post-image-remove-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemoveImage(img.id);
+                      }}
+                    >
+                      <Icon name="CloseIcon" size={12} />
+                    </button>
+                  )}
+                  {/* Three dots menu overlay — only for images */}
+                  {img.mediaType === "image" && !isUploading && (
+                    <div className="post-image-overlay-menu">
+                      <div className="post-image-dots">•••</div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </Flex>
 
       <Flex className="post-toolbar">
@@ -529,24 +636,30 @@ const ComposerPanel = ({
           type="text"
           className="post-toolbar-btn"
           icon={<Icon name="ImagePenIcon" size={22} />}
+          onClick={onOpenImagePicker}
+          disabled={isUploading}
         />
 
         <Popover
           content={<EmojiPicker height={260} width={320} onEmojiClick={handleEmojiClick} />}
           placement="bottom"
-          trigger={["click"]}
+          trigger={isUploading ? [] : ["click"]}
         >
           <Button
             type="text"
             className="post-toolbar-btn"
             icon={<Icon name="EmojiIcon" size={20} />}
+            disabled={isUploading}
           />
         </Popover>
         <Button
           type="text"
           className="post-toolbar-btn"
           icon={<Icon name="LocationIcon" size={22} />}
-          onClick={() => onNavigatePanel("location")}
+          onClick={() => {
+            if (!isUploading) onNavigatePanel("location");
+          }}
+          disabled={isUploading}
         />
       </Flex>
 
@@ -555,19 +668,29 @@ const ComposerPanel = ({
           <Text
             textType="M14"
             className="post-reply-option"
-            onClick={() => onNavigatePanel("privacy")}
+            onClick={() => {
+               if(!isUploading) onNavigatePanel("privacy");
+            }}
+            style={{ color: isUploading ? 'var(--gray-400)' : 'inherit' }}
           >
             {`Ai có thể trả lời`}
           </Text>
         </Flex>
-        <Button
-          className="post-submit"
-          onClick={onSubmit}
-          disabled={editorValue.trim().length === 0}
-          loading={loading[EPostActions.CREATE_POST]}
-        >
-          <Text textType="M14">Đăng</Text>
-        </Button>
+        <Flex align="center" gap={12}>
+          {isUploading && uploadStatusText && (
+            <Text textType="M13" style={{ color: "var(--gray-500)", fontStyle: 'italic', animation: "pulse 1.5s infinite" }}>
+              {uploadStatusText}
+            </Text>
+          )}
+          <Button
+            className="post-submit"
+            onClick={onSubmit}
+            disabled={!canSubmit}
+            loading={loading[EPostActions.CREATE_POST] || isUploading}
+          >
+            <Text textType="M14">Đăng</Text>
+          </Button>
+        </Flex>
       </Flex>
     </Flex>
   );

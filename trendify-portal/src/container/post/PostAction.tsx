@@ -17,9 +17,17 @@ interface PostActionProps {
   post: IPost;
   viewerContext: IPostViewerContext;
   onNavigateToDetail: () => void;
+  realtimeLikeCount?: number | null;
+  realtimeCommentCount?: number | null;
 }
 
-const PostAction = ({ post, viewerContext, onNavigateToDetail }: PostActionProps) => {
+const PostAction = ({
+  post,
+  viewerContext,
+  onNavigateToDetail,
+  realtimeLikeCount,
+  realtimeCommentCount,
+}: PostActionProps) => {
   const dispatch = useAppDispatch();
 
   const [visibleModalLike, setVisibleModalLike] = useState<boolean>(false);
@@ -60,6 +68,19 @@ const PostAction = ({ post, viewerContext, onNavigateToDetail }: PostActionProps
     setIsLiked(nextLiked);
     setLikeCount(nextLikeCount);
   }, [clearTrailingTimer, post.id, post.counters.likeCount, viewerContext.isLiked]);
+
+  // ---------------------------------------------------------------------------
+  // Merge realtime like count from socket broadcast (batched every 5s)
+  // Chỉ cập nhật khi KHÔNG đang mutating để tránh conflict với optimistic UI
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (realtimeLikeCount == null) return;
+    if (isMutatingLikeRef.current) return;
+    if (trailingTimerRef.current) return;
+
+    setLikeCount(realtimeLikeCount);
+    committedLikeCountRef.current = realtimeLikeCount;
+  }, [realtimeLikeCount]);
 
   useEffect(() => () => clearTrailingTimer(), [clearTrailingTimer]);
 
@@ -191,7 +212,7 @@ const PostAction = ({ post, viewerContext, onNavigateToDetail }: PostActionProps
           }}
         >
           <Icon name="CommentIcon" />
-          <Text className="post-action__text">{`${formatNumberCount(post.counters.commentCount)}`}</Text>
+          <Text className="post-action__text">{`${formatNumberCount(realtimeCommentCount ?? post.counters.commentCount)}`}</Text>
         </Flex>
         <Flex className="post-action" onClick={(e) => e.stopPropagation()}>
           <Icon name="ShareIcon" />

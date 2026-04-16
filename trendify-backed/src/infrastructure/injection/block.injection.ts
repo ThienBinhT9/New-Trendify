@@ -7,6 +7,7 @@ import { Producer } from "../messaging/producer";
 import { BlockUserUsecase } from "@/application/usecases/block/block-user.usecase";
 import { UnblockUserUsecase } from "@/application/usecases/block/unblock-user.usecase";
 import { GetBlockedListUsecase } from "@/application/usecases/block/get-blocked-list.usecase";
+import { CheckBlockStatusUsecase } from "@/application/usecases/block/check-block-status.usecase";
 import BlockController from "@/interfaces/controllers/block.controller";
 import { MongooseBlockRepository, MongooseUserRepository } from "../database/repositories";
 
@@ -20,11 +21,14 @@ const userRepo = new MongooseUserRepository();
 export const blockUserUsecase = new BlockUserUsecase(uowFactory, cacheSvc, producer);
 export const unblockUserUsecase = new UnblockUserUsecase(uowFactory, cacheSvc);
 export const getBlockedListUsecase = new GetBlockedListUsecase(blockRepo, userRepo);
+export const checkBlockStatusUsecase = new CheckBlockStatusUsecase(blockRepo);
 
 const blockController = new BlockController(
   blockUserUsecase,
   unblockUserUsecase,
   getBlockedListUsecase,
+  checkBlockStatusUsecase,
 );
 
 export default blockController;
+

@@ -9,6 +9,7 @@ import { IUserRepository } from "@/domain/user";
 import { IMediaRepository } from "@/domain/media";
 import { IFileStorageService } from "@/application/services/fileStorage.service";
 import { fetchMediaRecordFromGroups } from "@/application/mappers/media.mapper";
+import { resolveMediaDisplayList } from "@/application/mappers/media.mapper";
 import { CommentMapper, UserMapper } from "@/application/mappers";
 import { ViewerContextBuilder } from "@/application/policies/viewer-context.builder";
 
@@ -24,7 +25,7 @@ export class CreateCommentUseCase {
   ) {}
 
   async execute(dto: CreateCommentDTO) {
-    const { userId, postId, content, parentId, mentions } = dto;
+    const { userId, postId, content, parentId, mentions, mediaIds } = dto;
 
     // Validate post
     const post = await this.postRepo.findById(postId);
@@ -68,6 +69,7 @@ export class CreateCommentUseCase {
       parentId,
       rootCommentId,
       mentions,
+      mediaIds,
     });
 
     const created = await this.commentRepo.create(comment);
@@ -105,6 +107,21 @@ export class CreateCommentUseCase {
     );
 
     const authorMapped = UserMapper.toAuthorDTO(author, mediaRecord, this.storageSvc);
+
+    // Resolve comment media
+    const commentMediaIds = created.data.mediaIds ?? [];
+    let commentMediaRecord: Record<string, any> = {};
+    if (commentMediaIds.length > 0) {
+      commentMediaRecord = await fetchMediaRecordFromGroups([commentMediaIds], (ids) =>
+        this.mediaRepo.findByIds(ids),
+      );
+    }
+    const commentMedia = resolveMediaDisplayList(
+      commentMediaIds,
+      commentMediaRecord,
+      this.storageSvc,
+    );
+
     const viewerContext = ViewerContextBuilder.buildComment({
       viewerId: userId,
       postAuthorId: post.authorId,
@@ -115,7 +132,7 @@ export class CreateCommentUseCase {
     return new Response.SuccessResponse({
       statusCode: 201,
       message: "Comment created successfully",
-      data: { comment: CommentMapper.toResponseDTO(created, authorMapped, viewerContext) },
+      data: { comment: CommentMapper.toResponseDTO(created, authorMapped, viewerContext, commentMedia) },
     });
   }
 }
