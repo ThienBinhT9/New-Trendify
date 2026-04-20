@@ -134,7 +134,7 @@
 
   &__media-tabs {
     display: flex;
-    margin: 0 16px 0;
+    margin: 8px 16px 0;
     border-radius: 10px;
     overflow: hidden;
     border: 1px solid var(--gray-200);
@@ -189,7 +189,9 @@
     min-height: 0;
     overflow-y: auto;
 
-    &::-webkit-scrollbar { width: 4px; }
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
     &::-webkit-scrollbar-thumb {
       background: var(--gray-300);
       border-radius: 4px;

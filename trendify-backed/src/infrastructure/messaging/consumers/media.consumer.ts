@@ -78,15 +78,22 @@ export class MediaConsumer extends BaseConsumer {
 
     try {
       const isVideo = mimeType.startsWith("video/");
-      const result = isVideo
-        ? await this.processVideo(key, purpose, mimeType)
-        : await this.processImage(key, purpose, mimeType);
+      const isAudio = mimeType.startsWith("audio/");
+      
+      let result;
+      if (isVideo) {
+        result = await this.processVideo(key, purpose, mimeType);
+      } else if (isAudio) {
+        result = await this.processAudio(key, purpose, mimeType);
+      } else {
+        result = await this.processImage(key, purpose, mimeType);
+      }
 
       media.markProcessed(result.variants, result.metadata);
       await this.mediaRepo.save(media);
 
       console.log(
-        `Media processed: ${mediaId} (${isVideo ? "video" : "image"}, ${result.variants.length} variants)`,
+        `Media processed: ${mediaId} (${isVideo ? "video" : isAudio ? "audio" : "image"}, ${result.variants.length} variants)`,
       );
     } catch (error) {
       console.error(`Media processing failed: ${mediaId}`, error);
@@ -289,6 +296,59 @@ export class MediaConsumer extends BaseConsumer {
       return { variants, metadata };
     } finally {
       // Cleanup temp files
+      this.cleanupTmpDir(tmpDir);
+    }
+  }
+
+  // ===========================================================================
+  // AUDIO PROCESSING
+  // ===========================================================================
+
+  private async processAudio(
+    originalKey: string,
+    _purpose: EMediaPurpose,
+    _mimeType: string,
+  ): Promise<{ variants: IMediaVariant[]; metadata: IMediaMetadata }> {
+    const headResult = await this.storageSvc.headObject(originalKey);
+    if (!headResult) {
+      throw new Error(`Original file not found on S3: ${originalKey}`);
+    }
+
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "trendify-audio-"));
+    const ext = path.extname(originalKey) || ".webm";
+    const tmpInput = path.join(tmpDir, `input${ext}`);
+
+    try {
+      const buffer = await this.storageSvc.downloadBuffer(originalKey);
+      fs.writeFileSync(tmpInput, buffer);
+
+      const probeData = await this.probeVideo(tmpInput);
+      const audioStream = probeData.streams.find((s) => s.codec_type === "audio");
+
+      const duration = parseFloat(String(probeData.format.duration ?? 0));
+      const codec = audioStream?.codec_name || "unknown";
+
+      const metadata: IMediaMetadata = {
+        width: 0,
+        height: 0,
+        duration: Math.round(duration),
+        format: probeData.format.format_name?.split(",")[0],
+        codec,
+      };
+
+      const variants: IMediaVariant[] = [
+        {
+          key: originalKey,
+          type: EVariantType.ORIGINAL,
+          width: 0,
+          height: 0,
+          size: headResult.contentLength,
+          format: ext.replace(".", ""),
+        },
+      ];
+
+      return { variants, metadata };
+    } finally {
       this.cleanupTmpDir(tmpDir);
     }
   }

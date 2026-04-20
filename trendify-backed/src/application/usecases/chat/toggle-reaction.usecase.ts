@@ -35,14 +35,14 @@ export class ToggleReactionUseCase {
 
     if (hasReaction) {
       await this.messageRepo.removeReaction(messageId, userId, emoji);
-      return { action: "removed" as const, messageId, emoji, userId };
+      return { action: "removed" as const, messageId, emoji, userId, memberIds: conversation.memberIds };
     } else {
       await this.messageRepo.addReaction(messageId, {
         userId,
         emoji,
         createdAt: new Date(),
       });
-      return { action: "added" as const, messageId, emoji, userId };
+      return { action: "added" as const, messageId, emoji, userId, memberIds: conversation.memberIds };
     }
   }
 }

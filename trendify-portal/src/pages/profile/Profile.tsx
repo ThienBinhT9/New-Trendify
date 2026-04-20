@@ -26,6 +26,7 @@ import { useAppDispatch, useAppSelector } from "@/stores";
 import { getUserPostsAction } from "@/stores/post/actions";
 import { confirmUploadAction, presignedAction } from "@/stores/upload/action";
 import { updateProfileAction, userProfileAction } from "@/stores/profile/actions";
+import { createDM } from "@/stores/chat/api";
 
 import Icon from "@/components/icon/Icon";
 import Text from "@/components/text/Text";
@@ -551,6 +552,25 @@ interface ProfileActionsProps {
 
 const ProfileActions = ({ profile, isOwnProfile, onEditProfile }: ProfileActionsProps) => {
   const navigate = useNavigate();
+  const [isCreatingDM, setIsCreatingDM] = useState(false);
+  const { message } = App.useApp();
+
+  const handleMessage = async () => {
+    try {
+      setIsCreatingDM(true);
+      const res = await createDM(profile.id);
+      if (res.data?.data?.id) {
+        navigate(ROUTE_PATHS.MESSAGE, {
+          state: { activeConversationId: res.data.data.id },
+        });
+      }
+    } catch (error) {
+      console.log("create conversation error: ", error);
+      message.error("Không thể tạo cuộc trò chuyện, vui lòng thử lại.");
+    } finally {
+      setIsCreatingDM(false);
+    }
+  };
 
   if (isOwnProfile) {
     return (
@@ -571,7 +591,8 @@ const ProfileActions = ({ profile, isOwnProfile, onEditProfile }: ProfileActions
       <Button
         className="header-info-btn"
         icon={<Icon name="MessengerIcon" size={18} />}
-        onClick={() => navigate(ROUTE_PATHS.MESSAGE)}
+        onClick={handleMessage}
+        loading={isCreatingDM}
       >
         <Text textType="M14">Message</Text>
       </Button>

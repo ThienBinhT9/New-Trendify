@@ -79,6 +79,7 @@ interface ServerToClientEvents {
   // Chat events
   "chat:message": (payload: ChatMessagePayload) => void;
   "chat:typing": (payload: ChatTypingPayload) => void;
+  "chat:reaction": (payload: { conversationId: string; reaction: any }) => void;
 }
 
 interface ClientToServerEvents {

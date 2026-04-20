@@ -11,13 +11,6 @@ import Icon from "@/components/icon/Icon";
 
 const { TextArea } = Input;
 
-const StopIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-    <rect x="6" y="6" width="12" height="12" rx="2" />
-  </svg>
-);
-
-
 // ============================================================================
 // COMPONENT
 // ============================================================================
@@ -29,7 +22,8 @@ interface ISendPayload {
 
 interface ChatInputProps {
   onSend: (payload: ISendPayload) => void;
-  onSendVoice?: (blob: Blob) => void;
+  onTyping?: () => void;
+  onStopTyping?: () => void;
   droppedFiles?: IDroppedFile[];
   onClearDroppedFiles?: () => void;
   replyingTo?: IMessage | null;
@@ -37,14 +31,45 @@ interface ChatInputProps {
   quickEmoji?: string;
 }
 
-const ChatInput = ({ onSend, onSendVoice, droppedFiles, onClearDroppedFiles, replyingTo, onCancelReply, quickEmoji = "👍" }: ChatInputProps) => {
+const ChatInput = ({
+  onSend,
+  onTyping,
+  onStopTyping,
+  droppedFiles,
+  onClearDroppedFiles,
+  replyingTo,
+  onCancelReply,
+  quickEmoji = "👍",
+}: ChatInputProps) => {
   const [message, setMessage] = useState("");
   const [selectedImages, setSelectedImages] = useState<{ id: string; file: File; url: string }[]>(
     [],
   );
   const [emojiOpen, setEmojiOpen] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingDuration, setRecordingDuration] = useState(0);
+
+  // Typing indicator debounce
+  const isTypingRef = useRef(false);
+  const stopTypingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const emitTypingStart = useCallback(() => {
+    if (!isTypingRef.current) {
+      isTypingRef.current = true;
+      onTyping?.();
+    }
+    // Reset the stop timer on every keystroke
+    if (stopTypingTimerRef.current) clearTimeout(stopTypingTimerRef.current);
+    stopTypingTimerRef.current = setTimeout(() => {
+      isTypingRef.current = false;
+      onStopTyping?.();
+    }, 2000);
+  }, [onTyping, onStopTyping]);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (stopTypingTimerRef.current) clearTimeout(stopTypingTimerRef.current);
+    };
+  }, []);
 
   // Consume dropped files from drag/drop on ChatWindow
   useEffect(() => {
@@ -57,10 +82,6 @@ const ChatInput = ({ onSend, onSendVoice, droppedFiles, onClearDroppedFiles, rep
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
 
   const hasImages = selectedImages.length > 0;
   const hasContent = message.trim().length > 0 || hasImages;
@@ -68,7 +89,14 @@ const ChatInput = ({ onSend, onSendVoice, droppedFiles, onClearDroppedFiles, rep
   const handleSend = useCallback(() => {
     const text = message.trim();
     const images = selectedImages;
-    if (!text && images.length === 0 && !isRecording) return;
+    if (!text && images.length === 0) return;
+
+    // Stop typing immediately on send
+    if (stopTypingTimerRef.current) clearTimeout(stopTypingTimerRef.current);
+    if (isTypingRef.current) {
+      isTypingRef.current = false;
+      onStopTyping?.();
+    }
 
     onSend({
       text: message,
@@ -86,7 +114,7 @@ const ChatInput = ({ onSend, onSendVoice, droppedFiles, onClearDroppedFiles, rep
     setMessage("");
     setSelectedImages([]);
     inputRef.current?.focus();
-  }, [message, selectedImages, isRecording, onSend, replyingTo]);
+  }, [message, selectedImages, onSend, replyingTo]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     // Ignore Enter during IME composition (Vietnamese input, etc.)
@@ -136,148 +164,6 @@ const ChatInput = ({ onSend, onSendVoice, droppedFiles, onClearDroppedFiles, rep
     };
   }, []);
 
-  const startRecording = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = () => {
-        // const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        // TODO: Send audioBlob or convert to desired format
-        console.log("Recording stopped, chunks:", audioChunksRef.current.length);
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-      setRecordingDuration(0);
-
-      // Start timer
-      recordingTimerRef.current = setInterval(() => {
-        setRecordingDuration((prev) => prev + 1);
-      }, 1000);
-    } catch (err) {
-      console.error("Microphone permission denied:", err);
-      // Could show a notification here
-    }
-  }, []);
-
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-      mediaRecorderRef.current.stop();
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    if (recordingTimerRef.current) {
-      clearInterval(recordingTimerRef.current);
-      recordingTimerRef.current = null;
-    }
-    setIsRecording(false);
-    setRecordingDuration(0);
-  }, []);
-
-  const cancelRecording = useCallback(() => {
-    audioChunksRef.current = []; // Discard audio
-    stopRecording();
-  }, [stopRecording]);
-
-  const sendRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-      mediaRecorderRef.current.stop();
-    }
-    // Wait a tick for onstop to fire and collect chunks
-    setTimeout(() => {
-      const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-      if (onSendVoice && audioBlob.size > 0) {
-        onSendVoice(audioBlob);
-      }
-      stopRecording();
-    }, 100);
-  }, [stopRecording, onSendVoice]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, []);
-
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  // ============================================================================
-  // RENDER: VOICE RECORDING MODE
-  // ============================================================================
-  if (isRecording) {
-    return (
-      <Flex className="chat-input chat-input--recording" align="center" gap={8} id="chatInput">
-        {/* Cancel */}
-        <Flex
-          className="chat-input__recording-cancel"
-          align="center"
-          justify="center"
-          onClick={cancelRecording}
-        >
-          <CloseCircleIcon style={{ width: 24, height: 24 }} />
-        </Flex>
-
-        {/* Stop */}
-        <Flex
-          className="chat-input__recording-stop"
-          align="center"
-          justify="center"
-          onClick={sendRecording}
-        >
-          <StopIcon />
-        </Flex>
-
-        {/* Waveform / Progress bar */}
-        <Flex className="chat-input__recording-bar" flex={1} align="center">
-          <div className="chat-input__recording-progress">
-            <div
-              className="chat-input__recording-wave"
-              style={{
-                animation: "recording-pulse 1.5s ease-in-out infinite",
-              }}
-            />
-          </div>
-        </Flex>
-
-        {/* Duration */}
-        <Flex className="chat-input__recording-timer" align="center" justify="center">
-          <span>{formatDuration(recordingDuration)}</span>
-        </Flex>
-
-        {/* Send */}
-        <Flex
-          className="chat-input__send chat-input__send--active"
-          align="center"
-          justify="center"
-          onClick={sendRecording}
-        >
-          <Icon name="SendBlackIcon" size={22} />
-        </Flex>
-      </Flex>
-    );
-  }
-
   // ============================================================================
   // RENDER: NORMAL / WITH IMAGES MODE
   // ============================================================================
@@ -288,7 +174,10 @@ const ChatInput = ({ onSend, onSendVoice, droppedFiles, onClearDroppedFiles, rep
         <Flex className="chat-input__reply-bar" align="center" justify="space-between">
           <Flex vertical gap={2} className="chat-input__reply-info">
             <span className="chat-input__reply-label">
-              Đang trả lời {replyingTo.isMine ? "chính mình" : (replyingTo.sender?.displayName ?? replyingTo.senderId)}
+              Đang trả lời{" "}
+              {replyingTo.isMine
+                ? "chính mình"
+                : (replyingTo.sender?.displayName ?? replyingTo.senderId)}
             </span>
             <span className="chat-input__reply-content">
               {replyingTo.type === "image"
@@ -318,14 +207,6 @@ const ChatInput = ({ onSend, onSendVoice, droppedFiles, onClearDroppedFiles, rep
         {/* Left Action Icons */}
         {!hasImages ? (
           <Flex className="chat-input__left-icons" align="center" gap={2}>
-            <Flex
-              className="chat-input__icon-btn"
-              align="center"
-              justify="center"
-              onClick={startRecording}
-            >
-              <Icon name="MicIcon" size={24} />
-            </Flex>
             <Flex
               className="chat-input__icon-btn"
               align="center"
@@ -385,7 +266,12 @@ const ChatInput = ({ onSend, onSendVoice, droppedFiles, onClearDroppedFiles, rep
             <TextArea
               ref={inputRef as React.Ref<any>}
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={(e) => {
+                setMessage(e.target.value);
+                if (e.target.value.trim().length > 0) {
+                  emitTypingStart();
+                }
+              }}
               onKeyDown={handleKeyDown}
               placeholder="Aa"
               className="chat-input__input"
@@ -428,9 +314,9 @@ const ChatInput = ({ onSend, onSendVoice, droppedFiles, onClearDroppedFiles, rep
             <Icon name="SendBlackIcon" size={22} />
           </Flex>
         ) : (
-          <Flex 
-            className="chat-input__like" 
-            align="center" 
+          <Flex
+            className="chat-input__like"
+            align="center"
             justify="center"
             onClick={() => onSend({ text: quickEmoji, images: [] })}
           >

@@ -61,6 +61,7 @@
     font-size: 12px;
     color: var(--gray-500);
     line-height: 1.4;
+    margin-bottom: 0 !important;
   }
 
   &__time {
@@ -109,9 +110,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 20px;
-    height: 20px;
-    padding: 0 6px;
+    min-width: 10px;
+    height: 10px;
     border-radius: 10px;
     background: linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%);
     color: #fff;

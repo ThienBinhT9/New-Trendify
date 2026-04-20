@@ -3,8 +3,16 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "build": "tsc",
+    "start": "node -r tsconfig-paths/register/js dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon"
+    "dev": "nodemon",
+    "migrate": "npx ts-node -r tsconfig-paths/register src/infrastructure/database/mongoose.migrate.ts",
+    "seed:full": "npx ts-node -r tsconfig-paths/register src/infrastructure/database/seeds/seed-full.ts",
+    "seed:user": "npx ts-node -r tsconfig-paths/register src/infrastructure/database/seeds/insert-user.ts",
+    "seed:follow": "npx ts-node -r tsconfig-paths/register src/infrastructure/database/seeds/insert-follow.ts",
+    "seed:setting": "npx ts-node -r tsconfig-paths/register src/infrastructure/database/seeds/insert-setting.ts",
+    "seed:mock": "npx ts-node -r tsconfig-paths/register src/infrastructure/database/seeds/insert-mock-data.ts"
   },
   "keywords": [],
   "author": "",

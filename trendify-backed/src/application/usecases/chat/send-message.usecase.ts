@@ -71,6 +71,25 @@ export class SendMessageUseCase {
         .map((m) => this.fileStorageService!.getPublicUrl(m.key));
     }
 
+    let replyTo = undefined;
+    if (message.replyToId) {
+      const repliedMsg = await this.messageRepo.findById(message.replyToId);
+      if (repliedMsg) {
+        let replyToSender = undefined;
+        if (repliedMsg.senderId) {
+          // You might need to inject userRepo to SendMessageUseCase if needed, but since it's an optimistic return, providing senderId and content is enough.
+          // Wait, userRepo isn't injected here. We can just return the id and content.
+          replyTo = {
+            id: repliedMsg.id,
+            content: repliedMsg.content,
+            type: repliedMsg.type,
+            senderId: repliedMsg.senderId,
+            mediaIds: repliedMsg.mediaIds,
+          };
+        }
+      }
+    }
+
     return {
       id: message.id,
       conversationId: message.conversationId,
@@ -82,6 +101,10 @@ export class SendMessageUseCase {
       isUnsent: message.isUnsent,
       createdAt: message.createdAt?.toISOString(),
       isMine: true,
+      reactions: message.reactions,
+      replyToId: message.replyToId,
+      replyTo,
+      forwardedFromId: message.forwardedFromId,
       // For socket: emit to each member's room
       _memberIds: conversation.memberIds,
     };

@@ -165,16 +165,19 @@ export async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<
   });
 }
 
-export const formatNumberCount = (count: number): string => {
-  if (count >= 1_000_000) {
-    return (count / 1_000_000).toFixed(count % 1_000_000 === 0 ? 0 : 1) + "M";
+export const formatNumberCount = (count?: number | null): string => {
+  if (count === undefined || count === null || isNaN(count)) return "0";
+  
+  const num = Number(count);
+  if (num >= 1_000_000) {
+    return (num / 1_000_000).toFixed(num % 1_000_000 === 0 ? 0 : 1) + "M";
   }
 
-  if (count >= 1_000) {
-    return (count / 1_000).toFixed(count % 1_000 === 0 ? 0 : 1) + "K";
+  if (num >= 1_000) {
+    return (num / 1_000).toFixed(num % 1_000 === 0 ? 0 : 1) + "K";
   }
 
-  return count.toString();
+  return num.toString();
 };
 
 export function resolveInitialAvatar(name: string, actorId?: string): string {

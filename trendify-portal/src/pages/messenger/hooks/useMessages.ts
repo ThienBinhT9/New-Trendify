@@ -24,6 +24,8 @@ export interface IOptimisticSendParams {
   sendParams: Omit<ISendMessageParams, "conversationId">;
   /** Local blob URLs for media preview while uploading */
   localMediaUrls?: string[];
+  /** Parent message being replied to, to render optimistic quote preview */
+  replyToMessage?: IMessage;
 }
 
 // ============================================================================
@@ -88,6 +90,7 @@ export const useSendMessage = (conversationId: string) => {
         mediaUrls: [], // Not yet resolved
         localMediaUrls: params.localMediaUrls, // Local blob URLs for preview
         replyToId: params.sendParams.replyToId,
+        replyTo: params.replyToMessage,
         reactions: [],
         readBy: [],
         isUnsent: false,
@@ -132,7 +135,12 @@ export const useSendMessage = (conversationId: string) => {
             ...page,
             items: page.items.map((msg) =>
               msg._optimisticId === context?.optimisticId
-                ? { ...realMessage, status: "sent" as const, _optimisticId: undefined }
+                ? { 
+                    ...realMessage, 
+                    status: "sent" as const, 
+                    _optimisticId: undefined,
+                    replyTo: msg.replyTo || realMessage.replyTo // Preserve rich replyTo object if it was locally optimistic
+                  }
                 : msg,
             ),
           }));

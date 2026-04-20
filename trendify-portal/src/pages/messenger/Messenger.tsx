@@ -1,5 +1,6 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { Flex } from "antd";
+import { useLocation } from "react-router-dom";
 
 import ChatSidebar from "./components/chat-sidebar/ChatSidebar";
 import ChatWindow from "./components/chat-window/ChatWindow";
@@ -16,8 +17,20 @@ import { markConversationRead } from "./hooks/useUnreadTracker";
 const Messenger = () => {
   const { user } = useAppSelector((state) => state.auth);
 
+  const location = useLocation();
   const [showInfo, setShowInfo] = useState<boolean>(false);
-  const [activeConversationId, setActiveConversationId] = useState<string>("");
+  const [activeConversationId, setActiveConversationId] = useState<string>(
+    location.state?.activeConversationId || ""
+  );
+
+  // If a new conversation opens from another screen while already in Messenger, update the active ID
+  useEffect(() => {
+    if (location.state?.activeConversationId) {
+      setActiveConversationId(location.state.activeConversationId);
+      // Optional: Clear state to not re-trigger on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state?.activeConversationId]);
 
   // Fetch conversations (shared cache with ChatSidebar — same queryKey)
   const { data: conversationsData } = useConversations();

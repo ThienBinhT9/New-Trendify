@@ -124,9 +124,7 @@ const ConversationItem = ({
             {conversation.lastMessage}
           </Paragraph>
 
-          {conversation.unread > 0 && (
-            <span className="conversation-item__unread">{conversation.unread}</span>
-          )}
+          {conversation.unread > 0 && <span className="conversation-item__unread" />}
         </Flex>
       </Flex>
     </Flex>

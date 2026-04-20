@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef, DragEvent } from "react";
+import { useCallback, useState, useRef, useMemo, DragEvent } from "react";
 import { Flex } from "antd";
 import { useQuery } from "@tanstack/react-query";
 
@@ -51,9 +51,11 @@ const ChatWindow = ({ conversation, showInfo, onToggleInfo }: ChatWindowProps) =
   } = useMessages(conversation.id);
 
   // Flatten pages into a single array (API returns newest first, reverse for chat UI)
-  const messages: IMessage[] = messagesData?.pages
-    ? messagesData.pages.flatMap((page) => page.items).reverse()
-    : [];
+  // useMemo: stabilize array reference — only recompute when pages data actually changes
+  const messages: IMessage[] = useMemo(
+    () => (messagesData?.pages ? messagesData.pages.flatMap((page) => page.items).reverse() : []),
+    [messagesData?.pages],
+  );
 
   // ---- Check block status ----
   const { data: blockStatus } = useQuery({
@@ -144,6 +146,7 @@ const ChatWindow = ({ conversation, showInfo, onToggleInfo }: ChatWindowProps) =
         <ChatHeader conversation={conversation} showInfo={showInfo} onToggleInfo={onToggleInfo} />
         <MessageList
           conversationId={conversation.id}
+          conversationType={conversation.type}
           messages={messages}
           isLoading={isLoading}
           isFetchingMore={isFetchingNextPage}

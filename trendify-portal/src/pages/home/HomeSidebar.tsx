@@ -10,17 +10,38 @@ import SidebarContainer from "../../layouts/components/sidebar/SidebarContainer"
 import BottomNavContainer from "../../layouts/components/sidebar/BottomNavContainer";
 import Avatar from "antd/es/avatar/Avatar";
 import { getAvatarUrl } from "@/utils/common.util";
+import { useUnreadConversations, clearAllUnread } from "@/pages/messenger/hooks/useUnreadTracker";
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 const SidebarHome = () => {
   const { user } = useAppSelector((state) => state.auth);
   const unreadCount = useAppSelector((state) => state.notification.unreadCount);
+  const unreadConversations = useUnreadConversations();
+  const hasUnreadMessages = unreadConversations.size > 0;
   const screens = Grid.useBreakpoint();
   const useBottomNav = !screens.sm;
+  const location = useLocation();
+
+  // Clear messenger badge when user navigates to the message page
+  useEffect(() => {
+    if (location.pathname.startsWith(ROUTE_PATHS.MESSAGE)) {
+      clearAllUnread();
+    }
+  }, [location.pathname]);
 
   const renderActivityIcon = () => {
     return (
       <Badge dot={unreadCount > 0} className="notification-dot">
         <Icon name="HeartAltIcon" size={32} />
+      </Badge>
+    );
+  };
+
+  const renderMessengerIcon = () => {
+    return (
+      <Badge dot={hasUnreadMessages} className="notification-dot">
+        <Icon name="MessengerIcon" size={30} />
       </Badge>
     );
   };
@@ -43,9 +64,10 @@ const SidebarHome = () => {
     },
     {
       key: ROUTE_PATHS.MESSAGE,
-      icon: <Icon name="MessengerIcon" size={30} />,
+      icon: renderMessengerIcon(),
       label: <Text textType="M14">Tin nhắn</Text>,
     },
+
     {
       key: ROUTE_PATHS.PROFILE(user?.id),
       icon: <Avatar src={getAvatarUrl(user?.profilePicture)} />,
@@ -71,7 +93,7 @@ const SidebarHome = () => {
     },
     {
       key: ROUTE_PATHS.MESSAGE,
-      icon: <Icon name="MessengerIcon" size={30} />,
+      icon: renderMessengerIcon(),
       label: <Text textType="M14">Tin nhắn</Text>,
     },
     {

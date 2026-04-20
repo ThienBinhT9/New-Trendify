@@ -5,13 +5,18 @@ import ROUTE_PATHS from "@/routes/path.route";
 import { useAppSelector } from "@/stores";
 import { LogoIcon } from "@/assets/images";
 import useFaviconBadge from "@/hooks/useFaviconBadge";
+import { useGlobalChatSocket } from "@/hooks/useGlobalChatSocket";
 
 import SplashScreen from "../splash/Splash";
 
 const Private = () => {
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
 
   useFaviconBadge();
+
+  // Global chat socket: active on ALL private routes.
+  // Handles sound + badge + tab‑title when a message arrives outside Messenger.
+  useGlobalChatSocket(user?.id ?? "");
 
   const navigate = useNavigate();
 

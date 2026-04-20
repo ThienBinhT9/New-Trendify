@@ -213,7 +213,22 @@ class ChatController {
       emoji,
     });
 
-    const successResponse = new SuccessResponse({ data: result });
+    const { memberIds, ...reactionData } = result;
+
+    try {
+      const io = getIO();
+      for (const memberId of memberIds || []) {
+        if (memberId === userId) continue;
+        io.to(`user:${memberId}`).emit("chat:reaction", {
+          conversationId,
+          reaction: reactionData,
+        });
+      }
+    } catch {
+      // Ignored
+    }
+
+    const successResponse = new SuccessResponse({ data: reactionData });
     return response.status(200).json(successResponse);
   };
 

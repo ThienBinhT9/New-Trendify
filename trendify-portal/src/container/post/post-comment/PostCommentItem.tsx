@@ -56,14 +56,16 @@ const PostCommentItem = (props: PostCommentItemProps) => {
   const [isLocallyDeleted, setIsLocallyDeleted] = useState<boolean>(false);
 
   const commentContent = useMemo(() => {
+    const mentions = comment.mentions || [];
+    const hashtags = comment.hashtags || [];
     const ranges = [
-      ...comment.mentions.map((mention) => ({
+      ...mentions.map((mention) => ({
         userId: mention.userId,
         startIndex: mention.startIndex,
         endIndex: mention.endIndex,
         type: "mention" as const,
       })),
-      ...comment.hashtags.map((hashtag) => ({
+      ...hashtags.map((hashtag) => ({
         tag: hashtag.tag,
         startIndex: hashtag.startIndex,
         endIndex: hashtag.endIndex,

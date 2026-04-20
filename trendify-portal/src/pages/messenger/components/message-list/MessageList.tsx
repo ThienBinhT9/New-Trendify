@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback, useMemo, memo, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import React from "react";
 import { Flex, message as antdMessage } from "antd";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { useQueryClient } from "@tanstack/react-query";
@@ -6,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import MessageBubble from "../message-bubble/MessageBubble";
 import type { BubblePosition } from "../message-bubble/MessageBubble";
 import ChatInput from "../chat-input/ChatInput";
+import TypingIndicator from "./TypingIndicator";
 import type { IMessage } from "@/stores/chat/constants";
 import type { IDroppedFile } from "../chat-window/ChatWindow";
 import { useSendMessage, removeOptimisticMessage } from "../../hooks/useMessages";
@@ -13,12 +15,15 @@ import { useChatMediaUpload } from "../../hooks/useChatMediaUpload";
 import { useToggleReaction } from "../../hooks/useReaction";
 import { EMessageType } from "@/stores/chat/constants";
 import { sendMessage } from "@/stores/chat/api";
+import { useAppSelector } from "@/stores";
+import { getSocket } from "@/services/socket";
 
 import "./MessageList.scss";
 import { LoaderSpin } from "@/components/loader";
 
 interface MessageListProps {
   conversationId: string;
+  conversationType?: "direct" | "group";
   messages: IMessage[];
   isLoading: boolean;
   isFetchingMore: boolean;
@@ -42,9 +47,15 @@ const computePosition = (
   timeDiffPrev: number | null,
 ): BubblePosition => {
   const isGroupedWithPrev =
-    prev !== undefined && prev.senderId === curr.senderId && timeDiffPrev !== null && timeDiffPrev < 180000;
+    prev !== undefined &&
+    prev.senderId === curr.senderId &&
+    timeDiffPrev !== null &&
+    timeDiffPrev < 180000;
   const isGroupedWithNext =
-    next !== undefined && next.senderId === curr.senderId && timeDiffNext !== null && timeDiffNext < 180000;
+    next !== undefined &&
+    next.senderId === curr.senderId &&
+    timeDiffNext !== null &&
+    timeDiffNext < 180000;
 
   if (isGroupedWithPrev && isGroupedWithNext) return "middle";
   if (isGroupedWithPrev && !isGroupedWithNext) return "last";
@@ -62,18 +73,12 @@ const getTimestamp = (msg: IMessage): number => new Date(msg.createdAt).getTime(
 
 // ============================================================================
 // Stable Virtuoso sub-components
+// Defined OUTSIDE component scope so they never get recreated across renders.
+// Using refs internally so they can read the latest values without causing
+// Virtuoso to perceive a new component type (which would cause a full remount).
 // ============================================================================
 
 const VirtuosoFooter = () => null;
-
-const VirtuosoHeader = memo(({ isFetchingMore }: { isFetchingMore: boolean }) =>
-  isFetchingMore ? (
-    <Flex justify="center" className="message-list__loader-header">
-      <LoaderSpin size={24} />
-    </Flex>
-  ) : null,
-);
-VirtuosoHeader.displayName = "VirtuosoHeader";
 
 // ============================================================================
 // COMPONENT
@@ -81,6 +86,7 @@ VirtuosoHeader.displayName = "VirtuosoHeader";
 
 const MessageList = ({
   conversationId,
+  conversationType = "direct",
   messages,
   isLoading,
   isFetchingMore,
@@ -96,29 +102,114 @@ const MessageList = ({
   const isAtBottomRef = useRef(true);
   const queryClient = useQueryClient();
 
+  // Current user — stored in a ref so it's accessible from stable `renderItem` callback
+  const currentUserId = useAppSelector((state) => state.auth.user?.id ?? "");
+  const currentUserIdRef = useRef(currentUserId);
+  useEffect(() => {
+    currentUserIdRef.current = currentUserId;
+  }, [currentUserId]);
+
+  // conversationType in a ref so stable renderItem can access it
+  const conversationTypeRef = useRef(conversationType);
+  useEffect(() => {
+    conversationTypeRef.current = conversationType;
+  }, [conversationType]);
+
+  const allConversationUsers = useAppSelector((state) => {
+    const typingIds = state.chat.typingUsers[conversationId] ?? [];
+    return typingIds;
+  });
+
+  // Typing indicator: resolve IChatUser objects for typing userIds
+  // Messages already contain sender info; scan recent messages to find displayName
+  const typingUsers = React.useMemo(() => {
+    const typingIds = allConversationUsers;
+    if (typingIds.length === 0) return [];
+
+    // Build a lookup from recent messages
+    const userMap: Record<
+      string,
+      { id: string; displayName: string; username: string; isVerified: boolean }
+    > = {};
+    for (const msg of messages) {
+      if (msg.sender && !userMap[msg.senderId]) {
+        userMap[msg.senderId] = {
+          id: msg.senderId,
+          displayName: msg.sender.displayName,
+          username: msg.sender.username,
+          isVerified: msg.sender.isVerified,
+        };
+      }
+    }
+
+    return typingIds.map(
+      (id: string) => userMap[id] ?? { id, displayName: "...", username: "", isVerified: false },
+    );
+  }, [allConversationUsers, messages]);
+
   // ---- Send message mutation ----
   const sendMessageMutation = useSendMessage(conversationId);
 
   // ---- Media upload ----
-  const { uploadMultipleFiles, uploadVoice } = useChatMediaUpload();
+  const { uploadMultipleFiles } = useChatMediaUpload();
+
+  // ============================================================================
+  // Keep mutable refs in‑sync so stable callbacks can read latest values
+  // without being in the dependency array (avoids re-creating Virtuoso items).
+  // ============================================================================
+
+  /** Always points at the current messages array — zero-copy. */
+  const messagesRef = useRef<IMessage[]>(messages);
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  /** Ref so VirtuosoHeader can read without causing components obj to change. */
+  const isFetchingMoreRef = useRef(isFetchingMore);
+  useEffect(() => {
+    isFetchingMoreRef.current = isFetchingMore;
+  }, [isFetchingMore]);
+
+  const hasMoreMessagesRef = useRef(hasMoreMessages);
+  useEffect(() => {
+    hasMoreMessagesRef.current = hasMoreMessages;
+  }, [hasMoreMessages]);
+
+  const onLoadMoreRef = useRef(onLoadMore);
+  useEffect(() => {
+    onLoadMoreRef.current = onLoadMore;
+  }, [onLoadMore]);
 
   // ---- Virtuoso prepend support ----
   const [firstItemIndex, setFirstItemIndex] = useState(10000);
   const firstItemRef = useRef<IMessage | null>(null);
+  const firstItemIndexRef = useRef(10000);
+
+  // Track whether we've done the initial scroll for this conversation
+  const hasScrolledInitialRef = useRef(false);
 
   useEffect(() => {
     if (messages.length === 0) return;
-    const currentFirstItem = messages[0];
 
-    // If first item changed but we have an old first item, check if we prepended messages
+    // First time messages arrive: scroll to bottom without animation (instant jump)
+    if (!hasScrolledInitialRef.current) {
+      hasScrolledInitialRef.current = true;
+      requestAnimationFrame(() => {
+        virtuosoRef.current?.scrollToIndex({ index: messages.length - 1, behavior: "auto" });
+      });
+      firstItemRef.current = messages[0];
+      return;
+    }
+
+    const currentFirstItem = messages[0];
     if (firstItemRef.current && firstItemRef.current.id !== currentFirstItem.id) {
       const oldFirstIndex = messages.findIndex((m) => m.id === firstItemRef.current?.id);
       if (oldFirstIndex > 0) {
-        // We prepended `oldFirstIndex` items -> Shift index back so items keep same DOM index
-        setFirstItemIndex((prev) => prev - oldFirstIndex);
+        const next = firstItemIndexRef.current - oldFirstIndex;
+        firstItemIndexRef.current = next;
+        setFirstItemIndex(next);
       }
     }
-
     firstItemRef.current = currentFirstItem;
   }, [messages]);
 
@@ -127,12 +218,13 @@ const MessageList = ({
     isAtBottomRef.current = atBottom;
   }, []);
 
-  // ---- followOutput as callback — only auto-scroll when user is at bottom ----
+  // ---- followOutput: return 'smooth' so new messages scroll in naturally ----
   const handleFollowOutput = useCallback(() => {
-    return isAtBottomRef.current ? "auto" : false;
+    return isAtBottomRef.current ? "smooth" : false;
   }, []);
 
   // ---- Scroll to bottom ----
+  // Only used as a final fallback – primary scrolling is via Virtuoso's followOutput.
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
       virtuosoRef.current?.scrollToIndex({ index: "LAST", behavior: "smooth" });
@@ -141,163 +233,116 @@ const MessageList = ({
 
   // ---- Handle send (optimistic) ----
   const handleSend = useCallback(
-    async (payload: { text: string; images: { id: string; file: File; url: string }[]; replyTo?: any }) => {
+    async (payload: {
+      text: string;
+      images: { id: string; file: File; url: string }[];
+      replyTo?: any;
+    }) => {
       const text = payload.text.trim();
       if (!text && payload.images.length === 0) return;
 
       const replyToId = payload.replyTo?.id;
 
-      // --- Text-only message: use mutation's built-in optimistic via onMutate ---
-      if (text && payload.images.length === 0) {
+      // Helper to patch cache
+      type MsgPage = { items: IMessage[]; cursor: string | null; hasNext: boolean };
+      const patchCache = (updater: (old: { pages: MsgPage[]; pageParams: unknown[] }) => { pages: MsgPage[]; pageParams: unknown[] }) => {
+        queryClient.setQueryData<{ pages: MsgPage[]; pageParams: unknown[] }>(
+          ["messages", conversationId],
+          (old) => (old ? updater(old) : old),
+        );
+      };
+
+      // === TEXT-ONLY ===
+      if (!payload.images.length) {
+        // Set true so Virtuoso's followOutput fires and scrolls smoothly
+        isAtBottomRef.current = true;
         sendMessageMutation.mutate(
-          {
-            sendParams: { type: EMessageType.TEXT, content: text, replyToId },
-          },
-          { onSettled: () => scrollToBottom() },
+          { sendParams: { type: EMessageType.TEXT, content: text, replyToId }, replyToMessage: replyingTo || undefined },
         );
         setReplyingTo(null);
-        scrollToBottom();
         return;
       }
 
-      // --- Media messages: manually insert optimistic, then upload + send ---
-      if (payload.images.length > 0) {
-        const localMediaUrls = payload.images.map((img) => img.url);
-        const firstFile = payload.images[0].file;
-        const isVideo = firstFile.type.startsWith("video/");
-        const messageType = isVideo ? EMessageType.VIDEO : EMessageType.IMAGE;
+      // === IMAGE / VIDEO (± text) ===
+      // Step 1: Insert optimistic image bubble IMMEDIATELY
+      const firstFile = payload.images[0].file;
+      const isVideo = firstFile.type.startsWith("video/");
+      const messageType = isVideo ? EMessageType.VIDEO : EMessageType.IMAGE;
+      const localMediaUrls = payload.images.map((img) => img.url);
 
-        // 1. IMMEDIATELY insert optimistic message with local blob URLs
-        const optimisticId = `optimistic-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        const optimisticMessage: IMessage = {
-          id: optimisticId,
-          _optimisticId: optimisticId,
-          conversationId,
-          senderId: "",
-          type: messageType,
-          content: text || undefined,
-          mediaIds: [],
-          mediaUrls: [],
-          localMediaUrls,
-          replyToId,
-          reactions: [],
-          readBy: [],
-          isUnsent: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          isMine: true,
-          status: "sending",
-        };
+      const mediaOptId = `optimistic-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const mediaOptimistic: IMessage = {
+        id: mediaOptId,
+        _optimisticId: mediaOptId,
+        conversationId,
+        senderId: "",
+        type: messageType,
+        content: undefined,
+        mediaIds: [],
+        mediaUrls: [],
+        localMediaUrls,
+        replyToId,
+        replyTo: replyingTo || undefined,
+        reactions: [],
+        readBy: [],
+        isUnsent: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isMine: true,
+        status: "sending",
+      };
 
-        queryClient.setQueryData<{ pages: { items: IMessage[]; cursor: string | null; hasNext: boolean }[]; pageParams: unknown[] }>(
-          ["messages", conversationId],
-          (old) => {
-            if (!old) return old;
-            const updatedPages = [...old.pages];
-            updatedPages[0] = {
-              ...updatedPages[0],
-              items: [optimisticMessage, ...updatedPages[0].items],
-            };
-            return { ...old, pages: updatedPages };
-          },
-        );
+      // Set true so followOutput fires when Virtuoso sees the new item
+      isAtBottomRef.current = true;
+      patchCache((old) => {
+        const pages = [...old.pages];
+        pages[0] = { ...pages[0], items: [mediaOptimistic, ...pages[0].items] };
+        return { ...old, pages };
+      });
 
-        setReplyingTo(null);
-        scrollToBottom();
+      setReplyingTo(null);
+      // No manual scrollToBottom here — followOutput handles it smoothly
 
-        // 2. Upload media in background
+      // Step 2: Fire BOTH operations simultaneously — don't chain them
+      // 2a. Upload + send image (background)
+      const uploadAndSendMedia = async () => {
         try {
-          const filesToUpload = payload.images.map((img) => ({
-            localId: img.id,
-            file: img.file,
-            localUrl: img.url,
-          }));
-
+          const filesToUpload = payload.images.map((img) => ({ localId: img.id, file: img.file, localUrl: img.url }));
           const uploadResults = await uploadMultipleFiles(filesToUpload);
 
           if (uploadResults.length === 0) {
-            // Mark as failed
-            queryClient.setQueryData<{ pages: { items: IMessage[]; cursor: string | null; hasNext: boolean }[]; pageParams: unknown[] }>(
-              ["messages", conversationId],
-              (old) => {
-                if (!old) return old;
-                return {
-                  ...old,
-                  pages: old.pages.map((page) => ({
-                    ...page,
-                    items: page.items.map((msg) =>
-                      msg._optimisticId === optimisticId
-                        ? { ...msg, status: "failed" as const }
-                        : msg,
-                    ),
-                  })),
-                };
-              },
-            );
+            patchCache((old) => ({ ...old, pages: old.pages.map((page) => ({ ...page, items: page.items.map((msg) => msg._optimisticId === mediaOptId ? { ...msg, status: "failed" as const } : msg) })) }));
             antdMessage.error("Không thể tải lên file. Vui lòng thử lại.");
             return;
           }
 
           const mediaIds = uploadResults.map((r) => r.mediaId);
-
-          // 3. Call API to send the message
-          const response = await sendMessage({
-            conversationId,
-            type: messageType,
-            content: text || undefined,
-            mediaIds,
-            replyToId,
-          });
-
+          const response = await sendMessage({ conversationId, type: messageType, content: undefined, mediaIds, replyToId });
           const realMessage = response.data.data;
 
-          // 4. Replace optimistic with real message
-          queryClient.setQueryData<{ pages: { items: IMessage[]; cursor: string | null; hasNext: boolean }[]; pageParams: unknown[] }>(
-            ["messages", conversationId],
-            (old) => {
-              if (!old) return old;
-              return {
-                ...old,
-                pages: old.pages.map((page) => ({
-                  ...page,
-                  items: page.items.map((msg) =>
-                    msg._optimisticId === optimisticId
-                      ? { ...realMessage, status: "sent" as const, _optimisticId: undefined }
-                      : msg,
-                  ),
-                })),
-              };
-            },
-          );
+          patchCache((old) => ({ ...old, pages: old.pages.map((page) => ({ ...page, items: page.items.map((msg) => msg._optimisticId === mediaOptId ? { ...realMessage, status: "sent" as const, _optimisticId: undefined } : msg) })) }));
           queryClient.invalidateQueries({ queryKey: ["conversations"] });
           scrollToBottom();
         } catch {
-          // Mark as failed
-          queryClient.setQueryData<{ pages: { items: IMessage[]; cursor: string | null; hasNext: boolean }[]; pageParams: unknown[] }>(
-            ["messages", conversationId],
-            (old) => {
-              if (!old) return old;
-              return {
-                ...old,
-                pages: old.pages.map((page) => ({
-                  ...page,
-                  items: page.items.map((msg) =>
-                    msg._optimisticId === optimisticId
-                      ? { ...msg, status: "failed" as const }
-                      : msg,
-                  ),
-                })),
-              };
-            },
-          );
+          patchCache((old) => ({ ...old, pages: old.pages.map((page) => ({ ...page, items: page.items.map((msg) => msg._optimisticId === mediaOptId ? { ...msg, status: "failed" as const } : msg) })) }));
           antdMessage.error("Lỗi khi tải lên media. Vui lòng thử lại.");
         }
-        return;
-      }
+      };
 
-      setReplyingTo(null);
+      // 2b. Send text immediately (no waiting for upload)
+      const sendTextIfNeeded = () => {
+        if (!text) return;
+        sendMessageMutation.mutate(
+          { sendParams: { type: EMessageType.TEXT, content: text, replyToId: undefined }, replyToMessage: undefined },
+          { onSettled: () => scrollToBottom() },
+        );
+      };
+
+      // Fire both at the same time
+      uploadAndSendMedia();
+      sendTextIfNeeded();
     },
-    [sendMessageMutation, scrollToBottom, uploadMultipleFiles, queryClient, conversationId],
+    [sendMessageMutation, scrollToBottom, uploadMultipleFiles, queryClient, conversationId, replyingTo],
   );
 
   // ---- Reply ----
@@ -323,9 +368,7 @@ const MessageList = ({
   const handleRetry = useCallback(
     (message: IMessage) => {
       if (!message._optimisticId) return;
-      // Remove the failed message
       removeOptimisticMessage(queryClient, conversationId, message._optimisticId);
-      // Re-send
       sendMessageMutation.mutate(
         {
           sendParams: {
@@ -351,54 +394,77 @@ const MessageList = ({
     [queryClient, conversationId],
   );
 
-  // ---- Voice message ----
-  const handleSendVoice = useCallback(
-    async (blob: Blob) => {
-      try {
-        const uploadResult = await uploadVoice(blob);
-        if (!uploadResult) {
-          antdMessage.error("Không thể tải lên tin nhắn thoại.");
-          return;
-        }
-
-        sendMessageMutation.mutate(
-          {
-            sendParams: {
-              type: EMessageType.VOICE,
-              mediaIds: [uploadResult.mediaId],
-            },
-          },
-          { onSettled: () => scrollToBottom() },
-        );
-      } catch {
-        antdMessage.error("Lỗi khi gửi tin nhắn thoại.");
-      }
-    },
-    [uploadVoice, sendMessageMutation, scrollToBottom],
-  );
-
   // ---- Load more (startReached) ----
   const handleStartReached = useCallback(() => {
-    if (!isFetchingMore && hasMoreMessages) {
-      onLoadMore();
+    if (!isFetchingMoreRef.current && hasMoreMessagesRef.current) {
+      onLoadMoreRef.current();
     }
-  }, [isFetchingMore, hasMoreMessages, onLoadMore]);
+  }, []); // stable — reads via refs
 
-  // ---- Stable Virtuoso components ----
-  const virtuosoComponents = useMemo(
-    () => ({
-      Header: () => <VirtuosoHeader isFetchingMore={isFetchingMore} />,
+  // ---- Typing: emit socket events when user starts/stops typing ----
+  const handleTypingStart = useCallback(() => {
+    const socket = getSocket();
+    socket.emit("chat:typing", { conversationId });
+  }, [conversationId]);
+
+  const handleTypingStop = useCallback(() => {
+    const socket = getSocket();
+    socket.emit("chat:stop-typing", { conversationId });
+  }, [conversationId]);
+
+  // ---- Stable action refs for renderItem ----
+  // By keeping these as refs we avoid adding them to renderItem's dep array,
+  // which would otherwise cause every item to re-render on any state change.
+  const handleReplyRef = useRef(handleReply);
+  const handleReactRef = useRef(handleReact);
+  const handleRetryRef = useRef(handleRetry);
+  const handleCancelFailedRef = useRef(handleCancelFailed);
+  useEffect(() => {
+    handleReplyRef.current = handleReply;
+  }, [handleReply]);
+  useEffect(() => {
+    handleReactRef.current = handleReact;
+  }, [handleReact]);
+  useEffect(() => {
+    handleRetryRef.current = handleRetry;
+  }, [handleRetry]);
+  useEffect(() => {
+    handleCancelFailedRef.current = handleCancelFailed;
+  }, [handleCancelFailed]);
+
+  // ---- Stable Virtuoso components — created ONCE via useRef ----
+  // The Header component is a closure bound to `isFetchingMoreRef` at mount time.
+  // Because it reads the ref (not a prop), it always shows the latest value
+  // without the `components` object ever changing reference — Virtuoso never
+  // perceives a new component type and therefore never unmounts/remounts the Header.
+  const virtuosoComponentsRef = useRef<{
+    Header: React.FC;
+    Footer: React.FC;
+  } | null>(null);
+  if (!virtuosoComponentsRef.current) {
+    const HeaderComponent = () =>
+      isFetchingMoreRef.current ? (
+        <Flex justify="center" className="message-list__loader-header">
+          <LoaderSpin size={24} />
+        </Flex>
+      ) : null;
+    HeaderComponent.displayName = "VirtuosoHeader";
+    virtuosoComponentsRef.current = {
+      Header: HeaderComponent,
       Footer: VirtuosoFooter,
-    }),
-    [isFetchingMore],
-  );
+    };
+  }
+  const virtuosoComponents = virtuosoComponentsRef.current;
 
   // ---- Item content renderer ----
+  // Only depends on firstItemIndex and messagesRef (via ref).
+  // Stable action handlers are read via refs — no re-render cascade.
   const renderItem = useCallback(
     (index: number, message: IMessage) => {
-      const arrayIndex = index - firstItemIndex;
-      const prevMessage = messages[arrayIndex - 1] as IMessage | undefined;
-      const nextMessage = messages[arrayIndex + 1] as IMessage | undefined;
+      const msgs = messagesRef.current;
+      const arrayIndex = index - firstItemIndexRef.current;
+      const prevMessage = msgs[arrayIndex - 1] as IMessage | undefined;
+      const nextMessage = msgs[arrayIndex + 1] as IMessage | undefined;
 
       const currTs = getTimestamp(message);
       const nextTs = nextMessage ? getTimestamp(nextMessage) : null;
@@ -408,12 +474,19 @@ const MessageList = ({
       const timeDiffPrev = prevTs !== null ? currTs - prevTs : null;
 
       const showTimeSeparator = timeDiffNext !== null && timeDiffNext >= 180000;
-      const timeSeparatorLabel = showTimeSeparator && nextMessage ? formatHHmm(nextMessage.createdAt) : "";
+      const timeSeparatorLabel =
+        showTimeSeparator && nextMessage ? formatHHmm(nextMessage.createdAt) : "";
 
-      const isLastMessage = arrayIndex === messages.length - 1;
+      const isLastMessage = arrayIndex === msgs.length - 1;
       const showRelativeTime = isLastMessage && !!message.isMine;
 
-      const position = computePosition(prevMessage, message, nextMessage, timeDiffNext, timeDiffPrev);
+      const position = computePosition(
+        prevMessage,
+        message,
+        nextMessage,
+        timeDiffNext,
+        timeDiffPrev,
+      );
 
       const isGroupedWithNext =
         nextMessage &&
@@ -421,16 +494,27 @@ const MessageList = ({
         timeDiffNext !== null &&
         timeDiffNext < 180000;
 
+      const isGroupConversation = conversationTypeRef.current === "group";
+      const isOtherInGroup = isGroupConversation && !message.isMine;
+      // Avatar: show beside the LAST (or single) bubble of a sender run
+      const showAvatar = isOtherInGroup && (position === "single" || position === "last");
+      // Name: show above the FIRST (or single) bubble of a sender run
+      const showSenderName = isOtherInGroup && (position === "single" || position === "first");
+
       return (
         <div style={{ paddingBottom: showTimeSeparator ? 0 : isGroupedWithNext ? 2 : 6 }}>
           <MessageBubble
             message={message}
+            currentUserId={currentUserIdRef.current}
             showRelativeTime={showRelativeTime}
             position={position}
-            onReply={handleReply}
-            onReact={handleReact}
-            onRetry={handleRetry}
-            onCancel={handleCancelFailed}
+            isGroupConversation={isGroupConversation}
+            showAvatar={showAvatar}
+            showSenderName={showSenderName}
+            onReply={handleReplyRef.current}
+            onReact={handleReactRef.current}
+            onRetry={handleRetryRef.current}
+            onCancel={handleCancelFailedRef.current}
           />
           {showTimeSeparator && (
             <div className="message-list__time-separator">
@@ -440,7 +524,7 @@ const MessageList = ({
         </div>
       );
     },
-    [firstItemIndex, messages, handleReply, handleReact, handleRetry, handleCancelFailed],
+    [], // stable — reads live data via refs; no dep causes unnecessary item re-renders
   );
 
   // ---- Loading skeleton ----
@@ -475,7 +559,7 @@ const MessageList = ({
         className="message-list__virtuoso"
         data={messages}
         firstItemIndex={firstItemIndex}
-        initialTopMostItemIndex={messages.length - 1}
+        initialTopMostItemIndex={messages.length > 0 ? messages.length - 1 : 0}
         startReached={handleStartReached}
         alignToBottom
         followOutput={handleFollowOutput}
@@ -504,15 +588,19 @@ const MessageList = ({
           </span>
         </Flex>
       ) : (
-        <ChatInput
-          onSend={handleSend}
-          onSendVoice={handleSendVoice}
-          droppedFiles={droppedFiles}
-          onClearDroppedFiles={onClearDroppedFiles}
-          replyingTo={replyingTo}
-          onCancelReply={handleCancelReply}
-          quickEmoji={quickEmoji}
-        />
+        <>
+          <TypingIndicator typingUsers={typingUsers} />
+          <ChatInput
+            onSend={handleSend}
+            onTyping={handleTypingStart}
+            onStopTyping={handleTypingStop}
+            droppedFiles={droppedFiles}
+            onClearDroppedFiles={onClearDroppedFiles}
+            replyingTo={replyingTo}
+            onCancelReply={handleCancelReply}
+            quickEmoji={quickEmoji}
+          />
+        </>
       )}
     </Flex>
   );

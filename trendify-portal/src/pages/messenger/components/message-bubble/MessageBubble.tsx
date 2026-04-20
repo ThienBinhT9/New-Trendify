@@ -1,6 +1,7 @@
 import { memo, useState } from "react";
-import { Flex, Dropdown, MenuProps, Tooltip, Popover, Image } from "antd";
+import { Avatar, Flex, Popover, Image } from "antd";
 import type { IMessage, IMessageReaction } from "@/stores/chat/constants";
+import { getAvatarUrl } from "@/utils/common.util";
 
 import "./MessageBubble.scss";
 
@@ -9,21 +10,19 @@ export type BubblePosition = "single" | "first" | "middle" | "last";
 
 interface MessageBubbleProps {
   message: IMessage;
+  currentUserId?: string;
   showRelativeTime?: boolean;
   position?: BubblePosition;
+  isGroupConversation?: boolean;
+  /** Show avatar beside this bubble (last/single in a run) */
+  showAvatar?: boolean;
+  /** Show sender name above this bubble (first/single in a run) */
+  showSenderName?: boolean;
   onReply?: (message: IMessage) => void;
   onReact?: (messageId: string, emoji: string) => void;
   onRetry?: (message: IMessage) => void;
   onCancel?: (message: IMessage) => void;
 }
-
-const actionItems: MenuProps["items"] = [
-  { key: "reply", label: "Trả lời" },
-  { key: "forward", label: "Chuyển tiếp" },
-  { key: "copy", label: "Sao chép" },
-  { type: "divider" },
-  { key: "delete", label: "Xóa", danger: true },
-];
 
 const formatRelativeTime = (createdAt: string): string => {
   const diff = Date.now() - new Date(createdAt).getTime();
@@ -35,12 +34,6 @@ const formatRelativeTime = (createdAt: string): string => {
   if (hours < 24) return `Đã gửi ${hours} giờ trước`;
   const days = Math.floor(hours / 24);
   return `Đã gửi ${days} ngày trước`;
-};
-
-const formatTooltipTime = (createdAt: string): string => {
-  const d = new Date(createdAt);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getHours())}:${pad(d.getMinutes())} - ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 };
 
 // Quick reactions
@@ -63,7 +56,11 @@ const StatusIndicator = memo(
 
     if (status === "sending") {
       return (
-        <Flex className="message-bubble__status message-bubble__status--sending" align="center" gap={4}>
+        <Flex
+          className="message-bubble__status message-bubble__status--sending"
+          align="center"
+          gap={4}
+        >
           <span className="message-bubble__status-spinner" />
           <span className="message-bubble__status-text">Đang gửi</span>
         </Flex>
@@ -72,7 +69,11 @@ const StatusIndicator = memo(
 
     if (status === "failed") {
       return (
-        <Flex className="message-bubble__status message-bubble__status--failed" align="center" gap={6}>
+        <Flex
+          className="message-bubble__status message-bubble__status--failed"
+          align="center"
+          gap={6}
+        >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
           </svg>
@@ -111,24 +112,6 @@ const ActionButtons = memo(
     return (
       <div className="message-bubble__actions">
         <Flex gap={4}>
-          <Dropdown
-            menu={{ items: actionItems }}
-            trigger={["click"]}
-            placement={isMine ? "bottomRight" : "bottomLeft"}
-          >
-            <Flex
-              className="message-bubble__actions-btn"
-              align="center"
-              justify="center"
-              title="Xem thêm"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="5" cy="12" r="2" />
-                <circle cx="12" cy="12" r="2" />
-                <circle cx="19" cy="12" r="2" />
-              </svg>
-            </Flex>
-          </Dropdown>
           <Flex
             className="message-bubble__actions-btn"
             align="center"
@@ -197,57 +180,87 @@ ActionButtons.displayName = "ActionButtons";
 // ============================================================================
 // Quoted reply block (shown above the main message content)
 // ============================================================================
-const QuotedReply = memo(({ replyTo, isMine }: { replyTo?: IMessage; isMine: boolean }) => {
-  if (!replyTo) return null;
+const QuotedReply = memo(
+  ({
+    replyTo,
+    isMine,
+    currentUserId,
+  }: {
+    replyTo?: IMessage;
+    isMine: boolean;
+    currentUserId?: string;
+  }) => {
+    if (!replyTo) return null;
 
-  const senderName = replyTo.sender?.displayName ?? replyTo.senderId;
-  let contentPreview = replyTo.content ?? "";
-  if (replyTo.type === "image") contentPreview = "📷 Ảnh";
-  if (replyTo.type === "voice") contentPreview = "🎤 Tin nhắn thoại";
-  if (replyTo.type === "video") contentPreview = "🎬 Video";
+    let contentPreview = replyTo.content ?? "";
+    if (replyTo.type === "image") contentPreview = "📷 Ảnh";
+    if (replyTo.type === "voice") contentPreview = "🎤 Tin nhắn thoại";
+    if (replyTo.type === "video") contentPreview = "🎬 Video";
 
-  return (
-    <Flex
-      className={`message-bubble__quoted ${isMine ? "message-bubble__quoted--mine" : "message-bubble__quoted--other"}`}
-      vertical
-      gap={2}
-    >
-      <span className="message-bubble__quoted-label">↩ Trả lời {senderName}</span>
-      <span className="message-bubble__quoted-content">{contentPreview}</span>
-    </Flex>
-  );
-});
+    // replyTo.isMine is set by the API mapper. As fallback, compare senderId.
+    const replyToIsMe =
+      replyTo.isMine === true || (currentUserId ? replyTo.senderId === currentUserId : false);
+    const targetName = replyToIsMe ? "bạn" : (replyTo.sender?.displayName ?? replyTo.senderId);
+    const labelText = isMine ? `Bạn đã trả lời ${targetName}` : `Đã trả lời ${targetName}`;
+
+    return (
+      <Flex
+        className={`message-bubble__quoted-container ${isMine ? "message-bubble__quoted-container--mine" : "message-bubble__quoted-container--other"}`}
+        vertical
+        gap={4}
+      >
+        <Flex className="message-bubble__quoted-header" gap={6} align="center">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M10 9V5L3 12L10 19V14.9C15 14.9 18.5 16.5 21 20C20 15 17 10 10 9Z" />
+          </svg>
+          <span className="message-bubble__quoted-label">{labelText}</span>
+        </Flex>
+        <div
+          className={`message-bubble__quoted-bubble ${isMine ? "message-bubble__quoted-bubble--mine" : "message-bubble__quoted-bubble--other"}`}
+        >
+          <span className="message-bubble__quoted-content">{contentPreview}</span>
+        </div>
+      </Flex>
+    );
+  },
+);
 QuotedReply.displayName = "QuotedReply";
 
 // ============================================================================
 // Reactions display (shown below the message content)
 // ============================================================================
-const ReactionsBar = memo(({ reactions }: { reactions?: IMessageReaction[] }) => {
-  if (!reactions || reactions.length === 0) return null;
+const ReactionsBar = memo(
+  ({ reactions, isMine }: { reactions?: IMessageReaction[]; isMine?: boolean }) => {
+    if (!reactions || reactions.length === 0) return null;
 
-  // Group reactions by emoji
-  const grouped = reactions.reduce(
-    (acc, r) => {
-      if (!acc[r.emoji]) acc[r.emoji] = [];
-      acc[r.emoji].push(r.userId);
-      return acc;
-    },
-    {} as Record<string, string[]>,
-  );
+    // Group reactions by emoji
+    const grouped = reactions.reduce(
+      (acc, r) => {
+        if (!acc[r.emoji]) acc[r.emoji] = [];
+        acc[r.emoji].push(r.userId);
+        return acc;
+      },
+      {} as Record<string, string[]>,
+    );
 
-  return (
-    <Flex className="message-bubble__reactions" gap={4} wrap="wrap">
-      {Object.entries(grouped).map(([emoji, userIds]) => (
-        <span key={emoji} className="message-bubble__reactions-chip">
-          {emoji}{" "}
-          {userIds.length > 1 && (
-            <span className="message-bubble__reactions-count">{userIds.length}</span>
-          )}
-        </span>
-      ))}
-    </Flex>
-  );
-});
+    return (
+      <Flex
+        className={`message-bubble__reactions ${isMine ? "message-bubble__reactions--mine" : "message-bubble__reactions--other"}`}
+        gap={4}
+        wrap="wrap"
+      >
+        {Object.entries(grouped).map(([emoji, userIds]) => (
+          <span key={emoji} className="message-bubble__reactions-chip">
+            {emoji}{" "}
+            {userIds.length > 1 && (
+              <span className="message-bubble__reactions-count">{userIds.length}</span>
+            )}
+          </span>
+        ))}
+      </Flex>
+    );
+  },
+);
 ReactionsBar.displayName = "ReactionsBar";
 
 // ============================================================================
@@ -256,24 +269,41 @@ ReactionsBar.displayName = "ReactionsBar";
 const MessageBubble = memo(
   ({
     message,
+    currentUserId,
     showRelativeTime = false,
     position = "single",
+    isGroupConversation = false,
+    showAvatar = false,
+    showSenderName = false,
     onReply,
     onReact,
     onRetry,
     onCancel,
   }: MessageBubbleProps) => {
-    const { isMine, type, content, mediaUrls, localMediaUrls, createdAt, replyTo, reactions, status } =
-      message;
+    const {
+      isMine,
+      type,
+      content,
+      mediaUrls,
+      localMediaUrls,
+      createdAt,
+      replyTo,
+      reactions,
+      status,
+    } = message;
 
     // Use localMediaUrls for optimistic preview, fall back to server-resolved mediaUrls
-    const effectiveMediaUrls = localMediaUrls && localMediaUrls.length > 0 ? localMediaUrls : mediaUrls;
+    const effectiveMediaUrls =
+      localMediaUrls && localMediaUrls.length > 0 ? localMediaUrls : mediaUrls;
     const isSending = status === "sending";
     const isFailed = status === "failed";
 
-    const tooltipTitle = formatTooltipTime(createdAt);
     const positionClass = `message-bubble--pos-${position}`;
-    const statusClass = isSending ? "message-bubble--sending" : isFailed ? "message-bubble--failed" : "";
+    const statusClass = isSending
+      ? "message-bubble--sending"
+      : isFailed
+        ? "message-bubble--failed"
+        : "";
     const bubbleClass = `message-bubble ${isMine ? "message-bubble--mine" : "message-bubble--other"} ${positionClass} ${statusClass}`;
 
     const handleReply = () => onReply?.(message);
@@ -281,7 +311,6 @@ const MessageBubble = memo(
 
     const renderBottom = () => (
       <>
-        <ReactionsBar reactions={reactions} />
         {isFailed ? (
           <StatusIndicator
             status="failed"
@@ -299,8 +328,38 @@ const MessageBubble = memo(
     const renderActionBtns = (side: "mine" | "other") => {
       // Don't show actions for optimistic messages
       if (isSending || isFailed) return null;
+      return <ActionButtons isMine={side === "mine"} onReply={handleReply} onReact={handleReact} />;
+    };
+
+    // ---- Group conversation: sender avatar + name ----
+    const senderAvatarUrl = getAvatarUrl(message.sender?.profilePicture);
+    const senderName = message.sender?.displayName ?? "";
+
+    const wrapWithGroupLayout = (content: React.ReactNode) => {
+      if (!isGroupConversation || isMine) return <>{content}</>;
       return (
-        <ActionButtons isMine={side === "mine"} onReply={handleReply} onReact={handleReact} />
+        <Flex align="flex-end" style={{ paddingLeft: 4 }}>
+          {/* Avatar column — fixed 32px wide, always present to keep alignment */}
+          <div style={{ width: 36, flexShrink: 0, marginRight: 8, marginBottom: 2 }}>
+            {showAvatar ? (
+              <Avatar
+                src={senderAvatarUrl}
+                size={32}
+                style={{ border: "2px solid var(--gray-200)", display: "block" }}
+              >
+                {!senderAvatarUrl && senderName.charAt(0).toUpperCase()}
+              </Avatar>
+            ) : null}
+          </div>
+
+          {/* Bubble column — flex:1 + minWidth:0 essential to prevent letter wrapping */}
+          <Flex vertical gap={3} style={{ flex: 1, minWidth: 0, maxWidth: "calc(100% - 44px)" }}>
+            {showSenderName && senderName && (
+              <span className="message-bubble__group-sender-name">{senderName}</span>
+            )}
+            {content}
+          </Flex>
+        </Flex>
       );
     };
 
@@ -308,35 +367,34 @@ const MessageBubble = memo(
     if (type === "voice") {
       const voiceUrl = effectiveMediaUrls?.[0] ?? "";
 
-      return (
+      return wrapWithGroupLayout(
         <Flex className={bubbleClass} justify={isMine ? "flex-end" : "flex-start"}>
           <Flex vertical gap={4} className="message-bubble__wrapper">
-            <QuotedReply replyTo={replyTo} isMine={!!isMine} />
-            <Tooltip
-              title={tooltipTitle}
-              placement={isMine ? "left" : "right"}
-              mouseEnterDelay={0.4}
+            <QuotedReply replyTo={replyTo} isMine={!!isMine} currentUserId={currentUserId} />
+            <Flex
+              align="center"
+              gap={8}
+              className={`message-bubble__inner-row ${reactions && reactions.length > 0 ? "message-bubble__inner-row--has-reactions" : ""}`}
             >
-              <Flex align="center" gap={8} className="message-bubble__inner-row">
-                {isMine && renderActionBtns("mine")}
-                <Flex
-                  align="center"
-                  gap={10}
-                  className="message-bubble__voice"
-                  style={{ padding: "8px 12px" }}
-                >
-                  <audio
-                    controls
-                    src={voiceUrl}
-                    style={{ height: 40, width: 240, outline: "none" }}
-                  />
-                </Flex>
-                {!isMine && renderActionBtns("other")}
+              {isMine && renderActionBtns("mine")}
+              <Flex
+                align="center"
+                gap={10}
+                className="message-bubble__voice"
+                style={{ padding: "8px 12px" }}
+              >
+                <audio
+                  controls
+                  src={voiceUrl}
+                  style={{ height: 40, width: 240, outline: "none" }}
+                />
               </Flex>
-            </Tooltip>
+              {!isMine && renderActionBtns("other")}
+              <ReactionsBar reactions={reactions} isMine={!!isMine} />
+            </Flex>
             {renderBottom()}
           </Flex>
-        </Flex>
+        </Flex>,
       );
     }
 
@@ -344,17 +402,17 @@ const MessageBubble = memo(
     if (type === "image" && effectiveMediaUrls && effectiveMediaUrls.length > 0) {
       const isMultiple = effectiveMediaUrls.length > 1;
 
-      return (
+      return wrapWithGroupLayout(
         <Flex className={bubbleClass} justify={isMine ? "flex-end" : "flex-start"}>
           <Flex vertical gap={8} className="message-bubble__wrapper">
-            <QuotedReply replyTo={replyTo} isMine={!!isMine} />
-            <Tooltip
-              title={tooltipTitle}
-              placement={isMine ? "left" : "right"}
-              mouseEnterDelay={0.4}
+            <QuotedReply replyTo={replyTo} isMine={!!isMine} currentUserId={currentUserId} />
+            <Flex
+              align="center"
+              gap={8}
+              className={`message-bubble__inner-row ${reactions && reactions.length > 0 ? "message-bubble__inner-row--has-reactions" : ""}`}
             >
-              <Flex align="center" gap={8} className="message-bubble__inner-row">
-                {isMine && renderActionBtns("mine")}
+              {isMine && renderActionBtns("mine")}
+              <Flex vertical gap={6}>
                 <Image.PreviewGroup items={effectiveMediaUrls}>
                   <div
                     className={`message-bubble__image-container ${isMultiple ? "message-bubble__image-container--multiple" : ""}`}
@@ -377,12 +435,13 @@ const MessageBubble = memo(
                     </div>
                   </div>
                 </Image.PreviewGroup>
-                {!isMine && renderActionBtns("other")}
               </Flex>
-            </Tooltip>
+              {!isMine && renderActionBtns("other")}
+              <ReactionsBar reactions={reactions} isMine={!!isMine} />
+            </Flex>
             {renderBottom()}
           </Flex>
-        </Flex>
+        </Flex>,
       );
     }
 
@@ -390,17 +449,17 @@ const MessageBubble = memo(
     if (type === "video") {
       const videoUrl = effectiveMediaUrls?.[0] ?? "";
 
-      return (
+      return wrapWithGroupLayout(
         <Flex className={bubbleClass} justify={isMine ? "flex-end" : "flex-start"}>
           <Flex vertical gap={4} className="message-bubble__wrapper">
-            <QuotedReply replyTo={replyTo} isMine={!!isMine} />
-            <Tooltip
-              title={tooltipTitle}
-              placement={isMine ? "left" : "right"}
-              mouseEnterDelay={0.4}
+            <QuotedReply replyTo={replyTo} isMine={!!isMine} currentUserId={currentUserId} />
+            <Flex
+              align="center"
+              gap={8}
+              className={`message-bubble__inner-row ${reactions && reactions.length > 0 ? "message-bubble__inner-row--has-reactions" : ""}`}
             >
-              <Flex align="center" gap={8} className="message-bubble__inner-row">
-                {isMine && renderActionBtns("mine")}
+              {isMine && renderActionBtns("mine")}
+              <Flex vertical gap={6}>
                 <div
                   className="message-bubble__image-container"
                   style={{ borderRadius: 16, overflow: "hidden", background: "#000" }}
@@ -418,30 +477,34 @@ const MessageBubble = memo(
                     }}
                   />
                 </div>
-                {!isMine && renderActionBtns("other")}
               </Flex>
-            </Tooltip>
+              {!isMine && renderActionBtns("other")}
+              <ReactionsBar reactions={reactions} isMine={!!isMine} />
+            </Flex>
             {renderBottom()}
           </Flex>
-        </Flex>
+        </Flex>,
       );
     }
 
     // ---- Text (default) ----
-    return (
+    return wrapWithGroupLayout(
       <Flex className={bubbleClass} justify={isMine ? "flex-end" : "flex-start"}>
         <Flex vertical gap={4} className="message-bubble__wrapper">
-          <QuotedReply replyTo={replyTo} isMine={!!isMine} />
-          <Tooltip title={tooltipTitle} placement={isMine ? "left" : "right"} mouseEnterDelay={0.4}>
-            <Flex align="center" gap={8} className="message-bubble__inner-row">
-              {isMine && renderActionBtns("mine")}
-              <div className="message-bubble__content">{content}</div>
-              {!isMine && renderActionBtns("other")}
-            </Flex>
-          </Tooltip>
+          <QuotedReply replyTo={replyTo} isMine={!!isMine} currentUserId={currentUserId} />
+          <Flex
+            align="center"
+            gap={8}
+            className={`message-bubble__inner-row ${reactions && reactions.length > 0 ? "message-bubble__inner-row--has-reactions" : ""}`}
+          >
+            {isMine && renderActionBtns("mine")}
+            <div className="message-bubble__content">{content}</div>
+            {!isMine && renderActionBtns("other")}
+            <ReactionsBar reactions={reactions} isMine={!!isMine} />
+          </Flex>
           {renderBottom()}
         </Flex>
-      </Flex>
+      </Flex>,
     );
   },
   (prev, next) =>
@@ -449,9 +512,11 @@ const MessageBubble = memo(
     prev.message.reactions === next.message.reactions &&
     prev.message.status === next.message.status &&
     prev.position === next.position &&
-    prev.showRelativeTime === next.showRelativeTime,
+    prev.showRelativeTime === next.showRelativeTime &&
+    prev.showAvatar === next.showAvatar &&
+    prev.showSenderName === next.showSenderName &&
+    prev.isGroupConversation === next.isGroupConversation,
 );
 MessageBubble.displayName = "MessageBubble";
 
 export default MessageBubble;
-

@@ -35,18 +35,31 @@ export class GetMessagesUseCase {
     });
 
     // Batch-resolve all mediaIds to URLs
+    // Resolve mediaIds to URLs, and get replyTo messages
     const allMediaIds = messages.flatMap((msg) => msg.mediaIds || []);
-    const mediaUrlMap = new Map<string, string>();
-
-    if (allMediaIds.length > 0 && this.mediaRepo && this.fileStorageService) {
-      const uniqueIds = [...new Set(allMediaIds)];
-      const mediaEntities = await this.mediaRepo.findByIds(uniqueIds);
-      for (const media of mediaEntities) {
-        if (media.id && media.key) {
-          mediaUrlMap.set(media.id, this.fileStorageService.getPublicUrl(media.key));
+    const uniqueReplyToIds = [...new Set(messages.map((m) => m.replyToId).filter(Boolean) as string[])];
+    
+    const [mediaUrlMap, replyToEntities] = await Promise.all([
+      (async () => {
+        const map = new Map<string, string>();
+        if (allMediaIds.length > 0 && this.mediaRepo && this.fileStorageService) {
+          const uniqueIds = [...new Set(allMediaIds)];
+          const mediaEntities = await this.mediaRepo.findByIds(uniqueIds);
+          for (const media of mediaEntities) {
+            if (media.id && media.key) {
+              map.set(media.id, this.fileStorageService.getPublicUrl(media.key));
+            }
+          }
         }
-      }
-    }
+        return map;
+      })(),
+      (async () => {
+        if (uniqueReplyToIds.length > 0) return this.messageRepo.findByIds(uniqueReplyToIds);
+        return [];
+      })(),
+    ]);
+
+    const replyToMap = new Map(replyToEntities.map((m) => [m.id, m]));
 
     const items = await Promise.all(
       messages.map(async (msg) => {
@@ -57,10 +70,35 @@ export class GetMessagesUseCase {
             sender = {
               id: user.id,
               username: user.data.username,
-              displayName: user.fullName || `${user.data.firstName} ${user.data.lastName}`,
+              displayName: (user.id && conversation.settings?.nicknames?.[user.id]) || user.fullName || `${user.data.firstName} ${user.data.lastName}`,
               profilePicture: user.data.profilePicture
                 ? { mediaId: user.data.profilePicture }
                 : null,
+            };
+          }
+        }
+
+        let replyTo = undefined;
+        if (msg.replyToId) {
+          const repliedMsg = replyToMap.get(msg.replyToId);
+          if (repliedMsg) {
+            let replyToSender = undefined;
+            if (repliedMsg.senderId) {
+              const u = await this.userRepo.findById(repliedMsg.senderId);
+              if (u) {
+                replyToSender = {
+                  id: u.id,
+                  displayName: (u.id && conversation.settings?.nicknames?.[u.id]) || u.fullName || `${u.data.firstName} ${u.data.lastName}`,
+                };
+              }
+            }
+            replyTo = {
+              id: repliedMsg.id,
+              content: repliedMsg.content,
+              type: repliedMsg.type,
+              senderId: repliedMsg.senderId,
+              sender: replyToSender,
+              mediaIds: repliedMsg.mediaIds,
             };
           }
         }
@@ -82,6 +120,10 @@ export class GetMessagesUseCase {
           createdAt: msg.createdAt?.toISOString(),
           sender,
           isMine: msg.senderId === userId,
+          reactions: msg.reactions,
+          replyToId: msg.replyToId,
+          replyTo,
+          forwardedFromId: msg.forwardedFromId,
         };
       }),
     );

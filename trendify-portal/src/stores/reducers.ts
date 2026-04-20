@@ -7,6 +7,7 @@ import { followReducer } from "./follow";
 import { settingsReducer } from "./settings";
 import { postReducer } from "./post";
 import { notificationReducer } from "./notification";
+import chatSlice from "./chat/slice";
 
 const rootReducer = combineReducers({
   loading: loadingReducer,
@@ -16,6 +17,7 @@ const rootReducer = combineReducers({
   settings: settingsReducer,
   posts: postReducer,
   notification: notificationReducer,
+  chat: chatSlice.reducer,
 });
 
 export default rootReducer;
