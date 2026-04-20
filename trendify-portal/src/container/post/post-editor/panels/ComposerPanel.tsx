@@ -678,7 +678,7 @@ const ComposerPanel = ({
         </Flex>
         <Flex align="center" gap={12}>
           {isUploading && uploadStatusText && (
-            <Text textType="M13" style={{ color: "var(--gray-500)", fontStyle: 'italic', animation: "pulse 1.5s infinite" }}>
+            <Text textType="M14" style={{ color: "var(--gray-500)", fontStyle: 'italic', animation: "pulse 1.5s infinite" }}>
               {uploadStatusText}
             </Text>
           )}
