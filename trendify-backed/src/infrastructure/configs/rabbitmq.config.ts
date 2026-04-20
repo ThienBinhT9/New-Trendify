@@ -26,7 +26,7 @@ export interface RabbitMQConfig {
 }
 
 export const rabbitMQConfig: RabbitMQConfig = {
-  url: process.env.RABBITMQ_URL || "amqp://guest:guest@localhost:5672",
+  url: process.env.RABBITMQ_URL || process.env.AMQP_URL || "amqp://guest:guest@localhost:5672",
   exchanges: [
     {
       name: "app.events",
