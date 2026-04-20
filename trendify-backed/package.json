@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node -r tsconfig-paths/register dist/index.js",
+    "build": "tsc && tsc-alias",
+    "start": "node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon",
     "migrate": "npx ts-node -r tsconfig-paths/register src/infrastructure/database/mongoose.migrate.ts",
@@ -33,6 +33,7 @@
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
+    "tsc-alias": "^1.8.16",
     "typescript": "^5.9.2"
   },
   "dependencies": {
