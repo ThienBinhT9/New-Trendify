@@ -50,7 +50,7 @@ import EmojiSmileIcon from "./EmojiSmile.svg?react";
 import CameraIcon from "./Camera.svg?react";
 import CloseIcon from "./Close.svg?react";
 import EmailIcon from "./Email.svg?react";
-import LockIcon from "./lock.svg?react";
+import LockIcon from "./Lock.svg?react";
 import SearchSmall from "./SearchSmall.svg?react";
 import MessageCircleIcon from "./MessageCircle.svg?react";
 import HomeOutlinedIcon from "./HomeOutlined.svg?react";
