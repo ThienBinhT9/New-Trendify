@@ -7,16 +7,23 @@ class RedisService implements ICacheService {
   private client: Redis;
 
   constructor() {
-    this.client = new Redis({
-      host: redisConfig.host,
-      port: redisConfig.port,
-      username: redisConfig.username,
-      password: redisConfig.password,
-      db: redisConfig.db,
-      keyPrefix: redisConfig.keyPrefix,
-      tls: redisConfig.tls,
-      retryStrategy: redisConfig.reconnectStrategy,
-    });
+    if (process.env.REDIS_URL) {
+      this.client = new Redis(process.env.REDIS_URL, {
+        keyPrefix: redisConfig.keyPrefix,
+        retryStrategy: redisConfig.reconnectStrategy,
+      });
+    } else {
+      this.client = new Redis({
+        host: redisConfig.host,
+        port: redisConfig.port,
+        username: redisConfig.username,
+        password: redisConfig.password,
+        db: redisConfig.db,
+        keyPrefix: redisConfig.keyPrefix,
+        tls: redisConfig.tls,
+        retryStrategy: redisConfig.reconnectStrategy,
+      });
+    }
 
     this.client.on("connect", () => {
       console.log("✅ Redis Connected");

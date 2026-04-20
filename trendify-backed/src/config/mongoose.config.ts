@@ -27,7 +27,7 @@ const env = process.env.NODE_ENV || "development";
 const config = env === "production" ? production : development;
 
 const mongooseConfig = {
-  uri: `mongodb://${config.db.host}:${config.db.port}/${config.db.name}`,
+  uri: process.env.MONGODB_URI || `mongodb://${config.db.host}:${config.db.port}/${config.db.name}`,
   options: {
     autoIndex: false,
     maxPoolSize: 500,
