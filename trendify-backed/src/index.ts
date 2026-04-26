@@ -59,11 +59,12 @@ async function startServer() {
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
     // 5. Khởi động Express server
-    httpServer.listen(process.env.DEV_APP_PORT, () => {
+    const port = process.env.PORT || process.env.DEV_APP_PORT || 8000;
+    httpServer.listen(port, () => {
       console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-      console.log(`✅ Server is running on port ${process.env.DEV_APP_PORT}`);
+      console.log(`✅ Server is running on port ${port}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
-      console.log(`🔗 API: http://localhost:${process.env.DEV_APP_PORT}`);
+      console.log(`🔗 API: http://localhost:${port}`);
       console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
     });
   } catch (error) {
