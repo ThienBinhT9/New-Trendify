@@ -15,7 +15,7 @@ const development: EnvConfig = {
 };
 
 const production: EnvConfig = {
-  app: { port: process.env.PRODUCTION_APP_PORT || "trendify" },
+  app: { port: process.env.PORT || process.env.PRODUCTION_APP_PORT || 8000 },
   db: {
     host: process.env.PRODUCTION_DB_HOST || "trendify",
     port: process.env.PRODUCTION_DB_PORT || "27017",
