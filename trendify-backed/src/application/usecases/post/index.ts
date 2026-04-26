@@ -21,3 +21,4 @@ export { UnsavePostUseCase } from "./unsave-post.usecase";
 export { GetSavedPostsUseCase } from "./get-saved-posts.usecase";
 export { GetDraftPostsUseCase } from "./get-draft-posts.usecase";
 export { GetPostsByHashtagUseCase } from "./get-posts-by-hashtag.usecase";
+export { GetForYouFeedUseCase } from "./get-foryou-feed.usecase";

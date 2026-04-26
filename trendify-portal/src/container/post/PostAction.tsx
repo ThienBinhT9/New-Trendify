@@ -214,10 +214,10 @@ const PostAction = ({
           <Icon name="CommentIcon" />
           <Text className="post-action__text">{`${formatNumberCount(realtimeCommentCount ?? post.counters.commentCount)}`}</Text>
         </Flex>
-        <Flex className="post-action" onClick={(e) => e.stopPropagation()}>
+        {/* <Flex className="post-action" onClick={(e) => e.stopPropagation()}>
           <Icon name="ShareIcon" />
           <Text className="post-action__text">{`${formatNumberCount(post.counters.shareCount)}`}</Text>
-        </Flex>
+        </Flex> */}
       </Flex>
 
       {visibleModalLike && (

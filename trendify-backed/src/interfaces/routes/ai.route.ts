@@ -1,94 +1,107 @@
 import { Router, Request, Response } from "express";
 import { authMiddleware } from "../middlewares/auth.middleware";
 
+import {
+  MongoosePostRepository,
+  MongooseLikeRepository,
+  MongooseSaveRepository,
+  MongooseUserRepository,
+  MongooseFollowRepository,
+  MongooseBlockRepository,
+} from "@/infrastructure/database/repositories";
+import { MongooseMediaRepository } from "@/infrastructure/database/repositories/media.repository.impl";
+import S3Service from "@/infrastructure/services/s3.service";
+import { GetForYouFeedUseCase } from "@/application/usecases/post";
+
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "http://localhost:8001";
 const router = Router();
 const auth = authMiddleware();
 
+// Repositories for data enrichment
+const postRepo = new MongoosePostRepository();
+const likeRepo = new MongooseLikeRepository();
+const saveRepo = new MongooseSaveRepository();
+const userRepo = new MongooseUserRepository();
+const followRepo = new MongooseFollowRepository();
+const blockRepo = new MongooseBlockRepository();
+const mediaRepo = new MongooseMediaRepository();
+const storageSvc = new S3Service();
+
+const getForYouFeedUseCase = new GetForYouFeedUseCase(
+  postRepo,
+  followRepo,
+  blockRepo,
+  likeRepo,
+  saveRepo,
+  mediaRepo,
+  userRepo,
+  storageSvc,
+);
+
 /**
- * Proxy middleware: forwards authenticated requests to the Python AI service.
- * Node.js handles auth verification; Python handles recommendation logic.
+ * ForYou Feed: calls Python AI → ranked postIds → enriches with full post data.
  */
-const proxyToAI = async (req: Request, res: Response) => {
+const getForYouFeed = async (req: Request, res: Response) => {
   try {
     const userId = res.locals?.auth?.userId;
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    // Map Node.js route to Python AI service route
-    // /api/ai/suggestions/:userId  →  /api/recommendations/users/:userId
-    // /api/ai/feed/:userId         →  /api/recommendations/posts/:userId
-    // /api/ai/dismiss              →  /api/recommendations/dismiss (POST)
-    // /api/ai/graph/rebuild        →  /api/recommendations/graph/rebuild (POST)
-    let aiPath = req.path;
-    if (aiPath.startsWith("/suggestions")) {
-      aiPath = aiPath.replace("/suggestions", "/users");
-    } else if (aiPath.startsWith("/feed")) {
-      aiPath = aiPath.replace("/feed", "/posts");
-    }
+    const page = req.query.page || "0";
+    const limit = req.query.limit || "20";
 
-    const targetUrl = new URL(`/api/recommendations${aiPath}`, AI_SERVICE_URL);
+    const targetUrl = new URL(
+      `/api/recommendations/posts/${userId}`,
+      AI_SERVICE_URL,
+    );
+    targetUrl.searchParams.set("page", String(page));
+    targetUrl.searchParams.set("limit", String(limit));
 
-    // Forward query params
-    for (const [key, value] of Object.entries(req.query)) {
-      if (typeof value === "string") {
-        targetUrl.searchParams.set(key, value);
-      }
-    }
-
-    const isGet = req.method === "GET";
-
-    const fetchOptions: RequestInit = {
-      method: req.method,
+    const aiResponse = await fetch(targetUrl.toString(), {
+      method: "GET",
       headers: { "Content-Type": "application/json" },
-    };
+    });
 
-    if (!isGet && req.body) {
-      fetchOptions.body = JSON.stringify({
-        ...req.body,
-        user_id: userId,
+    if (!aiResponse.ok) {
+      console.error(`[AI Feed] Python service returned ${aiResponse.status}`);
+      return res.json({
+        status: 200,
+        data: { posts: [], nextCursor: null, meta: { fallback: true } },
       });
     }
 
-    const response = await fetch(targetUrl.toString(), fetchOptions);
+    const aiData = await aiResponse.json();
+    const { postIds = [], nextCursor, meta = {} } = aiData;
 
-    if (!response.ok) {
-      console.error(`[AI Proxy] Python service returned ${response.status}`);
-      return res.status(response.status).json({
-        message: "AI service error",
-        status: response.status,
+    if (postIds.length === 0) {
+      return res.json({
+        status: 200,
+        data: { posts: [], nextCursor: null, meta },
       });
     }
 
-    const data = await response.json();
-    return res.json({ status: 200, data });
+    // Enrich post IDs with full post data
+    const result = await getForYouFeedUseCase.execute({
+      viewerId: userId,
+      postIds,
+      nextCursor: nextCursor || null,
+      meta,
+    });
+
+    return res.status(200).json(result);
   } catch (error: any) {
-    console.error("[AI Proxy] Failed to reach AI service:", error?.message);
-    // Graceful fallback
+    console.error("[AI Feed] Error:", error?.message);
     return res.json({
       status: 200,
-      data: {
-        suggestions: [],
-        postIds: [],
-        meta: { fallback: true, reason: "AI service unavailable" },
-      },
+      data: { posts: [], nextCursor: null, meta: { fallback: true } },
     });
   }
 };
 
 // ====================== ROUTES ======================
 
-// PYMK suggestions: GET /api/ai/suggestions/:userId
-router.get("/suggestions/:userId", auth, proxyToAI);
-
-// Post recommendations (ForYou feed): GET /api/ai/feed/:userId
-router.get("/feed/:userId", auth, proxyToAI);
-
-// Dismiss a suggestion: POST /api/ai/dismiss
-router.post("/dismiss", auth, proxyToAI);
-
-// Rebuild graph (admin): POST /api/ai/graph/rebuild
-router.post("/graph/rebuild", auth, proxyToAI);
+// Post recommendations (ForYou feed): GET /api/ai/feed
+router.get("/feed", auth, getForYouFeed);
 
 export default router;

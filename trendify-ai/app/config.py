@@ -6,14 +6,15 @@ class Settings(BaseSettings):
     # MongoDB
     mongo_uri: str = "mongodb://localhost:27017/trendify"
 
-    # Redis
+    # Redis — supports REDIS_URL (Upstash/cloud) or host/port (local)
+    redis_url: str | None = None
     redis_host: str = "127.0.0.1"
     redis_port: int = 6379
     redis_db: int = 0
     redis_key_prefix: str = "myapp:"
 
     # Service
-    ai_service_port: int = 8000
+    ai_service_port: int = 8001
     ai_service_host: str = "0.0.0.0"
 
     # CORS

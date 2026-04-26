@@ -6,17 +6,9 @@ import "../Home.scss";
 
 import Post from "@/container/post/Post";
 import PostSkeleton from "@/container/skeleton/post_skeleton/PostSkeleton";
-
-const LIMIT = 5;
-
-const fakeGetPosts = async (cursor: number) => {
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-  return {
-    data: [],
-    cursor: cursor + LIMIT,
-    hasNext: true,
-  };
-};
+import EmptyState from "@/container/empty/EmptyState";
+import Icon from "@/components/icon/Icon";
+import { useForYouFeed } from "@/hooks/useForYouFeed";
 
 interface ForyouPageProps {
   isActive?: boolean;
@@ -24,32 +16,20 @@ interface ForyouPageProps {
 }
 
 const ForyouPage = ({ isActive = false, prefetch = false }: ForyouPageProps) => {
-  const [posts, setPosts] = useState<number[]>([]);
-  const [cursor, setCursor] = useState<number>(0);
-  const [hasNext, setHasNext] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const {
+    posts,
+    isLoading,
+    hasNext,
+    fetchPosts,
+    loadMore,
+  } = useForYouFeed(20);
+
   const hasFetchedRef = useRef<boolean>(false);
-
-  console.log({ cursor, hasNext });
-
-  const fetchPosts = useCallback(async (nextCursor: number) => {
-    try {
-      setIsLoading(true);
-      const res = await fakeGetPosts(nextCursor);
-      setPosts((prev) => (nextCursor === 0 ? res.data : [...prev, ...res.data]));
-      setCursor(res.cursor);
-      setHasNext(res.hasNext);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
     if ((!isActive && !prefetch) || hasFetchedRef.current) return;
     hasFetchedRef.current = true;
-    fetchPosts(0);
+    fetchPosts();
   }, [fetchPosts, isActive, prefetch]);
 
   const [scrollParent, setScrollParent] = useState<HTMLElement | null>(null);
@@ -58,9 +38,14 @@ const ForyouPage = ({ isActive = false, prefetch = false }: ForyouPageProps) => 
     setScrollParent(document.getElementById("mainLayoutChildren"));
   }, []);
 
+  const handleEndReached = useCallback(() => {
+    if (!isActive || !hasNext || isLoading) return;
+    loadMore();
+  }, [isActive, hasNext, isLoading, loadMore]);
+
   const renderLoading = () => (
     <Flex vertical gap={32} className="mt-32">
-      {[1, 1, 1, 1, 1, 1, 1, 1].map((_, index) => (
+      {[1, 2, 3].map((_, index) => (
         <PostSkeleton key={index} />
       ))}
     </Flex>
@@ -73,19 +58,16 @@ const ForyouPage = ({ isActive = false, prefetch = false }: ForyouPageProps) => 
       <Flex className="home-content">
         {isInitialLoading ? (
           renderLoading()
-        ) : posts.length ? (
+        ) : posts.length > 0 ? (
           <Virtuoso
             customScrollParent={scrollParent ?? undefined}
             data={posts}
             className="foryou-list"
             style={{ height: "100%" }}
-            endReached={() => {
-              // if (!isActive || !hasNext || isLoading) return;
-              // fetchPosts(cursor);
-            }}
-            itemContent={() => (
+            endReached={handleEndReached}
+            itemContent={(_index, post) => (
               <div className="foryou-item">
-                <Post />
+                <Post post={post} key={post.id} />
               </div>
             )}
             components={{
@@ -97,7 +79,19 @@ const ForyouPage = ({ isActive = false, prefetch = false }: ForyouPageProps) => 
               ),
             }}
           />
-        ) : null}
+        ) : (
+          <EmptyState
+            variant="blue"
+            icon={<Icon name="EarthIcon" size={28} />}
+            title="Chưa có nội dung gợi ý"
+            description="Tương tác nhiều hơn để nhận được gợi ý phù hợp hơn"
+            ctaLabel="Tải lại"
+            onCtaClick={() => {
+              hasFetchedRef.current = false;
+              fetchPosts();
+            }}
+          />
+        )}
       </Flex>
     </Flex>
   );

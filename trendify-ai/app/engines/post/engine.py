@@ -1,10 +1,9 @@
 """
-Post Recommendation Engine.
+Post Recommendation Engine — Content-Based Filtering.
 
-Hybrid approach combining 3 strategies:
+Two scoring strategies:
   1. Content-Based Filtering  (TF-IDF + Cosine Similarity)
-  2. Collaborative Filtering  (KNN-based co-interaction)
-  3. Popularity + Freshness   (Engagement × Time Decay)
+  2. Popularity + Freshness   (Engagement × Time Decay)
 
 Adaptive weights based on user's interaction history (Cold Start handling).
 """
@@ -49,24 +48,30 @@ class PostRecommendationEngine:
         user_oid = ObjectId(user_id)
 
         # ============ BUILD USER PROFILE ============
-        liked_ids, saved_ids, commented_ids, following_ids = await self._build_user_profile(user_oid)
+        liked_ids, saved_ids, commented_ids, following_ids = (
+            await self._build_user_profile(user_oid)
+        )
 
         interacted_ids = set(liked_ids + saved_ids + commented_ids)
         interaction_count = len(interacted_ids)
 
         # ============ ADAPTIVE WEIGHTS (Cold Start Handling) ============
+        # With fewer interactions, rely more on popularity (trending).
+        # As user interacts more, content similarity becomes dominant.
         if interaction_count < 5:
-            weights = {"content": 0.10, "cf": 0.05, "popularity": 0.85}
+            weights = {"content": 0.10, "popularity": 0.90}
         elif interaction_count < 20:
-            weights = {"content": 0.30, "cf": 0.20, "popularity": 0.50}
+            weights = {"content": 0.40, "popularity": 0.60}
         elif interaction_count < 50:
-            weights = {"content": 0.35, "cf": 0.30, "popularity": 0.35}
+            weights = {"content": 0.60, "popularity": 0.40}
         else:
-            weights = {"content": 0.40, "cf": 0.35, "popularity": 0.25}
+            weights = {"content": 0.75, "popularity": 0.25}
 
         # ============ FETCH CANDIDATE POSTS ============
         now = datetime.now(timezone.utc)
-        candidate_oid_exclusions = [ObjectId(pid) for pid in interacted_ids if ObjectId.is_valid(pid)]
+        candidate_oid_exclusions = [
+            ObjectId(pid) for pid in interacted_ids if ObjectId.is_valid(pid)
+        ]
 
         candidate_filter = {
             "status": "active",
@@ -78,18 +83,22 @@ class PostRecommendationEngine:
         if candidate_oid_exclusions:
             candidate_filter["_id"] = {"$nin": candidate_oid_exclusions}
 
-        candidates = await self.mongo.posts.find(
-            candidate_filter,
-            {
-                "_id": 1,
-                "authorId": 1,
-                "content": 1,
-                "hashtags": 1,
-                "counters": 1,
-                "createdAt": 1,
-                "type": 1,
-            },
-        ).sort("createdAt", -1).to_list(500)
+        candidates = (
+            await self.mongo.posts.find(
+                candidate_filter,
+                {
+                    "_id": 1,
+                    "authorId": 1,
+                    "content": 1,
+                    "hashtags": 1,
+                    "counters": 1,
+                    "createdAt": 1,
+                    "type": 1,
+                },
+            )
+            .sort("createdAt", -1)
+            .to_list(500)
+        )
 
         if not candidates:
             result = {
@@ -111,24 +120,16 @@ class PostRecommendationEngine:
             user_oid, interacted_ids, candidates
         )
 
-        # ============ STRATEGY 2: COLLABORATIVE FILTERING ============
-        cf_scores = await self._collaborative_scores(
-            user_oid, candidates, liked_ids
-        )
-
-        # ============ STRATEGY 3: POPULARITY + FRESHNESS ============
+        # ============ STRATEGY 2: POPULARITY + FRESHNESS ============
         pop_scores = self._popularity_scores(candidates, now)
 
         # ============ NORMALIZE ============
         content_norm = min_max_normalize(np.array(content_scores))
-        cf_norm = min_max_normalize(np.array(cf_scores))
         pop_norm = min_max_normalize(np.array(pop_scores))
 
-        # ============ HYBRID FUSION ============
+        # ============ WEIGHTED FUSION ============
         final_scores = (
-            weights["content"] * content_norm
-            + weights["cf"] * cf_norm
-            + weights["popularity"] * pop_norm
+            weights["content"] * content_norm + weights["popularity"] * pop_norm
         )
 
         # ============ FOLLOWING BOOST ============
@@ -183,13 +184,9 @@ class PostRecommendationEngine:
         interacted_ids: set[str],
         candidates: list[dict],
     ) -> list[float]:
-        """Score candidates by content similarity to user's interaction history."""
-
         # Build user taste profile from interacted posts
         interacted_oids = [
-            ObjectId(pid)
-            for pid in interacted_ids
-            if ObjectId.is_valid(pid)
+            ObjectId(pid) for pid in interacted_ids if ObjectId.is_valid(pid)
         ]
 
         if not interacted_oids:
@@ -203,7 +200,6 @@ class PostRecommendationEngine:
         if not interacted_posts:
             return [0.0] * len(candidates)
 
-        # Build text corpus
         user_text = " ".join(self._post_to_text(p) for p in interacted_posts)
 
         if not user_text.strip():
@@ -231,76 +227,7 @@ class PostRecommendationEngine:
             # TF-IDF can fail on empty corpus
             return [0.0] * len(candidates)
 
-    # ==================== STRATEGY 2: COLLABORATIVE FILTERING ====================
-
-    async def _collaborative_scores(
-        self,
-        user_oid: ObjectId,
-        candidates: list[dict],
-        user_liked_ids: list[str],
-    ) -> list[float]:
-        """
-        KNN-based CF: find similar users, score = how many similar users
-        interacted with each candidate.
-        """
-        if not user_liked_ids:
-            return [0.0] * len(candidates)
-
-        liked_oids = [
-            ObjectId(pid) for pid in user_liked_ids[:100] if ObjectId.is_valid(pid)
-        ]
-
-        # Find users who liked the same posts (K nearest neighbors by co-likes)
-        pipeline = [
-            {"$match": {"postId": {"$in": liked_oids}, "userId": {"$ne": user_oid}}},
-            {"$group": {"_id": "$userId", "overlap": {"$sum": 1}}},
-            {"$sort": {"overlap": -1}},
-            {"$limit": 50},  # Top 50 similar users
-        ]
-
-        similar_users = await self.mongo.likes.aggregate(pipeline).to_list(50)
-
-        if not similar_users:
-            return [0.0] * len(candidates)
-
-        similar_user_ids = [doc["_id"] for doc in similar_users]
-        # Weight by overlap count
-        user_weights = {str(doc["_id"]): doc["overlap"] for doc in similar_users}
-
-        # Find which candidates these similar users liked
-        candidate_oids = [c["_id"] for c in candidates]
-
-        cf_pipeline = [
-            {
-                "$match": {
-                    "userId": {"$in": similar_user_ids},
-                    "postId": {"$in": candidate_oids},
-                }
-            },
-            {
-                "$group": {
-                    "_id": "$postId",
-                    "likers": {"$addToSet": "$userId"},
-                }
-            },
-        ]
-
-        cf_results = await self.mongo.likes.aggregate(cf_pipeline).to_list(
-            len(candidates)
-        )
-
-        # Build score map: weighted count of similar users who liked
-        post_cf_scores: dict[str, float] = {}
-        for doc in cf_results:
-            post_id = str(doc["_id"])
-            score = sum(
-                user_weights.get(str(uid), 1) for uid in doc["likers"]
-            )
-            post_cf_scores[post_id] = score
-
-        return [post_cf_scores.get(str(c["_id"]), 0.0) for c in candidates]
-
-    # ==================== STRATEGY 3: POPULARITY + FRESHNESS ====================
+    # ==================== STRATEGY 2: POPULARITY + FRESHNESS ====================
 
     def _popularity_scores(
         self, candidates: list[dict], now: datetime
@@ -356,7 +283,6 @@ class PostRecommendationEngine:
     # ==================== HELPERS ====================
 
     def _post_to_text(self, post: dict) -> str:
-        """Convert post to text representation for TF-IDF."""
         parts = []
         content = post.get("content", "")
         if content:
@@ -372,25 +298,32 @@ class PostRecommendationEngine:
     async def _build_user_profile(
         self, user_oid: ObjectId
     ) -> tuple[list[str], list[str], list[str], list[str]]:
-        """Fetch user's interaction history in parallel."""
         import asyncio
 
         async def get_liked():
-            docs = await self.mongo.likes.find(
-                {"userId": user_oid}, {"postId": 1}
-            ).sort("_id", -1).to_list(300)
+            docs = (
+                await self.mongo.likes.find({"userId": user_oid}, {"postId": 1})
+                .sort("_id", -1)
+                .to_list(300)
+            )
             return [str(d["postId"]) for d in docs]
 
         async def get_saved():
-            docs = await self.mongo.saves.find(
-                {"userId": user_oid}, {"postId": 1}
-            ).sort("_id", -1).to_list(200)
+            docs = (
+                await self.mongo.saves.find({"userId": user_oid}, {"postId": 1})
+                .sort("_id", -1)
+                .to_list(200)
+            )
             return [str(d["postId"]) for d in docs]
 
         async def get_commented():
-            docs = await self.mongo.comments.find(
-                {"authorId": user_oid, "status": "active"}, {"postId": 1}
-            ).sort("_id", -1).to_list(200)
+            docs = (
+                await self.mongo.comments.find(
+                    {"authorId": user_oid, "status": "active"}, {"postId": 1}
+                )
+                .sort("_id", -1)
+                .to_list(200)
+            )
             return [str(d["postId"]) for d in docs]
 
         async def get_following():

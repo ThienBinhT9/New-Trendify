@@ -27,16 +27,27 @@ class RedisService:
             return
 
         settings = get_settings()
-        self._client = aioredis.Redis(
-            host=settings.redis_host,
-            port=settings.redis_port,
-            db=settings.redis_db,
-            decode_responses=True,
-        )
+
+        if settings.redis_url:
+            # URL-based connection (Upstash, cloud Redis with TLS)
+            self._client = aioredis.from_url(
+                settings.redis_url,
+                decode_responses=True,
+            )
+        else:
+            # Host/port connection (local Redis)
+            self._client = aioredis.Redis(
+                host=settings.redis_host,
+                port=settings.redis_port,
+                db=settings.redis_db,
+                decode_responses=True,
+            )
+
         # Verify connection
         await self._client.ping()
         self._prefix = settings.redis_key_prefix
-        print(f"✅ AI Service connected to Redis: {settings.redis_host}:{settings.redis_port}")
+        redis_target = settings.redis_url or f"{settings.redis_host}:{settings.redis_port}"
+        print(f"✅ AI Service connected to Redis: {redis_target[:50]}...")
 
     async def disconnect(self) -> None:
         if self._client:

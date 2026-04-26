@@ -20,10 +20,10 @@ async def get_post_recommendations(
     """
     Get personalized post recommendations for a user's ForYou feed.
 
-    Uses Hybrid Recommendation:
-    - Content-Based Filtering (TF-IDF + Cosine Similarity)
-    - Collaborative Filtering (KNN co-interaction)
-    - Popularity + Freshness (engagement × time decay)
+    Uses Content-Based Filtering:
+    - TF-IDF Vectorization of post content + hashtags
+    - Cosine Similarity between user taste profile and candidate posts
+    - Popularity + Freshness scoring (engagement × time decay)
 
     Adaptive weights handle cold-start users automatically.
     """
